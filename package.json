@@ -1,0 +1,10 @@
+{
+  "name": "palestra-app",
+  "private": true,
+  "type": "module",
+  "description": "Palestra: gym routines, guided workouts and history. Plain JS PWA, no build step. Only needed for the tests.",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "e2e": "node tests/e2e.cjs"
+  }
+}

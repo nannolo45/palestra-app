@@ -1,0 +1,137 @@
+// The guide shown in Settings → Guida. [title, intro, steps]. **bold** becomes <strong>.
+// The full guide is a separate document ("Palestra: guide"); this follows its chapters.
+
+export const GUIDE = {
+  it: [
+    ['Installazione', 'Una volta sola, circa dieci minuti. I tuoi dati restano in un repository GitHub **privato** che leggi solo tu (ed Everyday).', [
+      'Su GitHub crea il repository privato **palestra-data**, vuoto: Palestra scrive i suoi file alla prima sincronizzazione.',
+      'Crea un token per questo telefono: GitHub → Settings → Developer settings → **Fine-grained tokens**. Accesso solo a palestra-data, permesso **Contents: Read and write**, nient\'altro. Chiamalo come il dispositivo.',
+      'Apri l\'indirizzo dell\'app in Chrome e scegli **Installa app** (o Aggiungi a schermata Home). Da lì aprila dall\'icona: funziona a schermo intero e offline.',
+      'In **Impostazioni → Collegamento GitHub** inserisci utente, repository e token, poi **Salva e sincronizza**.',
+      'Prepara nell\'ordine: zone e macchine, poi esercizi, poi allenamenti.',
+    ]],
+    ['La tua palestra', 'La scheda **Palestra** è il percorso della tua palestra: gli allenamenti la usano per farti camminare meno, e durante l\'allenamento ti dice dove andare.', [
+      '**Zone**: aggiungi le aree in cui ti sposti, poi **Riordina** e trascinale nell\'ordine in cui le attraversi.',
+      '**Macchine**: in ogni zona, con il **numero** scritto sopra (M14, C3), un nome e le **regolazioni** (sedile, schienale, perno).',
+      'Più macchine uguali possono essere una sola voce (C1–6).',
+      'Una macchina che **non c\'è**: dalla scheda dell\'esercizio tocca **+ Nuova macchina** (o **+ Altra macchina** per il cardio). Per il cardio scegli cosa misura oltre al tempo, fino a tre, o crea una misura tua con nome e unità.',
+    ]],
+    ['Esercizi', 'Ogni esercizio ha una scheda con un **tipo** in alto, e il tipo decide cosa imposti.', [
+      '**Pesi** (etichetta scura con il numero della macchina): serie, ripetizioni, kg, recupero.',
+      '**Corpo libero** (bordo tratteggiato): serie, ripetizioni o secondi, recupero.',
+      '**Cardio** (etichetta gialla): la macchina (tapis roulant, ellittica, bike, vogatore, stepper o una tua) e gli obiettivi: durata, velocità, pendenza, livello…',
+      'Le **note** sono facoltative: come eseguirlo, cosa ricordare. Le vedi sotto la macchina durante l\'allenamento.',
+      'In alto nell\'elenco scegli **Per muscolo** o **Per posto**, e filtra per tipo con i chip.',
+    ]],
+    ['Allenamenti', 'Un allenamento è una sequenza di esercizi che ripeti, come Gambe o Full body. La **durata stimata** si calcola da sola ed è quella che usa Everyday.', [
+      'Tocca **+**, dai un nome, poi **Aggiungi esercizio** per ognuno. Toccalo per serie, ripetizioni, peso e recupero.',
+      'In **Modifica** trascina un esercizio dalla maniglia per cambiare l\'ordine. Il riscaldamento cardio di solito va primo.',
+      'Sempre in Modifica attivi l\'**aumento automatico** per quell\'allenamento.',
+      'La stima parte da circa 3 secondi a ripetizione e poi usa i tuoi tempi veri, dopo qualche seduta.',
+    ]],
+    ['Durante l\'allenamento', 'Tocca **▶ Inizia** (o **Apri in Palestra** da un blocco di Everyday). Lo schermo diventa scuro e grande, resta acceso e funziona senza rete.', [
+      '**Aumenti della settimana** (prima seduta della settimana, se attivo): togli la spunta a quelli che non vuoi, poi **Conferma e inizia**, o **Inizia con i pesi di prima**.',
+      '**La serie**: esercizio, serie 2 di 4, ripetizioni e kg, macchina e zona, la tua nota. Correggi con −/+ se hai fatto diverso, poi **Fatto**.',
+      '**Recupero**: conto alla rovescia, quanto hai riposato davvero, **+30 s** e **Salta**. Vibra a zero. Sotto: cosa viene dopo e dove andare.',
+      '**Cardio**: conto alla rovescia della durata, obiettivi con −/+, e la distanza dal display se vuoi. **Fine** quando hai finito.',
+      '**Pausa** (in alto a destra) ferma il tempo, per esempio per una telefonata. **×** chiude prima: le serie fatte si salvano come parziale.',
+      'Se il telefono si blocca o l\'app si ricarica, riaprila: riprende da dove era.',
+    ]],
+    ['Aumento automatico', 'Una volta a settimana Palestra può alzare i tuoi obiettivi, e chiede sempre prima, all\'inizio della seduta.', [
+      'In **Impostazioni → Aumento automatico**: di quanto per tipo (macchine +2,5 kg, bilanciere +2,5, manubri +1, cavi +2,5, corpo libero +1 ripetizione, cardio +1 minuto) e quando.',
+      '**Se completo**: sale solo se l\'ultima volta hai fatto tutte le serie. **Sempre**: ogni settimana, chiedendo comunque.',
+      'Nella **scheda di un esercizio**: come il suo tipo, un passo tuo, o escluso.',
+      'Si attiva per ogni allenamento in **Modifica**.',
+    ]],
+    ['Storico', 'I tuoi progressi e tutte le sedute.', [
+      'In alto scegli un esercizio: vedi il carico nel tempo, quanto è cambiato e l\'ultima volta.',
+      'Sotto, le sedute, complete o parziali. Toccane una per vedere ogni serie e dove sono andati i minuti.',
+    ]],
+    ['Everyday', 'Palestra decide **cosa** fai in palestra, Everyday **quando**.', [
+      'In Everyday: **Impostazioni → Avanzate → Collegamenti → Palestra**, incolla un token per palestra-data con **Contents: Read and write**.',
+      'Ogni allenamento appare in Everyday come **attività salvata**, con la sua durata stimata: pianificalo come le altre (3 volte a settimana, finestre, andata e ritorno).',
+      'Un blocco di allenamento in Everyday ha **▶ Apri in Palestra**, che apre quell\'allenamento pronto a partire.',
+      'Alla fine Everyday segna fatto il blocco con l\'ora vera di inizio e fine, e la durata stimata si avvicina a quella reale.',
+      'Everyday scrive una sola cosa in Palestra: gli allenamenti pianificati, così vedi **Prossimo: Gambe, gio 18:00**.',
+    ]],
+    ['Sync, offline e backup', 'Tutto funziona senza rete: le modifiche aspettano sul telefono e partono alla prossima sincronizzazione.', [
+      'Si sincronizza all\'apertura, alla fine dell\'allenamento e con **Sync** in Impostazioni.',
+      '**Più dispositivi**: ognuno ha la sua copia e si uniscono a ogni sync; vince la modifica più recente.',
+      'Quando esce una versione nuova compare la barra **Aggiorna**: toccala quando non ti stai allenando.',
+      '**Backup** scarica tutti i dati in un file; il repository tiene anche tutte le versioni passate.',
+    ]],
+    ['Problemi comuni', 'Le soluzioni più frequenti.', [
+      'Errore **401/403**: il token è scaduto o non vede palestra-data. Creane uno nuovo e incollalo in Collegamento GitHub.',
+      'Errore **404**: utente o nome del repository sbagliati.',
+      '**Lo schermo si spegne**: escludi Palestra dal risparmio batteria.',
+      '**Il blocco non risulta fatto in Everyday**: tocca Sync in Palestra e poi in Everyday.',
+      'Everyday dice **aggiorna Everyday**: i dati sono su un contratto più nuovo; aggiorna Everyday.',
+    ]],
+  ],
+  en: [
+    ['Install', 'Once, about ten minutes. Your data stays in a **private** GitHub repository that only you (and Everyday) can read.', [
+      'On GitHub, create the private repository **palestra-data**, empty: Palestra writes its files on the first sync.',
+      'Make a token for this phone: GitHub → Settings → Developer settings → **Fine-grained tokens**. Access to palestra-data only, permission **Contents: Read and write**, nothing else. Name it after the device.',
+      'Open the app\'s address in Chrome and choose **Install app** (or Add to Home screen). From then on open it from its icon: it runs full screen and works offline.',
+      'In **Settings → GitHub connection** enter user, repository and token, then **Save and sync**.',
+      'Set up in this order: zones and machines, then exercises, then routines.',
+    ]],
+    ['Your gym', 'The **Palestra** tab is your gym as a walking route: routines use it so you walk less, and the workout tells you where to go next.', [
+      '**Zones**: add the areas you move between, then **Reorder** and drag them into the order you walk them.',
+      '**Machines**: in each zone, with the **number** printed on it (M14, C3), a name and its **settings** (seat, back rest, pin).',
+      'Several identical machines can be one entry (C1–6).',
+      'A machine that **isn\'t listed**: on the exercise card tap **+ New machine** (or **+ Other machine** for cardio). For cardio, pick what it measures besides time, up to three, or make your own measure with a name and a unit.',
+    ]],
+    ['Exercises', 'Every exercise has a card with a **type** at the top, and the type decides what you set.', [
+      '**Weights** (dark tag with the machine number): sets, reps, kg, rest.',
+      '**Bodyweight** (dashed outline): sets, reps or seconds, rest.',
+      '**Cardio** (yellow tag): the machine (treadmill, elliptical, bike, rower, stepper or your own) and the targets: duration, speed, incline, level…',
+      '**Notes** are optional: how to do it, what to remember. They show under the machine during the workout.',
+      'At the top of the list choose **By muscle** or **By place**, and filter by type with the chips.',
+    ]],
+    ['Routines', 'A routine is a workout you repeat, like Legs or Full body. Its **estimated length** is worked out for you, and it\'s what Everyday plans with.', [
+      'Tap **+**, give it a name, then **Add exercise** for each one. Tap one for sets, reps, weight and rest.',
+      'In **Edit**, drag an exercise by its handle to change the order. A cardio warm-up usually goes first.',
+      'Also in Edit you switch on the **automatic increase** for that routine.',
+      'The estimate starts from about 3 seconds a rep and then uses your real times, after a few sessions.',
+    ]],
+    ['During the workout', 'Tap **▶ Start** (or **Open in Palestra** on an Everyday block). The screen turns dark and large, stays on and works without signal.', [
+      '**This week\'s increases** (first session of the week, if on): untick any you don\'t want, then **Confirm and start**, or **Start with the old weights**.',
+      '**The set**: exercise, set 2 of 4, reps and kg, machine and zone, your note. Adjust with −/+ if you did something different, then **Done**.',
+      '**Rest**: a countdown, how long you actually rested, **+30 s** and **Skip**. It vibrates at zero. Underneath: what\'s next and where to go.',
+      '**Cardio**: a countdown for the duration, targets with −/+, and the distance from the display if you like. **Finish** when done.',
+      '**Pause** (top right) stops the clock, e.g. for a phone call. **×** ends early: the sets you did are saved as partial.',
+      'If the phone locks or the app reloads, open it again: it picks up where it was.',
+    ]],
+    ['Automatic increase', 'Once a week Palestra can raise your targets, and it always asks first, at the start of the session.', [
+      'In **Settings → Automatic increase**: how much per type (machines +2.5 kg, barbell +2.5, dumbbells +1, cables +2.5, bodyweight +1 rep, cardio +1 minute) and when.',
+      '**If complete**: only after a session where every set was done. **Always**: every week, still asking first.',
+      'On an **exercise card**: like its type, your own step, or excluded.',
+      'Switch it on per routine in **Edit**.',
+    ]],
+    ['History', 'Your progress and every session.', [
+      'At the top pick an exercise: its load over time, how much it changed and the last result.',
+      'Below, the sessions, complete or partial. Tap one to see every set and where the minutes went.',
+    ]],
+    ['Everyday', 'Palestra decides **what** you do at the gym, Everyday **when**.', [
+      'In Everyday: **Settings → Advanced → Connections → Palestra**, paste a token for palestra-data with **Contents: Read and write**.',
+      'Each routine shows in Everyday as a **saved task**, with its estimated length: plan it like any other (3 times a week, windows, trips there and back).',
+      'A workout block in Everyday has **▶ Open in Palestra**, which opens that routine ready to start.',
+      'At the end Everyday ticks the block with the real start and end, and the estimate gets closer to the real length.',
+      'Everyday writes only one thing to Palestra: the planned workouts, so you see **Next: Legs, Thu 18:00**.',
+    ]],
+    ['Sync, offline and backup', 'Everything works without signal: changes wait on the phone and go up at the next sync.', [
+      'It syncs on opening, at the end of a workout and with **Sync** in Settings.',
+      '**Several devices**: each keeps its own copy and they merge on every sync; the most recent change wins.',
+      'When a new version is out, an **Update** bar appears: tap it when you\'re not training.',
+      '**Backup** downloads all your data as one file; the repository also keeps every past version.',
+    ]],
+    ['Troubleshooting', 'The most common fixes.', [
+      'Error **401/403**: the token expired or can\'t see palestra-data. Make a new one and paste it in GitHub connection.',
+      'Error **404**: the user or repository name is wrong.',
+      '**The screen turns off**: exclude Palestra from battery saving.',
+      '**The block isn\'t ticked in Everyday**: tap Sync in Palestra, then in Everyday.',
+      'Everyday says **update Everyday**: the data is on a newer contract; update Everyday.',
+    ]],
+  ],
+};
