@@ -185,6 +185,7 @@ export function increaseProposals(routine, exercises, sessions, settings = DEFAU
     if (!step || step <= 0) { out.excluded.push(ex.id); return; }
     const res = lastResult(item, ex, sessions, now);
     if (!res) return; // never done: nothing to go on yet
+    if (ex.type === 'weights' && !(Number(item.weight) > 0)) return; // no weight chosen yet: the first session sets it
     if (ex.type === 'weights' && res.at != null && res.at < (Number(item.weight) || 0)) return; // the new weight isn't tried yet
     if (settings.when !== 'always' && !res.complete) { out.held.push({ exerciseId: ex.id, short: res.short }); return; }
     if (ex.type === 'cardio') {

@@ -10,6 +10,7 @@ import { syncNow, isSyncing, isConfigured, testConnection, clearFileCache, CONTR
 import { training, increaseSettings, refreshEstimates } from '../data.js';
 import { INCREASE_STEP, plannedAhead } from '../model.js';
 import { GUIDE } from '../guide.js';
+import { parseImport, planImport, runImport } from '../importer.js';
 
 const VERSION = 'v1';
 
@@ -185,6 +186,11 @@ const SUB = {
     const body = `<div class="stack"><p>${esc(t('backupText'))}</p>
       <button type="button" class="btn primary wide" data-action="download">${icon('download', 18)}${esc(t('downloadBackup'))}</button>
       <p class="muted small">${esc(t('backupRepoHint'))}</p>
+      <h2 class="section-title">${esc(t('importTitle'))}</h2>
+      <p>${esc(t('importText'))}</p>
+      <label class="btn wide file-btn">${icon('plus', 18)}${esc(t('importPickFile'))}<input type="file" accept=".json,application/json" data-import-file class="sr"></label>
+      <label class="field"><span>${esc(t('importOrPaste'))}</span><textarea id="import-text" rows="4" placeholder='{"format": "palestra-import", …}'></textarea></label>
+      <button type="button" class="btn primary wide" data-action="import-text">${esc(t('importRead'))}</button>
       <h2 class="section-title">${esc(t('thisDevice'))}</h2>
       <button type="button" class="btn danger-text wide" data-action="wipe">${esc(t('wipeDevice'))}</button></div>`;
     return page(t('set_backup'), body, (view) => {
@@ -199,6 +205,28 @@ const SUB = {
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       });
+      const doImport = async (text) => {
+        const res = parseImport(text);
+        if (res.error) { toast(t(res.error, res.detail || ''), { ms: 5000 }); return; }
+        const plan = planImport(res.data);
+        const lines = [
+          t('importRoutines', plan.routines.map((r) => r.finalName).join(', ')),
+          plan.newExercises.length ? t('importNewEx', plan.newExercises.length) : '',
+          plan.reused.length ? t('importReused', plan.reused.join(', ')) : '',
+        ].filter(Boolean).join(' ');
+        if (!(await askConfirm({ title: t('importQ'), text: lines, ok: t('importDo') }))) return;
+        const out = runImport(res.data);
+        refreshEstimates();
+        toast(t('importDone', out.routines.length));
+        location.hash = '#/routines';
+      };
+      view.querySelector('[data-import-file]').addEventListener('change', async (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (!f) return;
+        await doImport(await f.text());
+        e.target.value = '';
+      });
+      view.querySelector('[data-action=import-text]').addEventListener('click', () => doImport(view.querySelector('#import-text').value));
       view.querySelector('[data-action=wipe]').addEventListener('click', async () => {
         if (!(await askConfirm({ text: isConfigured() ? t('wipeQSynced') : t('wipeQLocal'), ok: t('wipe'), danger: true }))) return;
         await resetLocal();

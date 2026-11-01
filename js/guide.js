@@ -59,6 +59,7 @@ export const GUIDE = {
       '**Più dispositivi**: ognuno ha la sua copia e si uniscono a ogni sync; vince la modifica più recente.',
       'Quando esce una versione nuova compare la barra **Aggiorna**: toccala quando non ti stai allenando.',
       '**Backup** scarica tutti i dati in un file; il repository tiene anche tutte le versioni passate.',
+      'In **Backup e importazione** puoi anche **importare** allenamenti da un file: gli esercizi che hai già vengono riusati, i pesi mancanti li scegli alla prima seduta.',
     ]],
     ['Problemi comuni', 'Le soluzioni più frequenti.', [
       'Errore **401/403**: il token è scaduto o non vede palestra-data. Creane uno nuovo e incollalo in Collegamento GitHub.',
@@ -125,6 +126,7 @@ export const GUIDE = {
       '**Several devices**: each keeps its own copy and they merge on every sync; the most recent change wins.',
       'When a new version is out, an **Update** bar appears: tap it when you\'re not training.',
       '**Backup** downloads all your data as one file; the repository also keeps every past version.',
+      'In **Backup and import** you can also **import** routines from a file: exercises you already have are reused, and missing weights are picked in the first session.',
     ]],
     ['Troubleshooting', 'The most common fixes.', [
       'Error **401/403**: the token expired or can\'t see palestra-data. Make a new one and paste it in GitHub connection.',

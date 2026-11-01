@@ -430,3 +430,5 @@ body.mode-workout a { color: var(--yellow); }
   dialog { border-radius: 20px; margin: auto; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+.file-btn { position: relative; cursor: pointer; }

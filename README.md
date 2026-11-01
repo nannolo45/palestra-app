@@ -54,15 +54,22 @@ Unknown fields are kept on every write.
 | `data/exercises.json` | an exercise | `name`, `type` (`weights`/`bodyweight`/`cardio`), `equipment` (`machine`/`barbell`/`dumbbell`/`cable`), `machineId`, `placeId`, `muscles`, `defaultRest`, `notes`, `timed`, `cardio: {kind, targets}`, `increase: {mode: type/custom/off, step}` |
 | `data/routines.json` | a routine | `name`, `items: [{exerciseId, sets, reps` or `seconds, weight, rest, targets}]`, `restBetween`, `estMinutes`, `autoIncrease`, `increaseWeek` |
 | `data/sessions/YYYY-MM.json` | a workout done | `routineId`, `start`, `end` (ms), `minutes` (without pauses), `sets: [{exerciseId, n, reps, weight, seconds, targets, distance, dur, restTaken, restPlanned}]`, `breakdown: {work, rest, walk, pause}` (s), `outcome` (`done`/`partial`), `everydayBlockId` |
-| `data/prefs.json` | a setting, `{id, value}` | `increase`, `training`, `gymName`; and `planned`, written by Everyday |
-| `data/contract.json` | — | `{ "version": 1 }` |
+| `data/prefs.json` | a setting, `{id, value}` | `contract` (the contract version, `1`), `increase`, `training`, `gymName`; and `planned`, written by Everyday |
 
 ### Data contract with Everyday (v1)
 
-Everyday reads `routines.json` (`id`, `name`, `estMinutes`, `deleted`, `updatedAt`) and the session files
-(`id`, `routineId`, `start`, `end`, `minutes`, `outcome`, `everydayBlockId`). It writes only the prefs record
-`planned`: `[{blockId, routineId, date: "YYYY-MM-DD", start: "HH:MM"}]`. A `version` in `contract.json` higher than
-the app knows makes it stop writing until it's updated. Changing a listed field means contract v2.
+Everyday reads `routines.json` (`id`, `name`, `estMinutes`, `deleted`, `updatedAt`) and the session files of the
+current and previous month (`id`, `routineId`, `start`, `end`, `minutes`, `outcome`, `everydayBlockId`).
+`start` and `end` are ms since 1970 and place the block; `minutes` is the time worked, without pauses.
+
+Everyday writes only the prefs record `planned`: `[{blockId, routineId, date: "YYYY-MM-DD", start: "HH:MM"}]`,
+rewritten in full on each sync with the next 14 days.
+
+The contract version is the prefs record `{id: "contract", value: 1}`, as in Ricette. A higher value than the app
+knows makes it keep reading but stop writing until it's updated. Changing a listed field means contract v2.
+
+A session started in Palestra without a block is matched by Everyday to a block for the same routine that day,
+nearest by time, or gets a new block. A deleted routine archives its saved task in Everyday.
 
 Everyday opens a workout with `…/palestra-app/#/start/<routineId>?block=<blockId>`; the session saved at the end
 carries that `everydayBlockId`.

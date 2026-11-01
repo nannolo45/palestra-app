@@ -216,6 +216,7 @@ function setBody(step, ex) {
     : `<div class="w-card stepcard">${stepper({ name: 'reps', value: step.plan.reps, step: 1, min: 0, label: t('reps'), big: true })}</div>`}
         ${step.plan.weight != null ? `<div class="w-card stepcard">${stepper({ name: 'weight', value: step.plan.weight, step: ex.equipment === 'dumbbell' ? 1 : 2.5, min: 0, label: 'kg', big: true })}</div>` : ''}
       </div>
+      ${step.plan.weight === 0 ? `<p class="w-small">${esc(t('weightFirstTime'))}</p>` : ''}
       ${m || p ? `<div class="w-card machine"><span class="w-mnum">${esc(m?.number || '·')}</span><div><b>${esc(p?.name || m?.name || '')}</b><small>${esc(m?.settings || (m && p ? m.name : ''))}</small></div></div>` : ''}
       ${ex.notes ? `<section class="w-note" aria-label="${esc(t('notes'))}">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
       <p class="w-small">${esc([lastSet ? t('setDone', lastSet.n, setText(ex, lastSet)) : '', prevText].filter(Boolean).join(' · '))}</p>
@@ -367,7 +368,23 @@ async function finish(early) {
   if (active.phase === 'rest') active = W.endRest(active);
   const session = W.toSession(active);
   if (early) session.outcome = active.log.length >= active.steps.length ? 'done' : 'partial';
-  if (session.sets.length) upsert('sessions', session);
+  if (session.sets.length) {
+    upsert('sessions', session);
+    // a routine imported without weights: the first session sets them
+    const r = get('routines', session.routineId);
+    if (r) {
+      let changed = false;
+      const items = (r.items || []).map((it) => {
+        const ex = get('exercises', it.exerciseId);
+        if (!ex || ex.type !== 'weights' || Number(it.weight) > 0) return it;
+        const used = Math.max(0, ...session.sets.filter((x) => x.exerciseId === ex.id).map((x) => Number(x.weight) || 0));
+        if (!used) return it;
+        changed = true;
+        return { ...it, weight: used };
+      });
+      if (changed) upsert('routines', { ...r, items });
+    }
+  }
   await W.saveActive(null);
   active = null;
   releaseWake();

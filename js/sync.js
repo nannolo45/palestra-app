@@ -2,22 +2,26 @@
 // the same way Ricette and Everyday do it: one file per collection, merged record by record.
 // Sessions are split by month (data/sessions/YYYY-MM.json), like Everyday's blocks.
 import {
-  state, mergeLists, purgeTombstones, serialize, replaceCollection, saveMeta, kvGet, kvSet, kvDel, kvKeys,
+  state, upsert, mergeLists, purgeTombstones, serialize, replaceCollection, saveMeta, kvGet, kvSet, kvDel, kvKeys,
 } from './store.js';
 
+// prefs first: it holds the contract version, which decides whether this app may write.
 export const PATHS = {
+  prefs: 'data/prefs.json',
   places: 'data/places.json',
   machines: 'data/machines.json',
   exercises: 'data/exercises.json',
   routines: 'data/routines.json',
-  prefs: 'data/prefs.json',
 };
 const SESSIONS_DIR = 'data/sessions';
-const CONTRACT_PATH = 'data/contract.json';
 
-// Data contract with Everyday, v1. A newer number in data/contract.json means a newer Palestra wrote the data:
-// this one keeps reading but stops writing until it's updated.
+// Data contract with Everyday, v1, kept as the prefs record {id: 'contract', value} the way Ricette does.
+// A higher number means a newer app wrote the data: this one keeps reading but stops writing until it's updated.
 export const CONTRACT = 1;
+export function contractInData() {
+  const rec = (state.prefs || []).find((p) => p && p.id === 'contract' && !p.deleted);
+  return Number(rec?.value) || 0;
+}
 
 export function isConfigured() {
   const s = state.settings;
@@ -157,18 +161,6 @@ async function syncFile(path, local, listing, readOnly) {
   throw new SyncError('conflict');
 }
 
-async function syncContract() {
-  const { sha, text } = await getText(CONTRACT_PATH);
-  let version = 0;
-  try { version = Number(JSON.parse(text || '{}').version) || 0; } catch { version = 0; }
-  if (version > CONTRACT) return true;
-  if (version < CONTRACT) {
-    const body = JSON.stringify({ version: CONTRACT, app: 'palestra', note: 'Data contract with Everyday. See the spec.' }, null, 1) + '\n';
-    await putFile(CONTRACT_PATH, body, sha);
-  }
-  return false;
-}
-
 let running = null;
 let again = false;
 
@@ -180,12 +172,16 @@ export function syncNow() {
     try {
       do {
         again = false;
-        const newer = await syncContract();
         let dataListing = null;
         try { dataListing = await listDir('data'); } catch (e) { if (e.code === 'auth' || e.code === 'forbidden') throw e; }
+        let newer = contractInData() > CONTRACT;
         for (const [c, path] of Object.entries(PATHS)) {
           const merged = await syncFile(path, state[c], dataListing, newer);
           await replaceCollection(c, mergeLists(merged, state[c]));
+          if (c === 'prefs') {
+            newer = contractInData() > CONTRACT; // the prefs just arrived: check again
+            if (!newer && contractInData() < CONTRACT) { upsert('prefs', { id: 'contract', value: CONTRACT }, { silent: true }); again = true; }
+          }
         }
         // sessions, one file per month
         let sessListing = null;

@@ -3,7 +3,7 @@
 const VERSION = 'palestra-v1';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
-  'js/app.js', 'js/store.js', 'js/sync.js', 'js/i18n.js', 'js/shell.js', 'js/sortable.js', 'js/model.js', 'js/workout.js', 'js/data.js', 'js/guide.js',
+  'js/app.js', 'js/store.js', 'js/sync.js', 'js/i18n.js', 'js/shell.js', 'js/sortable.js', 'js/model.js', 'js/workout.js', 'js/data.js', 'js/guide.js', 'js/importer.js',
   'js/ui/format.js', 'js/ui/dialogs.js', 'js/ui/icons.js', 'js/ui/parts.js',
   'js/views/routines.js', 'js/views/exercises.js', 'js/views/gym.js', 'js/views/history.js', 'js/views/settings.js', 'js/views/workout.js',
   'fonts/Barlow-Regular.woff', 'fonts/Barlow-Medium.woff', 'fonts/Barlow-SemiBold.woff', 'fonts/Barlow-Bold.woff', 'fonts/BarlowCondensed-SemiBold.woff', 'fonts/BarlowCondensed-Bold.woff',
