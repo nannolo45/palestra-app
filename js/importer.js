@@ -47,6 +47,9 @@ const CARDIO_KIND_WORDS = [
   [/\b(bike|cyclette|bici|spinning)\b/i, 'bike'], [/\b(vogatore|rower|rowing)\b/i, 'rower'], [/\b(stepper|step)\b/i, 'stepper'],
 ];
 
+const WEEKDAY_WORDS = [/\b(lun|lunedi|lunedì|mon|monday)\b/i, /\b(mar|martedi|martedì|tue|tuesday)\b/i, /\b(mer|mercoledi|mercoledì|wed|wednesday)\b/i,
+  /\b(gio|giovedi|giovedì|thu|thursday)\b/i, /\b(ven|venerdi|venerdì|fri|friday)\b/i, /\b(sab|sabato|sat|saturday)\b/i, /\b(dom|domenica|sun|sunday)\b/i];
+
 function restSeconds(v) {
   const t = String(v).trim().toLowerCase().replace(',', '.');
   let m = t.match(/^(\d+):(\d{2})$/);
@@ -120,7 +123,16 @@ export function parseText(text) {
     m = line.match(/^(note?|nota)\s*:\s*(.*)$/i);
     if (m && !routine) { planNote = m[2].trim(); return; }
     m = line.match(/^(giorno|day|allenamento|workout)\s*\d*\s*:\s*(.+)$/i);
-    if (m) { routine = { name: m[2].trim(), items: [], autoIncrease: true }; data.routines.push(routine); lastEx = null; return; }
+    if (m) {
+      // "GIORNO: Gambe @ ven 18:00": weekday and time are optional
+      const [name, when = ''] = m[2].split('@');
+      routine = { name: name.trim(), items: [], autoIncrease: true };
+      const wd = WEEKDAY_WORDS.findIndex((re) => re.test(when));
+      if (wd >= 0) routine._weekday = wd;
+      const tm = when.match(/(\d{1,2})[:.](\d{2})/);
+      if (tm && Number(tm[1]) < 24 && Number(tm[2]) < 60) routine._time = `${tm[1].padStart(2, '0')}:${tm[2]}`;
+      data.routines.push(routine); lastEx = null; return;
+    }
     m = line.match(/^[-–•*]\s*(.+)$/);
     if (m) {
       if (lastEx) lastEx.notes = lastEx.notes ? `${lastEx.notes}\n${m[1].trim()}` : m[1].trim();
@@ -238,8 +250,15 @@ export function runImport(data, { asPlan = true } = {}) {
   });
   let planId = null;
   if (asPlan && data.plan) {
+    const given = data.routines.some((r) => Number.isInteger(r._weekday ?? r.weekday));
     const weekdays = defaultWeekdays(created.length);
-    const p = upsert('plans', { id: uid(), name: String(data.plan.name || '').trim() || 'Scheda', note: data.plan.note || '', days: created.map((routineId, i) => ({ routineId, weekday: weekdays[i] })) }, { silent: true });
+    const days = created.map((routineId, i) => {
+      const r = data.routines[i];
+      const wd = r._weekday ?? r.weekday;
+      const time = r._time ?? r.time;
+      return { routineId, weekday: Number.isInteger(wd) ? wd : given ? null : weekdays[i], ...(typeof time === 'string' && /^\d{2}:\d{2}$/.test(time) ? { time } : {}) };
+    });
+    const p = upsert('plans', { id: uid(), name: String(data.plan.name || '').trim() || 'Scheda', note: data.plan.note || '', days }, { silent: true });
     planId = p.id;
   }
   return { ...plan, created, planId };

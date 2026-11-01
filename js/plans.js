@@ -7,6 +7,9 @@ import { measuresFor } from './model.js';
 
 const DAY = 86400000;
 
+/** "18:00" → true. A day's time is optional. */
+export const validTime = (x) => typeof x === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(x);
+
 /** Monday 00:00 (local) of the week containing ts. */
 export function weekStart(ts = Date.now()) {
   const d = new Date(ts);
@@ -60,7 +63,11 @@ function activeRecord(plan, from) {
     planId: plan.id,
     name: plan.name,
     from,
-    days: planDays(plan).map((d) => ({ routineId: d.routineId, weekday: Number.isInteger(d.weekday) ? d.weekday : null })),
+    days: planDays(plan).map((d) => ({
+      routineId: d.routineId,
+      weekday: Number.isInteger(d.weekday) ? d.weekday : null,
+      ...(validTime(d.time) ? { time: d.time } : {}),
+    })),
   };
 }
 
@@ -129,6 +136,7 @@ export function outsidePlan(plan) {
   return live('routines').filter((r) => !inPlan.has(r.id));
 }
 
+const WD_TXT = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 const restText = (s) => (s % 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : `${s / 60}:00`);
 const EQ_TXT = { barbell: 'bilanciere', dumbbell: 'manubri', cable: 'cavi', machine: 'macchina' };
 
@@ -138,7 +146,9 @@ export function planToText(plan) {
   if (plan.note) lines.push(`Note: ${plan.note}`);
   for (const d of planDays(plan)) {
     const r = get('routines', d.routineId);
-    lines.push('', `GIORNO: ${r.name}`);
+    const wd = Number.isInteger(d.weekday) ? ` @ ${WD_TXT[d.weekday]}` : '';
+    const tm = validTime(d.time) ? `${wd ? '' : ' @'} ${d.time}` : '';
+    lines.push('', `GIORNO: ${r.name}${wd}${tm}`);
     for (const it of r.items || []) {
       const ex = get('exercises', it.exerciseId);
       if (!ex) continue;

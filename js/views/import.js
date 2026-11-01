@@ -18,7 +18,7 @@ const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
 
 const HELP = [
   ['SCHEDA: Push Pull Legs', 'helpPlan'],
-  ['GIORNO: Spinta', 'helpDay'],
+  ['GIORNO: Spinta @ lun 18:00', 'helpDay'],
   ['Panca piana 4x8', 'helpSets'],
   ['… 60 kg', 'helpWeight'],
   ['… rec 2:30  /  rec 90s', 'helpRest'],

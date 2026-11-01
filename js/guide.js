@@ -31,7 +31,7 @@ export const GUIDE = {
     ]],
     ['Schede e scheda attiva', 'Una **scheda** è la tua settimana: gli allenamenti che fai, ognuno nel suo giorno. Quella **attiva** è quella che vedi in Allenamenti e che Everyday pianifica.', [
       'In Allenamenti tocca **Schede**: la scheda attiva è in giallo, le altre restano salvate con il loro storico.',
-      'Apri una scheda per cambiarle nome, ordine dei giorni (trascina) e il **giorno della settimana** di ogni allenamento (L M M G V S D).',
+      'Apri una scheda per cambiarle nome, ordine dei giorni (trascina) e il **giorno della settimana** di ogni allenamento (L M M G V S D), con un\'**ora** facoltativa: con l\'ora Everyday lo mette in agenda da solo, senza la scegli ogni settimana.',
       '**Rendi attiva**: scegli se da lunedì (finisci la settimana con quella di prima) o da oggi. Everyday pianifica i nuovi giorni.',
       'In Allenamenti vedi la settimana: cosa hai fatto, il prossimo, e **Inizia** per partire. Gli allenamenti fuori scheda sono sotto.',
       '**Esporta .txt** salva la scheda come testo, da condividere o reimportare.',
@@ -111,7 +111,7 @@ export const GUIDE = {
     ]],
     ['Plans and the active plan', 'A **plan** is your week: the routines you do, each on its day. The **active** one is what you see in Routines and what Everyday plans.', [
       'In Routines tap **Plans**: the active plan is in yellow, the others stay saved with their history.',
-      'Open a plan to change its name, the order of the days (drag) and the **weekday** of each routine (M T W T F S S).',
+      'Open a plan to change its name, the order of the days (drag) and the **weekday** of each routine (M T W T F S S), with an optional **time**: with a time Everyday puts it in your plan by itself, without one you pick it each week.',
       '**Make active**: choose from Monday (finish the week with the old one) or from today. Everyday plans the new days.',
       'Routines shows the week: what you did, the next one, and **Start**. Routines outside the plan are below.',
       '**Export .txt** saves the plan as text, to share or import again.',

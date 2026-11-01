@@ -7,7 +7,7 @@ import { backLink, empty, toggle } from '../ui/parts.js';
 import { openSheet, askConfirm, toast } from '../ui/dialogs.js';
 import { routines, routineMinutes, lastDone } from '../data.js';
 import {
-  plans, activeInfo, isActive, isUpcoming, dateOf, activate, deactivate, savePlan, planDays, planMinutes, weekNumber, nextMonday, isoDate, weekStart, planToText,
+  plans, activeInfo, isActive, isUpcoming, dateOf, activate, validTime, deactivate, savePlan, planDays, planMinutes, weekNumber, nextMonday, isoDate, weekStart, planToText,
 } from '../plans.js';
 
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
@@ -27,7 +27,7 @@ function sinceText(p) {
 
 function weekdaysText(p) {
   const names = t('weekdayShort');
-  const ds = planDays(p).map((d) => (Number.isInteger(d.weekday) ? names[d.weekday] : '')).filter(Boolean);
+  const ds = planDays(p).map((d) => (Number.isInteger(d.weekday) ? `${names[d.weekday]}${validTime(d.time) ? ` ${d.time}` : ''}` : '')).filter(Boolean);
   return ds.join(' · ');
 }
 
@@ -114,6 +114,8 @@ export function planView(id) {
         <div class="weekdays" role="group" aria-label="${esc(t('weekdayFor', r.name))}">
           ${letters.map((l, w) => `<button type="button" class="wd${d.weekday === w ? ' on' : ''}" aria-pressed="${d.weekday === w}" aria-label="${esc(t('weekdayShort')[w])}" data-day="${i}" data-wd="${w}">${esc(l)}</button>`).join('')}
         </div>
+        <label class="day-time"><span>${esc(t('timeOptional'))}</span><input type="time" value="${esc(validTime(d.time) ? d.time : '')}" data-time="${i}" aria-label="${esc(t('timeFor', r.name))}">
+          ${validTime(d.time) ? `<button type="button" class="link-btn" data-clear-time="${i}">${esc(t('clearTime'))}</button>` : `<small class="muted">${esc(t('noTimeHint'))}</small>`}</label>
       </div>
       <button type="button" class="icon-btn" data-remove-day="${i}" aria-label="${esc(t('removeX', r.name))}">${icon('close', 18)}</button>
     </div>`).join('');
@@ -145,6 +147,13 @@ export function planView(id) {
         savePlan({ ...cur, days: daysNext });
         rerender();
       }));
+      const setTime = (i, time) => {
+        const cur = get('plans', id);
+        savePlan({ ...cur, days: cur.days.map((d, j) => { if (j !== i) return d; const n = { ...d }; if (validTime(time)) n.time = time; else delete n.time; return n; }) });
+        rerender();
+      };
+      view.querySelectorAll('[data-time]').forEach((inp) => inp.addEventListener('change', () => setTime(Number(inp.dataset.time), inp.value)));
+      view.querySelectorAll('[data-clear-time]').forEach((b) => b.addEventListener('click', () => setTime(Number(b.dataset.clearTime), '')));
       view.querySelector('[data-sortable=days]').addEventListener('sorted', (e) => {
         const cur = get('plans', id);
         savePlan({ ...cur, days: e.detail.keys.map((k) => cur.days[Number(k)]) });

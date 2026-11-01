@@ -50,9 +50,9 @@ function plannedText(p) {
 function dayBadge(x, i, status, planned) {
   const wdNames = t('weekdayShort');
   if (x.done) return `<span class="badge done">${esc(t('doneOn', weekdayShort(x.done.start)))}</span>`;
-  const wd = Number.isInteger(x.day.weekday) ? wdNames[x.day.weekday] : '';
+  const wd = Number.isInteger(x.day.weekday) ? `${wdNames[x.day.weekday]}${x.day.time ? ` ${x.day.time}` : ''}` : '';
   const p = planned.find((q) => q.routineId === x.routine.id);
-  const when = p ? weekdayShort(p.at) : wd;
+  const when = p ? `${weekdayShort(p.at)} ${timeOfDay(p.at)}` : wd;
   if (i === status.next) return `<span class="badge next">${esc(when ? t('nextOn', when) : t('nextOne'))}</span>`;
   return when ? `<span class="badge muted">${esc(when)}</span>` : '';
 }

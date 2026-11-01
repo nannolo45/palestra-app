@@ -300,6 +300,9 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   // move the legs day to Saturday
   await page.click('.day-row:nth-child(3) .wd[data-wd="5"]');
   await page.waitForTimeout(150);
+  await page.fill('.day-row:nth-child(3) [data-time]', '10:30');
+  await page.dispatchEvent('.day-row:nth-child(3) [data-time]', 'change');
+  await page.waitForTimeout(150);
   // make it active from Monday
   await page.click('.toggle-row:has([name=active])');
   await page.waitForSelector('#modal[open] .option');
@@ -316,6 +319,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForTimeout(600);
   const ap = JSON.parse(repo.get('data/prefs.json').text).find((p) => p.id === 'activePlan').value;
   check(ap.days.length === 3 && ap.days[2].weekday === 5 && ap.days[0].weekday === 0, 'activePlan in prefs has days and weekdays');
+  check(ap.days[2].time === '10:30' && !('time' in ap.days[0]), 'optional time only where set');
   check(ap.from === '2026-11-09', `active from next Monday (${ap.from})`);
   check(ap.previous && ap.previous.days.length === 3, 'the plan in force until then is in the record too');
   await page.clock.setFixedTime(new Date(2026, 10, 9, 9, 0));

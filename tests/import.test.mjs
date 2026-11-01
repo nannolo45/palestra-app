@@ -44,3 +44,8 @@ test('problems are reported, not fatal', () => {
   assert.equal(parseText('niente').error, 'importNothing');
   assert.deepEqual(defaultWeekdays(3), [0, 2, 4]);
 });
+
+test('weekday and time on a day line', () => {
+  const { data } = parseText('SCHEDA: X\nGIORNO: Gambe @ ven 18:30\nSquat 4x8\nGIORNO: Petto @ 7.15\nPanca 3x10\nGIORNO: Schiena\nRematore 3x10\n');
+  assert.deepEqual(data.routines.map((r) => [r.name, r._weekday, r._time]), [['Gambe', 4, '18:30'], ['Petto', undefined, '07:15'], ['Schiena', undefined, undefined]]);
+});
