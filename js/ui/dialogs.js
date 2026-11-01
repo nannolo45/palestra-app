@@ -68,3 +68,16 @@ export function openSheet(html, bind = () => {}) {
     if (first) first.focus();
   });
 }
+
+/**
+ * "Start empty or import?" when creating a plan or a routine. Resolves 'empty', 'import' or null.
+ */
+export function chooseHowToCreate({ title, emptyLabel, emptyHint, importLabel, importHint }) {
+  const html = `<h2>${esc(title)}</h2>
+    <button type="button" class="option-btn" data-choice="empty"><b>${esc(emptyLabel)}</b><small>${esc(emptyHint)}</small></button>
+    <button type="button" class="option-btn" data-choice="import"><b>${esc(importLabel)}</b><small>${esc(importHint)}</small></button>
+    <button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button>`;
+  return openSheet(html, (form, close) => {
+    form.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => close(b.dataset.choice)));
+  });
+}

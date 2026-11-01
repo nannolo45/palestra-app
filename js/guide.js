@@ -36,7 +36,7 @@ export const GUIDE = {
       'In Allenamenti vedi la settimana: cosa hai fatto, il prossimo, e **Inizia** per partire. Gli allenamenti fuori scheda sono sotto.',
       '**Esporta .txt** salva la scheda come testo, da condividere o reimportare.',
     ]],
-    ['Importare', 'Da **Impostazioni → Importa** (o Schede → Importa): incolla un testo, o scegli un file .txt o .json. Prima vedi un\'anteprima.', [
+    ['Importare', 'Quando crei una scheda o un allenamento scegli **Importa da testo o file**, oppure vai in **Impostazioni → Importa**: incolla un testo, o scegli un file .txt o .json. Prima vedi un\'anteprima.', [
       '**SCHEDA:** nome della settimana, **GIORNO:** nome di un allenamento, poi un esercizio per riga.',
       'Un esercizio: **Panca piana 4x8 60 kg rec 2:30**. Peso e recupero sono facoltativi. A tempo: **Plank 3x45s**. Cardio: **Ellittica 15 min livello 6**.',
       'L\'attrezzo tra parentesi, se vuoi: (bilanciere), (manubri), (cavi), (macchina). Una riga che inizia con **-** è una nota per l\'esercizio sopra.',
@@ -116,7 +116,7 @@ export const GUIDE = {
       'Routines shows the week: what you did, the next one, and **Start**. Routines outside the plan are below.',
       '**Export .txt** saves the plan as text, to share or import again.',
     ]],
-    ['Importing', 'From **Settings → Import** (or Plans → Import): paste text, or pick a .txt or .json file. You see a preview first.', [
+    ['Importing', 'When you create a plan or a routine choose **Import from text or a file**, or go to **Settings → Import**: paste text, or pick a .txt or .json file. You see a preview first.', [
       '**PLAN:** the week\'s name, **DAY:** a routine\'s name, then one exercise per line.',
       'An exercise: **Bench press 4x8 60 kg rest 2:30**. Weight and rest are optional. Timed: **Plank 3x45s**. Cardio: **Elliptical 15 min level 6**.',
       'Equipment in brackets if you like: (barbell), (dumbbells), (cables), (machine). A line starting with **-** is a note for the exercise above.',

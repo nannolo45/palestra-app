@@ -512,3 +512,27 @@ button.back.plain { border: 0; background: none; color: var(--gold); padding: 0 
 .day-time input { height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); padding: 0 8px; font-size: 15px; }
 .day-time small { flex-basis: 100%; }
 .link-btn { border: 0; background: none; color: var(--gold); font-weight: 600; padding: 0; min-height: 36px; }
+
+.option-btn { min-height: 64px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); padding: 10px 16px; display: flex; flex-direction: column; justify-content: center; gap: 2px; text-align: left; color: var(--ink); }
+.option-btn small { color: var(--muted); font-size: 13px; }
+.option-btn:hover { border-color: var(--ink); }
+
+/* ---- exercise list: one filter row, collapsible groups, compact rows ---- */
+.page-head.tight { padding-bottom: 10px; }
+.round-btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.filter-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px 4px; padding: 0 16px 4px; }
+.filter-row::-webkit-scrollbar { display: none; }
+.filter-row .chip-btn { flex-shrink: 0; min-height: 38px; padding: 0 12px; white-space: nowrap; }
+.filter-row .divider { width: 1px; background: var(--line); margin: 6px 2px; flex-shrink: 0; }
+.list-tools { display: flex; justify-content: space-between; align-items: center; margin: 6px 4px 0; }
+.group-head { margin: 14px 0 6px; }
+.group-head button { width: 100%; min-height: 36px; border: 0; background: none; padding: 0 4px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); text-align: left; }
+.group-head .count { font-size: 12px; letter-spacing: 0; padding: 1px 7px; border-radius: 10px; background: var(--line-soft); color: #4A4C52; }
+.group-head .chev { margin-left: auto; }
+.group.compact .group-head { margin: 10px 0 4px; }
+.list-row.compact { min-height: 46px; padding: 6px 12px; gap: 10px; }
+.list-row.compact .extag { min-width: 38px; height: 24px; font-size: 13px; }
+.list-row.compact .tag-cardio { border-radius: 12px; }
+.one-line { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; }
+.row-fact { max-width: 46%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--muted); text-align: right; }
+.note-mark { color: var(--gold-2); display: inline-flex; flex-shrink: 0; }

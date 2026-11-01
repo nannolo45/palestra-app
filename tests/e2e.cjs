@@ -163,6 +163,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   console.log('Routine');
   await go('#/routines');
   await page.click('.page-head [data-action=new-routine]');
+  await page.click('#modal [data-choice=empty]');
   await page.waitForSelector('#r-name');
   await page.fill('#r-name', 'Gambe');
   await page.press('#r-name', 'Tab');
@@ -285,6 +286,29 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   const mins = await page.$$eval('.day-home .row-sub', (els) => els.map((e) => Number(e.textContent.match(/(\d+) min/)[1])));
   check(mins.every((m) => m >= 85 && m <= 120), `days last 85–120 min (${mins.join(', ')})`);
 
+  console.log('Compact exercise list');
+  await go('#/exercises');
+  const tall = await page.evaluate(() => document.documentElement.scrollHeight);
+  await shot('23-exercises-normal');
+  await page.click('[data-action=density]');
+  await page.waitForSelector('.list-row.compact');
+  const short = await page.evaluate(() => document.documentElement.scrollHeight);
+  check(short < tall * 0.85, `compact list is much shorter (${tall} → ${short})`);
+  await shot('24-exercises-compact');
+  await page.click('[data-action=toggle-all]');
+  await page.waitForTimeout(100);
+  check((await page.$$('.list-row')).length === 0, 'all groups closed');
+  await page.click('.group-head button');
+  await page.waitForTimeout(100);
+  await shot('25-exercises-closed');
+  check((await page.$$('.group .card.list')).length === 1, 'one group opened');
+  await page.fill('#ex-q', 'panca');
+  await page.waitForTimeout(100);
+  check((await page.$$('.list-row')).length >= 1, 'search opens closed groups');
+  await page.fill('#ex-q', '');
+  await page.click('[data-action=toggle-all]');
+  await page.click('[data-action=density]');
+
   const txt = fs.readFileSync(path.join(__dirname, 'sample-plan.txt'), 'utf8').replace('Curl con bilanciere 4x10 rec 1:30', 'Curl con bilanciere 4x10 rc 1:30');
   await go('#/import');
   await page.fill('#imp-text', txt);
@@ -328,12 +352,32 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check((await page.textContent('.plan-hero-name')).includes('Petto e bicipiti'), 'on Monday the new plan is in force');
   check(repo.has('data/plans.json') && JSON.parse(repo.get('data/plans.json').text).length === 2, 'plans synced');
 
+  console.log('New routine by importing text');
+  await go('#/routines');
+  await page.click('[data-action=new-routine]');
+  await page.click('#modal [data-choice=import]');
+  await page.waitForSelector('#imp-text');
+  check((await page.textContent('.title')) === 'Importa un allenamento', 'import opened for a routine');
+  await page.fill('#imp-text', 'Panca piana 4x8 rec 2:30\nCroci ai cavi 3x12\nPlank 3x45s');
+  await page.click('[data-action=read]');
+  await page.waitForSelector('.imp-day');
+  check(!(await page.$('[name=asPlan]')), 'a single routine is not offered as a plan');
+  await page.click('[data-action=do-import]');
+  await page.waitForSelector('.page-head');
+  check((await page.textContent('#view')).includes('Allenamento'), 'routine imported');
+  await go('#/plans');
+  await page.click('[data-action=new-plan]');
+  await page.click('#modal [data-choice=import]');
+  await page.waitForSelector('#imp-text');
+  check((await page.textContent('.title')) === 'Importa una scheda', 'import opened for a plan');
+
   console.log('A newer app raised the contract');
   const pr = JSON.parse(repo.get('data/prefs.json').text).map((p) => (p.id === 'contract' ? { ...p, value: 2, updatedAt: Date.now() + 2e9 } : p));
   repo.set('data/prefs.json', { text: JSON.stringify(pr), sha: `sha${++shaN}` });
   const routinesSha = repo.get('data/routines.json').sha;
   await go('#/routines');
   await page.click('[data-action=new-routine]');
+  await page.click('#modal [data-choice=empty]');
   await page.waitForSelector('#r-name');
   await go('#/settings');
   await page.click('[data-action=sync]');

@@ -68,7 +68,8 @@ function preview() {
     </div>`;
 }
 
-export function importView() {
+export function importView(query = {}) {
+  if (query.for && st.for !== query.for) { st.for = query.for; }
   if (st.result) {
     return {
       html: preview(),
@@ -87,15 +88,17 @@ export function importView() {
           }
           toast(out.planId ? t('importedPlan', get('plans', out.planId).name) : t('importDone', out.routines.length));
           const dest = out.planId ? `#/plan/${encodeURIComponent(out.planId)}` : '#/routines';
-          Object.assign(st, { text: '', result: null, error: '', makeActive: false, asPlan: true });
+          Object.assign(st, { text: '', result: null, error: '', makeActive: false, asPlan: true, for: null });
           location.hash = dest;
         });
       },
     };
   }
-  const html = `<header class="bar">${backLink('#/routines', t('tab_routines'))}</header>
-    <h1 class="title">${esc(t('importShort'))}</h1>
-    <p class="lead">${esc(t('importLead'))}</p>
+  const backTo = st.for === 'plan' ? ['#/plans', t('plansTitle')] : ['#/routines', t('tab_routines')];
+  const title = st.for === 'plan' ? t('importAPlan') : st.for === 'routine' ? t('importARoutine') : t('importShort');
+  const html = `<header class="bar">${backLink(backTo[0], backTo[1])}</header>
+    <h1 class="title">${esc(title)}</h1>
+    <p class="lead">${esc(st.for === 'routine' ? t('importLeadRoutine') : t('importLead'))}</p>
     <div class="stack form">
       ${segmented({ name: 'src', value: st.src, options: [['paste', t('pasteText')], ['file', t('fromFile')]], label: t('importFrom') })}
       ${st.src === 'paste' ? `<label class="field"><span class="sr">${esc(t('planText'))}</span><textarea id="imp-text" class="mono" rows="14" placeholder="${esc(t('importPlaceholder'))}">${esc(st.text)}</textarea></label>`
@@ -112,7 +115,7 @@ export function importView() {
       const read = (text) => {
         st.text = text;
         const res = parseImport(text);
-        if (res.error) { st.error = t(res.error, res.detail || ''); st.result = null; } else { st.error = ''; st.result = res; st.asPlan = true; st.makeActive = !activeInfo(); }
+        if (res.error) { st.error = t(res.error, res.detail || ''); st.result = null; } else { st.error = ''; st.result = res; st.asPlan = st.for !== 'routine'; st.makeActive = st.for !== 'routine' && !activeInfo(); }
         rerender();
       };
       view.querySelector('[data-action=read]')?.addEventListener('click', () => read(view.querySelector('#imp-text').value));

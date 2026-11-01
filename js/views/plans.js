@@ -4,7 +4,7 @@ import { t } from '../i18n.js';
 import { esc, minText, shortDate } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { backLink, empty, toggle } from '../ui/parts.js';
-import { openSheet, askConfirm, toast } from '../ui/dialogs.js';
+import { openSheet, askConfirm, toast, chooseHowToCreate } from '../ui/dialogs.js';
 import { routines, routineMinutes, lastDone } from '../data.js';
 import {
   plans, activeInfo, isActive, isUpcoming, dateOf, activate, validTime, deactivate, savePlan, planDays, planMinutes, weekNumber, nextMonday, isoDate, weekStart, planToText,
@@ -63,7 +63,10 @@ export function plansView() {
     bind(view) {
       view.querySelectorAll('[data-activate]').forEach((b) => b.addEventListener('click', () => activateSheet(get('plans', b.dataset.activate))));
       view.querySelectorAll('[data-activate-now]').forEach((b) => b.addEventListener('click', () => { activate(get('plans', b.dataset.activateNow), isoDate(Date.now())); rerender(); }));
-      view.querySelector('[data-action=new-plan]').addEventListener('click', () => {
+      view.querySelector('[data-action=new-plan]').addEventListener('click', async () => {
+        const how = await chooseHowToCreate({ title: t('newPlan'), emptyLabel: t('startEmpty'), emptyHint: t('startEmptyPlanHint'), importLabel: t('importFromTextOrFile'), importHint: t('importPlanHint') });
+        if (how === 'import') { location.hash = '#/import?for=plan'; return; }
+        if (how !== 'empty') return;
         const p = upsert('plans', { id: uid(), name: t('newPlanName'), days: [] });
         location.hash = `#/plan/${encodeURIComponent(p.id)}`;
       });
@@ -200,7 +203,7 @@ async function addDay(planId) {
   const list = routines().filter((r) => !inPlan.has(r.id));
   const html = `<h2>${esc(t('addRoutineToPlan'))}</h2>
     ${list.length ? `<div class="pick-list">${list.map((r) => `<button type="button" class="row pick" data-pick="${esc(r.id)}"><span class="min-badge"><b>${routineMinutes(r)}</b><small>min</small></span><span class="row-text"><span class="row-title">${esc(r.name)}</span><span class="row-sub">${esc(t('nExercises', (r.items || []).length))}</span></span></button>`).join('')}</div>` : `<p>${esc(t('allRoutinesInPlan'))}</p>`}
-    <div class="button-row"><button type="button" class="btn" data-new>${esc(t('newRoutine'))}</button><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+    <div class="button-row"><button type="button" class="btn" data-new>${esc(t('newRoutine'))}</button><a class="btn" href="#/import?for=routine" data-close>${esc(t('importShort'))}</a><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
   await openSheet(html, (form, close) => {
     form.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => {
       const cur = get('plans', planId);

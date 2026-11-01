@@ -33,7 +33,7 @@ function viewFor(r) {
     case 'settings': return settingsView(r.id);
     case 'plans': return plansView();
     case 'plan': return planView(r.id);
-    case 'import': return importView();
+    case 'import': return importView(r.query);
     case 'start': return startView(r.id, r.query);
     case 'workout': return workoutView();
     default: return routinesView();

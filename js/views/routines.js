@@ -4,7 +4,7 @@ import { t } from '../i18n.js';
 import { esc, fmtNum, restText, minText, shortDate, timeOfDay, weekdayShort } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { backLink, stepper, bindSteppers, stepVal, toggle, empty, exTag, segmented } from '../ui/parts.js';
-import { openSheet, askConfirm, toast } from '../ui/dialogs.js';
+import { openSheet, askConfirm, toast, chooseHowToCreate } from '../ui/dialogs.js';
 import { syncStatus } from '../shell.js';
 import { isSyncing, syncNow } from '../sync.js';
 import {
@@ -147,6 +147,9 @@ export function routinesView() {
 }
 
 async function newRoutine() {
+  const how = await chooseHowToCreate({ title: t('newRoutine'), emptyLabel: t('startEmpty'), emptyHint: t('startEmptyRoutineHint'), importLabel: t('importFromTextOrFile'), importHint: t('importRoutineHint') });
+  if (how === 'import') { location.hash = '#/import?for=routine'; return; }
+  if (how !== 'empty') return;
   const r = upsert('routines', { id: uid(), name: t('newRoutineName'), items: [], autoIncrease: false, order: routines().length });
   location.hash = `#/routine/${r.id}/edit?new=1`;
 }

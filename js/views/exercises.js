@@ -1,5 +1,5 @@
 // Esercizi: the list (by muscle or by place, filtered by type) and the exercise card.
-import { state, get, upsert, remove, restore, uid, live } from '../store.js';
+import { state, get, upsert, remove, restore, uid, live, saveSettings } from '../store.js';
 import { t } from '../i18n.js';
 import { esc, fmtNum, shortDate, num } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
@@ -22,13 +22,24 @@ function tagLabel(ex) {
   return t(`eqShort_${ex.equipment || 'machine'}`);
 }
 
-function exRow(ex, by) {
-  const detail = by === 'muscle'
-    ? [placeOf(ex)?.name, settingsText(ex)].filter(Boolean).join(' · ')
-    : [(ex.muscles || []).join(', ') || typeLabel(ex), settingsText(ex)].filter(Boolean).join(' · ');
+function exRow(ex, by, compact) {
+  const where = by === 'muscle' ? placeOf(ex)?.name : (ex.muscles || []).join(', ');
+  const extra = settingsText(ex);
+  if (compact) {
+    // one line: tag, name, the one fact that tells exercises apart (targets, settings or zone), a mark if it has notes
+    const fact = extra || where || '';
+    return `<a class="row list-row compact" href="#/exercise/${encodeURIComponent(ex.id)}">
+      ${exTag(ex, tagLabel(ex))}
+      <span class="row-title one-line">${esc(ex.name)}</span>
+      ${fact ? `<span class="row-fact">${esc(fact)}</span>` : ''}
+      ${ex.notes ? `<span class="note-mark" title="${esc(t('hasNotes'))}" aria-label="${esc(t('hasNotes'))}">${icon('pencil', 14)}</span>` : ''}
+    </a>`;
+  }
+  // the tag already says the type: the line under the name only shows what it doesn't
+  const detail = [where, extra].filter(Boolean).join(' · ');
   return `<a class="row list-row" href="#/exercise/${encodeURIComponent(ex.id)}">
     ${exTag(ex, tagLabel(ex))}
-    <span class="row-text"><span class="row-title">${esc(ex.name)}</span><span class="row-sub">${esc(detail || typeLabel(ex))}</span>
+    <span class="row-text"><span class="row-title">${esc(ex.name)}</span>${detail ? `<span class="row-sub">${esc(detail)}</span>` : ''}
     ${ex.notes ? `<span class="row-note">${icon('pencil', 12)}<span>${esc(ex.notes)}</span></span>` : ''}</span>
     ${icon('chevron', 18, 'class="chev"')}
   </a>`;
@@ -38,12 +49,15 @@ function settingsText(ex) {
   if (ex.type === 'cardio') {
     const ms = measuresFor(ex, machineOf(ex));
     const tg = ex.cardio?.targets || {};
-    return ms.filter((m) => tg[m.key] != null).slice(0, 3).map((m) => `${fmtNum(tg[m.key])}${m.unit ? ` ${m.unit}` : ''}`).join(' · ');
+    return ms.filter((m) => tg[m.key] != null).slice(0, 3)
+      .map((m) => (m.unit ? `${fmtNum(tg[m.key])} ${m.unit}` : `${measureLabel(m).toLowerCase()} ${fmtNum(tg[m.key])}`)).join(' · ');
   }
   return machineOf(ex)?.settings || '';
 }
 
 export function exercisesView() {
+  const compact = Boolean(state.settings.exCompact);
+  const collapsed = new Set(state.settings.exCollapsed || []);
   const q = listState.q.trim().toLowerCase();
   let list = exercises().filter((e) => listState.type === 'all' || e.type === listState.type);
   if (q) list = list.filter((e) => [e.name, machineOf(e)?.number, machineOf(e)?.name, ...(e.muscles || [])].some((x) => String(x || '').toLowerCase().includes(q)));
@@ -58,25 +72,52 @@ export function exercisesView() {
     groups.push({ title: t('noPlace'), rows: list.filter((e) => !placeOf(e)) });
   }
   groups = groups.filter((g) => g.rows.length);
+  const key = (g) => `${listState.by}:${g.title}`;
+  // while searching, every group is open
+  const isClosed = (g) => !q && collapsed.has(key(g));
+  const allClosed = groups.length && groups.every(isClosed);
   const filters = [['all', t('all')], ['weights', t('type_weights')], ['bodyweight', t('type_bodyweight')], ['cardio', t('type_cardio')]];
-  const html = `<header class="page-head">
+  const html = `<header class="page-head tight">
       <h1>${esc(t('tab_exercises'))}</h1>
-      <div class="head-actions"><a class="round-btn" href="#/exercise/new" aria-label="${esc(t('newExercise'))}">${icon('plus')}</a></div>
+      <div class="head-actions">
+        <button type="button" class="round-btn${compact ? ' on' : ''}" data-action="density" aria-pressed="${compact}" aria-label="${esc(t('compactView'))}" title="${esc(t('compactView'))}">${icon('rowsCompact')}</button>
+        <a class="round-btn" href="#/exercise/new" aria-label="${esc(t('newExercise'))}">${icon('plus')}</a>
+      </div>
     </header>
     <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchExercise'))}</span><input id="ex-q" type="search" placeholder="${esc(t('searchExercisePh'))}" value="${esc(listState.q)}"></label>
-    ${segmented({ name: 'by', value: listState.by, options: [['muscle', t('byMuscle')], ['place', t('byPlace')]], label: t('groupBy'), cls: 'seg-list' })}
-    <div class="chips" role="group" aria-label="${esc(t('filterType'))}">
+    <div class="filter-row" role="group" aria-label="${esc(t('filterType'))}">
+      <button type="button" class="chip-btn by" data-action="by" aria-label="${esc(t('groupBy'))}">${icon('sort', 16)}${esc(listState.by === 'muscle' ? t('byMuscle') : t('byPlace'))}</button>
+      <span class="divider" aria-hidden="true"></span>
       ${filters.map(([v, l]) => `<button type="button" class="chip-btn${listState.type === v ? ' on' : ''}" aria-pressed="${listState.type === v}" data-type="${v}">${v !== 'all' ? `<span class="swatch sw-${v}" aria-hidden="true"></span>` : ''}${esc(l)}</button>`).join('')}
     </div>
-    ${groups.length ? groups.map((g) => `<section class="group"><h2 class="section-title">${esc(g.title)}</h2><div class="card list">${g.rows.map((e) => exRow(e, listState.by)).join('')}</div></section>`).join('')
+    ${groups.length > 1 && !q ? `<div class="list-tools"><span class="muted small">${esc(t('nExercisesShort', list.length))}</span><button type="button" class="link-btn" data-action="toggle-all">${esc(allClosed ? t('openAll') : t('closeAll'))}</button></div>` : ''}
+    ${groups.length ? groups.map((g) => {
+    const closed = isClosed(g);
+    return `<section class="group${compact ? ' compact' : ''}">
+        <h2 class="group-head"><button type="button" data-group="${esc(key(g))}" aria-expanded="${!closed}">
+          <span>${esc(g.title)}</span><span class="count">${g.rows.length}</span>${icon(closed ? 'chevron' : 'down', 16, 'class="chev"')}
+        </button></h2>
+        ${closed ? '' : `<div class="card list">${g.rows.map((e) => exRow(e, listState.by, compact)).join('')}</div>`}
+      </section>`;
+  }).join('')
     : empty(exercises().length ? t('esNoMatch') : t('esExercisesTitle'), exercises().length ? t('esNoMatchText') : t('esExercisesText'),
       `<a class="btn primary" href="#/exercise/new">${esc(t('newExercise'))}</a>`)}`;
   return {
     html,
     bind(view) {
       view.querySelector('#ex-q').addEventListener('input', (e) => { listState.q = e.target.value; rerender(); });
-      view.querySelectorAll('[name=by]').forEach((x) => x.addEventListener('change', () => { listState.by = x.value; rerender(); }));
+      view.querySelector('[data-action=by]').addEventListener('click', () => { listState.by = listState.by === 'muscle' ? 'place' : 'muscle'; rerender(); });
       view.querySelectorAll('[data-type]').forEach((b) => b.addEventListener('click', () => { listState.type = b.dataset.type; rerender(); }));
+      view.querySelector('[data-action=density]').addEventListener('click', () => saveSettings({ exCompact: !compact }).then(rerender));
+      view.querySelectorAll('[data-group]').forEach((b) => b.addEventListener('click', () => {
+        const k = b.dataset.group;
+        if (collapsed.has(k)) collapsed.delete(k); else collapsed.add(k);
+        saveSettings({ exCollapsed: [...collapsed] }).then(rerender);
+      }));
+      view.querySelector('[data-action=toggle-all]')?.addEventListener('click', () => {
+        const others = [...collapsed].filter((k) => !k.startsWith(`${listState.by}:`));
+        saveSettings({ exCollapsed: allClosed ? others : [...others, ...groups.map(key)] }).then(rerender);
+      });
     },
   };
 }
