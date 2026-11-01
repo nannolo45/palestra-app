@@ -1,7 +1,7 @@
 // Local storage (IndexedDB) and conflict-free merging of collections, as in Ricette and Everyday.
 // Every record: {id, updatedAt, deleted?}. Merge = newest updatedAt wins per id.
 
-export const COLLECTIONS = ['places', 'machines', 'exercises', 'routines', 'sessions', 'prefs'];
+export const COLLECTIONS = ['places', 'machines', 'exercises', 'routines', 'plans', 'sessions', 'prefs'];
 const TOMBSTONE_TTL = 90 * 24 * 3600 * 1000;
 
 const DB_NAME = 'palestra';
@@ -66,7 +66,7 @@ export async function kvDel(key) {
 }
 
 export const state = {
-  places: [], machines: [], exercises: [], routines: [], sessions: [], prefs: [],
+  places: [], machines: [], exercises: [], routines: [], plans: [], sessions: [], prefs: [],
   // local to this device, never synced
   settings: { lang: '', owner: '', repo: 'palestra-data', branch: 'main', token: '' },
   meta: { dirty: false, lastSync: null, lastError: null, contractNewer: false },

@@ -12,6 +12,7 @@ export const PATHS = {
   machines: 'data/machines.json',
   exercises: 'data/exercises.json',
   routines: 'data/routines.json',
+  plans: 'data/plans.json',
 };
 const SESSIONS_DIR = 'data/sessions';
 

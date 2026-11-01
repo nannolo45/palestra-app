@@ -29,6 +29,20 @@ export const GUIDE = {
       'Sempre in Modifica attivi l\'**aumento automatico** per quell\'allenamento.',
       'La stima parte da circa 3 secondi a ripetizione e poi usa i tuoi tempi veri, dopo qualche seduta.',
     ]],
+    ['Schede e scheda attiva', 'Una **scheda** è la tua settimana: gli allenamenti che fai, ognuno nel suo giorno. Quella **attiva** è quella che vedi in Allenamenti e che Everyday pianifica.', [
+      'In Allenamenti tocca **Schede**: la scheda attiva è in giallo, le altre restano salvate con il loro storico.',
+      'Apri una scheda per cambiarle nome, ordine dei giorni (trascina) e il **giorno della settimana** di ogni allenamento (L M M G V S D).',
+      '**Rendi attiva**: scegli se da lunedì (finisci la settimana con quella di prima) o da oggi. Everyday pianifica i nuovi giorni.',
+      'In Allenamenti vedi la settimana: cosa hai fatto, il prossimo, e **Inizia** per partire. Gli allenamenti fuori scheda sono sotto.',
+      '**Esporta .txt** salva la scheda come testo, da condividere o reimportare.',
+    ]],
+    ['Importare', 'Da **Impostazioni → Importa** (o Schede → Importa): incolla un testo, o scegli un file .txt o .json. Prima vedi un\'anteprima.', [
+      '**SCHEDA:** nome della settimana, **GIORNO:** nome di un allenamento, poi un esercizio per riga.',
+      'Un esercizio: **Panca piana 4x8 60 kg rec 2:30**. Peso e recupero sono facoltativi. A tempo: **Plank 3x45s**. Cardio: **Ellittica 15 min livello 6**.',
+      'L\'attrezzo tra parentesi, se vuoi: (bilanciere), (manubri), (cavi), (macchina). Una riga che inizia con **-** è una nota per l\'esercizio sopra.',
+      'Nell\'anteprima: **già tuo** riusa il tuo esercizio con la sua macchina, **nuovo** lo crea, **da controllare** segna un pezzo non capito.',
+      'Puoi salvarla come scheda e renderla attiva subito. I pesi mancanti li scegli alla prima seduta.',
+    ]],
     ['Durante l\'allenamento', 'Tocca **▶ Inizia** (o **Apri in Palestra** da un blocco di Everyday). Lo schermo diventa scuro e grande, resta acceso e funziona senza rete.', [
       '**Aumenti della settimana** (prima seduta della settimana, se attivo): togli la spunta a quelli che non vuoi, poi **Conferma e inizia**, o **Inizia con i pesi di prima**.',
       '**La serie**: esercizio, serie 2 di 4, ripetizioni e kg, macchina e zona, la tua nota. Correggi con −/+ se hai fatto diverso, poi **Fatto**.',
@@ -59,7 +73,6 @@ export const GUIDE = {
       '**Più dispositivi**: ognuno ha la sua copia e si uniscono a ogni sync; vince la modifica più recente.',
       'Quando esce una versione nuova compare la barra **Aggiorna**: toccala quando non ti stai allenando.',
       '**Backup** scarica tutti i dati in un file; il repository tiene anche tutte le versioni passate.',
-      'In **Backup e importazione** puoi anche **importare** allenamenti da un file: gli esercizi che hai già vengono riusati, i pesi mancanti li scegli alla prima seduta.',
     ]],
     ['Problemi comuni', 'Le soluzioni più frequenti.', [
       'Errore **401/403**: il token è scaduto o non vede palestra-data. Creane uno nuovo e incollalo in Collegamento GitHub.',
@@ -96,6 +109,20 @@ export const GUIDE = {
       'Also in Edit you switch on the **automatic increase** for that routine.',
       'The estimate starts from about 3 seconds a rep and then uses your real times, after a few sessions.',
     ]],
+    ['Plans and the active plan', 'A **plan** is your week: the routines you do, each on its day. The **active** one is what you see in Routines and what Everyday plans.', [
+      'In Routines tap **Plans**: the active plan is in yellow, the others stay saved with their history.',
+      'Open a plan to change its name, the order of the days (drag) and the **weekday** of each routine (M T W T F S S).',
+      '**Make active**: choose from Monday (finish the week with the old one) or from today. Everyday plans the new days.',
+      'Routines shows the week: what you did, the next one, and **Start**. Routines outside the plan are below.',
+      '**Export .txt** saves the plan as text, to share or import again.',
+    ]],
+    ['Importing', 'From **Settings → Import** (or Plans → Import): paste text, or pick a .txt or .json file. You see a preview first.', [
+      '**PLAN:** the week\'s name, **DAY:** a routine\'s name, then one exercise per line.',
+      'An exercise: **Bench press 4x8 60 kg rest 2:30**. Weight and rest are optional. Timed: **Plank 3x45s**. Cardio: **Elliptical 15 min level 6**.',
+      'Equipment in brackets if you like: (barbell), (dumbbells), (cables), (machine). A line starting with **-** is a note for the exercise above.',
+      'In the preview: **yours** reuses your exercise and its machine, **new** creates it, **check** marks a bit it didn\'t understand.',
+      'You can save it as a plan and make it active straight away. Missing weights are picked in the first session.',
+    ]],
     ['During the workout', 'Tap **▶ Start** (or **Open in Palestra** on an Everyday block). The screen turns dark and large, stays on and works without signal.', [
       '**This week\'s increases** (first session of the week, if on): untick any you don\'t want, then **Confirm and start**, or **Start with the old weights**.',
       '**The set**: exercise, set 2 of 4, reps and kg, machine and zone, your note. Adjust with −/+ if you did something different, then **Done**.',
@@ -126,7 +153,6 @@ export const GUIDE = {
       '**Several devices**: each keeps its own copy and they merge on every sync; the most recent change wins.',
       'When a new version is out, an **Update** bar appears: tap it when you\'re not training.',
       '**Backup** downloads all your data as one file; the repository also keeps every past version.',
-      'In **Backup and import** you can also **import** routines from a file: exercises you already have are reused, and missing weights are picked in the first session.',
     ]],
     ['Troubleshooting', 'The most common fixes.', [
       'Error **401/403**: the token expired or can\'t see palestra-data. Make a new one and paste it in GitHub connection.',

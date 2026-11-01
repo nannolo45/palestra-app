@@ -11,6 +11,7 @@ import {
   routines, exercises, routineMinutes, refreshEstimates, lastDone, whereText, placeOf, machineOf, training, measureLabel, typeLabel, places,
 } from '../data.js';
 import { plannedAhead, measuresFor, defaultTargets } from '../model.js';
+import { activeInfo, weekStatus, weekNumber, planMinutes, outsidePlan, plans } from '../plans.js';
 
 function syncLine() {
   const st = syncStatus(isSyncing());
@@ -46,7 +47,60 @@ function plannedText(p) {
 
 // ---- list ----
 
+function dayBadge(x, i, status, planned) {
+  const wdNames = t('weekdayShort');
+  if (x.done) return `<span class="badge done">${esc(t('doneOn', weekdayShort(x.done.start)))}</span>`;
+  const wd = Number.isInteger(x.day.weekday) ? wdNames[x.day.weekday] : '';
+  const p = planned.find((q) => q.routineId === x.routine.id);
+  const when = p ? weekdayShort(p.at) : wd;
+  if (i === status.next) return `<span class="badge next">${esc(when ? t('nextOn', when) : t('nextOne'))}</span>`;
+  return when ? `<span class="badge muted">${esc(when)}</span>` : '';
+}
+
+function activePlanHome(a) {
+  const plan = a.plan;
+  const status = weekStatus(plan);
+  const planned = plannedAhead(pref('planned', []));
+  const letters = t('weekdayLetters');
+  const onDays = new Set(plan.days.map((d) => d.weekday).filter(Number.isInteger));
+  const rows = status.days.map((x, i) => `<a class="row card-row day-home${x.done ? ' is-done' : ''}" href="#/routine/${encodeURIComponent(x.routine.id)}">
+      <span class="day-letter">${esc(String.fromCharCode(65 + i))}</span>
+      <span class="row-text"><span class="row-title">${esc(x.routine.name)}</span><span class="row-sub">${esc(`${t('nExercises', (x.routine.items || []).length)} · ${x.minutes} min`)}</span></span>
+      ${dayBadge(x, i, status, planned)}
+    </a>`).join('');
+  const next = status.days[status.next];
+  const block = next && planned.find((q) => q.routineId === next.routine.id);
+  const outside = outsidePlan(plan);
+  return `<a class="plan-hero" href="#/plans">
+      <span class="plan-top"><span class="badge-active yellow">${esc(t('activeBadgeLong'))}</span><span class="change">${esc(t('change'))}${icon('down', 16)}</span></span>
+      <span class="plan-hero-name">${esc(plan.name)}</span>
+      <span class="plan-hero-meta"><span>${esc(t('weekStatus', weekNumber(a.from), status.doneCount, status.days.length, minText(planMinutes(plan))))}</span>
+        <span class="wd-chips" aria-hidden="true">${letters.map((l, w) => `<i class="${onDays.has(w) ? 'on' : ''}">${esc(l)}</i>`).join('')}</span></span>
+    </a>
+    <h2 class="section-title">${esc(t('thisWeek'))}</h2>
+    <div class="stack tight">${rows}</div>
+    ${next ? `<a class="btn yellow big wide" href="#/start/${encodeURIComponent(next.routine.id)}${block ? `?block=${encodeURIComponent(block.blockId || '')}` : ''}">${icon('play', 18)}${esc(t('startX', next.routine.name))}</a>`
+    : `<p class="week-done">${icon('check', 18)}${esc(t('weekDone'))}</p>`}
+    ${outside.length ? `<h2 class="section-title">${esc(t('outsidePlan'))}</h2><div class="card list">${outside.map((r) => `<a class="row list-row" href="#/routine/${encodeURIComponent(r.id)}"><span class="row-text"><span class="row-title">${esc(r.name)}</span></span><span class="muted small">${routineMinutes(r)} min</span>${icon('chevron', 18, 'class="chev"')}</a>`).join('')}</div>` : ''}
+    <button type="button" class="btn dashed wide" data-action="new-routine">${icon('plus', 18)}${esc(t('newRoutine'))}</button>`;
+}
+
 export function routinesView() {
+  const a = activeInfo();
+  if (a) {
+    return {
+      html: `<header class="page-head">
+        <div><h1>${esc(t('tab_routines'))}</h1>${syncLine()}</div>
+        <div class="head-actions">
+          <a class="round-btn" href="#/settings" aria-label="${esc(t('settings'))}">${icon('gear')}</a>
+          <a class="pill-btn" href="#/plans">${esc(t('plansTitle'))}</a>
+        </div></header>${activePlanHome(a)}`,
+      bind(view) {
+        view.querySelectorAll('[data-action=new-routine]').forEach((b) => b.addEventListener('click', newRoutine));
+        view.querySelector('[data-action=sync]')?.addEventListener('click', () => syncNow());
+      },
+    };
+  }
   const list = routines();
   const next = plannedAhead(pref('planned', [])).find((p) => get('routines', p.routineId));
   let hero = '';
@@ -74,10 +128,12 @@ export function routinesView() {
       <div><h1>${esc(t('tab_routines'))}</h1>${syncLine()}</div>
       <div class="head-actions">
         <a class="round-btn" href="#/settings" aria-label="${esc(t('settings'))}">${icon('gear')}</a>
+        <a class="pill-btn" href="#/plans">${esc(t('plansTitle'))}</a>
         <button type="button" class="round-btn" data-action="new-routine" aria-label="${esc(t('newRoutine'))}">${icon('plus')}</button>
       </div>
     </header>
     ${hero}
+    ${list.length ? `<a class="card plan-prompt" href="#/plans">${icon('calendar', 20)}<span><b>${esc(plans().length ? t('choosePlan') : t('makePlan'))}</b><small>${esc(t('planPromptText'))}</small></span>${icon('chevron', 18, 'class="chev"')}</a>` : ''}
     ${list.length ? `<h2 class="section-title">${esc(t('yourRoutines'))}</h2><div class="stack">${rows}</div>`
     : empty(t('esRoutinesTitle'), exercises().length ? t('esRoutinesText') : t('esRoutinesFirst'),
       `<div class="button-row">${exercises().length ? '' : `<a class="btn" href="#/gym">${esc(t('setUpGym'))}</a>`}<button type="button" class="btn primary" data-action="new-routine">${esc(t('newRoutine'))}</button></div>`)}`;

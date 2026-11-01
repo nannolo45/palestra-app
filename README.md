@@ -37,7 +37,8 @@ The full guide for using the app is in the app (Settings → Guide) and in the d
 | `js/sync.js` | sync with `palestra-data` through the GitHub Contents API; sessions split by month; the data contract |
 | `js/model.js` | exercise types, cardio machines and measures, estimated lengths, the weekly automatic increase |
 | `js/workout.js` | the workout in progress, all from timestamps (survives a locked phone or a reload) |
-| `js/views/` | the screens: routines, exercises, gym, history, settings, workout mode |
+| `js/plans.js`, `js/importer.js` | weekly plans and the active plan; import from text or JSON |
+| `js/views/` | the screens: routines (with the active plan), plans, import, exercises, gym, history, settings, workout mode |
 | `js/guide.js` | the in-app guide, Italian and English |
 | `js/i18n.js` | texts, Italian (first) and English |
 | `tests/` | unit tests (`npm test`) and a browser test with a fake GitHub (`npm run e2e`); not needed to use the app |
@@ -54,7 +55,8 @@ Unknown fields are kept on every write.
 | `data/exercises.json` | an exercise | `name`, `type` (`weights`/`bodyweight`/`cardio`), `equipment` (`machine`/`barbell`/`dumbbell`/`cable`), `machineId`, `placeId`, `muscles`, `defaultRest`, `notes`, `timed`, `cardio: {kind, targets}`, `increase: {mode: type/custom/off, step}` |
 | `data/routines.json` | a routine | `name`, `items: [{exerciseId, sets, reps` or `seconds, weight, rest, targets}]`, `restBetween`, `estMinutes`, `autoIncrease`, `increaseWeek` |
 | `data/sessions/YYYY-MM.json` | a workout done | `routineId`, `start`, `end` (ms), `minutes` (without pauses), `sets: [{exerciseId, n, reps, weight, seconds, targets, distance, dur, restTaken, restPlanned}]`, `breakdown: {work, rest, walk, pause}` (s), `outcome` (`done`/`partial`), `everydayBlockId` |
-| `data/prefs.json` | a setting, `{id, value}` | `contract` (the contract version, `1`), `increase`, `training`, `gymName`; and `planned`, written by Everyday |
+| `data/plans.json` | a weekly plan (scheda) | `name`, `note`, `days: [{routineId, weekday}]` (0 = Monday … 6 = Sunday, or `null`) |
+| `data/prefs.json` | a setting, `{id, value}` | `contract` (the contract version, `1`), `activePlan` (read by Everyday, below), `increase`, `training`, `gymName`; and `planned`, written by Everyday |
 
 ### Data contract with Everyday (v1)
 
@@ -67,6 +69,11 @@ rewritten in full on each sync with the next 14 days.
 
 The contract version is the prefs record `{id: "contract", value: 1}`, as in Ricette. A higher value than the app
 knows makes it keep reading but stop writing until it's updated. Changing a listed field means contract v2.
+
+**Active plan** (prefs record `activePlan`, read by Everyday): `{planId, name, from: "YYYY-MM-DD", days: [{routineId, weekday}], previous?}`.
+Everyday plans the active plan's routines on their weekdays (`null` = any day) from `from` on. When a plan is made
+active "from Monday", `previous` holds the plan in force until then, in the same shape, so Everyday keeps planning
+it for the rest of the week. `null` = no active plan. This is an addition to contract v1: no listed field changes.
 
 A session started in Palestra without a block is matched by Everyday to a block for the same routine that day,
 nearest by time, or gets a new block. A deleted routine archives its saved task in Everyday.

@@ -10,7 +10,7 @@ import { syncNow, isSyncing, isConfigured, testConnection, clearFileCache, CONTR
 import { training, increaseSettings, refreshEstimates } from '../data.js';
 import { INCREASE_STEP, plannedAhead } from '../model.js';
 import { GUIDE } from '../guide.js';
-import { parseImport, planImport, runImport } from '../importer.js';
+import { activeInfo } from '../plans.js';
 
 const VERSION = 'v1';
 
@@ -35,11 +35,13 @@ export function settingsView(sub) {
   const planned = plannedAhead(pref('planned', []));
   const rows = [
     ['github', 'link', t('set_github'), isConfigured() ? `${state.settings.owner}/${state.settings.repo}` : t('notConnected')],
+    ['plans', 'calendar', t('plansTitle'), activeInfo() ? t('activeIs', activeInfo().plan.name) : t('noActivePlanShort')],
     ['increase', 'trend', t('set_increase'), `${inc.when === 'always' ? t('whenAlways') : t('whenDone')} · ${t('cat_machine').toLowerCase()} +${fmtNum(inc.steps.machine)} kg`],
     ['training', 'timer', t('set_training'), [t('restBetweenSetsShort', tr.rest), tr.vibrate ? t('vibration') : '', tr.wake ? t('screenOn') : ''].filter(Boolean).join(' · ')],
     ['gym', 'pin', t('set_gym'), [pref('gymName', '') || t('yourGym'), 'kg, km/h'].join(' · ')],
     ['everyday', 'calcheck', t('set_everyday'), planned.length ? t('everydayPlannedN', planned.length) : t('everydayHow')],
     ['lang', 'globe', t('set_lang'), LANGS[getLang()]],
+    ['import', 'arrowDown', t('importShort'), t('importSub')],
     ['backup', 'download', t('set_backup'), t('backupSub')],
     ['guide', 'book', t('set_guide'), t('guideSub')],
   ];
@@ -47,7 +49,7 @@ export function settingsView(sub) {
     <h1 class="title">${esc(t('settings'))}</h1>
     ${statusCard()}
     <nav class="card list settings-list" aria-label="${esc(t('settings'))}">
-      ${rows.map(([k, ic, title, sub2]) => `<a class="row list-row" href="#/settings/${k}">
+      ${rows.map(([k, ic, title, sub2]) => `<a class="row list-row" href="${k === 'plans' ? '#/plans' : k === 'import' ? '#/import' : `#/settings/${k}`}">
         <span class="icon-tile" aria-hidden="true">${icon(ic)}</span>
         <span class="row-text"><span class="row-title">${esc(title)}</span><span class="row-sub">${esc(sub2)}</span></span>${icon('chevron', 18, 'class="chev"')}</a>`).join('')}
     </nav>
@@ -168,6 +170,7 @@ const SUB = {
     const planned = plannedAhead(pref('planned', []));
     const body = `<div class="card kv-list">
         <div class="kv"><span>${esc(t('contract'))}</span><b>v${CONTRACT}</b></div>
+        <div class="kv"><span>${esc(t('plansTitle'))}</span><b>${esc(activeInfo() ? activeInfo().plan.name : t('noActivePlanShort'))}</b></div>
         <div class="kv"><span>${esc(t('plannedByEveryday'))}</span><b>${planned.length ? esc(t('everydayPlannedN', planned.length)) : esc(t('nothingYet'))}</b></div>
         <div class="kv"><span>${esc(t('routinesShared'))}</span><b>${live('routines').length}</b></div>
       </div>
@@ -186,11 +189,6 @@ const SUB = {
     const body = `<div class="stack"><p>${esc(t('backupText'))}</p>
       <button type="button" class="btn primary wide" data-action="download">${icon('download', 18)}${esc(t('downloadBackup'))}</button>
       <p class="muted small">${esc(t('backupRepoHint'))}</p>
-      <h2 class="section-title">${esc(t('importTitle'))}</h2>
-      <p>${esc(t('importText'))}</p>
-      <label class="btn wide file-btn">${icon('plus', 18)}${esc(t('importPickFile'))}<input type="file" accept=".json,application/json" data-import-file class="sr"></label>
-      <label class="field"><span>${esc(t('importOrPaste'))}</span><textarea id="import-text" rows="4" placeholder='{"format": "palestra-import", …}'></textarea></label>
-      <button type="button" class="btn primary wide" data-action="import-text">${esc(t('importRead'))}</button>
       <h2 class="section-title">${esc(t('thisDevice'))}</h2>
       <button type="button" class="btn danger-text wide" data-action="wipe">${esc(t('wipeDevice'))}</button></div>`;
     return page(t('set_backup'), body, (view) => {
@@ -205,28 +203,6 @@ const SUB = {
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       });
-      const doImport = async (text) => {
-        const res = parseImport(text);
-        if (res.error) { toast(t(res.error, res.detail || ''), { ms: 5000 }); return; }
-        const plan = planImport(res.data);
-        const lines = [
-          t('importRoutines', plan.routines.map((r) => r.finalName).join(', ')),
-          plan.newExercises.length ? t('importNewEx', plan.newExercises.length) : '',
-          plan.reused.length ? t('importReused', plan.reused.join(', ')) : '',
-        ].filter(Boolean).join(' ');
-        if (!(await askConfirm({ title: t('importQ'), text: lines, ok: t('importDo') }))) return;
-        const out = runImport(res.data);
-        refreshEstimates();
-        toast(t('importDone', out.routines.length));
-        location.hash = '#/routines';
-      };
-      view.querySelector('[data-import-file]').addEventListener('change', async (e) => {
-        const f = e.target.files && e.target.files[0];
-        if (!f) return;
-        await doImport(await f.text());
-        e.target.value = '';
-      });
-      view.querySelector('[data-action=import-text]').addEventListener('click', () => doImport(view.querySelector('#import-text').value));
       view.querySelector('[data-action=wipe]').addEventListener('click', async () => {
         if (!(await askConfirm({ text: isConfigured() ? t('wipeQSynced') : t('wipeQLocal'), ok: t('wipe'), danger: true }))) return;
         await resetLocal();

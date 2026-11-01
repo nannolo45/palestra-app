@@ -17,7 +17,7 @@ export function route() {
 
 export const TAB_OF = {
   routines: 'routines', routine: 'routines', exercises: 'exercises', exercise: 'exercises',
-  gym: 'gym', machine: 'gym', history: 'history', session: 'history',
+  gym: 'gym', machine: 'gym', history: 'history', session: 'history', plans: 'routines', plan: 'routines', import: 'routines',
 };
 
 export function renderTabs() {

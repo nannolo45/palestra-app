@@ -10,6 +10,8 @@ import { exercisesView, exerciseView } from './views/exercises.js';
 import { gymView } from './views/gym.js';
 import { historyView, sessionView } from './views/history.js';
 import { settingsView } from './views/settings.js';
+import { plansView, planView } from './views/plans.js';
+import { importView } from './views/import.js';
 import { initWorkout, startView, workoutView, hasActive, activeWorkout, leaveWorkoutScreens } from './views/workout.js';
 import { refreshEstimates } from './data.js';
 import { esc } from './ui/format.js';
@@ -29,6 +31,9 @@ function viewFor(r) {
     case 'history': return historyView(r.query);
     case 'session': return sessionView(r.id);
     case 'settings': return settingsView(r.id);
+    case 'plans': return plansView();
+    case 'plan': return planView(r.id);
+    case 'import': return importView();
     case 'start': return startView(r.id, r.query);
     case 'workout': return workoutView();
     default: return routinesView();
@@ -67,7 +72,7 @@ function renderIfSafe() {
   const typing = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT') && $('#view').contains(ae);
   // the workout screen and an exercise card being edited only redraw on their own actions
   const rn = route();
-  if (current?.dark || rn.name === 'exercise' || (rn.name === 'settings' && rn.id && rn.id !== 'everyday')) return;
+  if (current?.dark || rn.name === 'exercise' || rn.name === 'import' || (rn.name === 'settings' && rn.id && rn.id !== 'everyday')) return;
   if (isDragging() || $('#modal')?.open || typing) { pending = true; return; }
   pending = false;
   render();
