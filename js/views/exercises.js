@@ -3,7 +3,7 @@ import { state, get, upsert, remove, restore, uid, live, saveSettings } from '..
 import { t } from '../i18n.js';
 import { esc, fmtNum, shortDate, num } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { backLink, stepper, bindSteppers, stepVal, segmented, empty, exTag } from '../ui/parts.js';
+import { backLink, stepper, bindSteppers, stepVal, segmented, empty, exTag, segTabs } from '../ui/parts.js';
 import { askConfirm, toast } from '../ui/dialogs.js';
 import {
   exercises, places, machines, machineOf, placeOf, whereText, typeLabel, cardioKindLabel, measureLabel, training, increaseSettings, refreshEstimates,
@@ -84,6 +84,7 @@ export function exercisesView() {
         <a class="round-btn" href="#/exercise/new" aria-label="${esc(t('newExercise'))}">${icon('plus')}</a>
       </div>
     </header>
+    ${segTabs('exercises')}
     <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchExercise'))}</span><input id="ex-q" type="search" placeholder="${esc(t('searchExercisePh'))}" value="${esc(listState.q)}"></label>
     <div class="filter-row" role="group" aria-label="${esc(t('filterType'))}">
       <button type="button" class="chip-btn by" data-action="by" aria-label="${esc(t('groupBy'))}">${icon('sort', 16)}${esc(listState.by === 'muscle' ? t('byMuscle') : t('byPlace'))}</button>
@@ -91,7 +92,7 @@ export function exercisesView() {
       ${filters.map(([v, l]) => `<button type="button" class="chip-btn${listState.type === v ? ' on' : ''}" aria-pressed="${listState.type === v}" data-type="${v}">${v !== 'all' ? `<span class="swatch sw-${v}" aria-hidden="true"></span>` : ''}${esc(l)}</button>`).join('')}
     </div>
     ${groups.length > 1 && !q ? `<div class="list-tools"><span class="muted small">${esc(t('nExercisesShort', list.length))}</span><button type="button" class="link-btn" data-action="toggle-all">${esc(allClosed ? t('openAll') : t('closeAll'))}</button></div>` : ''}
-    ${groups.length ? groups.map((g) => {
+    ${groups.length ? `<div class="groups">${groups.map((g) => {
     const closed = isClosed(g);
     return `<section class="group${compact ? ' compact' : ''}">
         <h2 class="group-head"><button type="button" data-group="${esc(key(g))}" aria-expanded="${!closed}">
@@ -99,7 +100,7 @@ export function exercisesView() {
         </button></h2>
         ${closed ? '' : `<div class="card list">${g.rows.map((e) => exRow(e, listState.by, compact)).join('')}</div>`}
       </section>`;
-  }).join('')
+  }).join('')}</div>`
     : empty(exercises().length ? t('esNoMatch') : t('esExercisesTitle'), exercises().length ? t('esNoMatchText') : t('esExercisesText'),
       `<a class="btn primary" href="#/exercise/new">${esc(t('newExercise'))}</a>`)}`;
   return {

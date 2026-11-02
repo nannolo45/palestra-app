@@ -6,6 +6,7 @@ import { route, renderTabs, setActiveTab, paint } from './shell.js';
 import { syncNow, isConfigured } from './sync.js';
 import { isDragging } from './sortable.js';
 import { routinesView, routineView, routineEditView } from './views/routines.js';
+import { todayView } from './views/today.js';
 import { exercisesView, exerciseView } from './views/exercises.js';
 import { gymView } from './views/gym.js';
 import { historyView, sessionView } from './views/history.js';
@@ -23,7 +24,8 @@ let currentKey = '';
 
 function viewFor(r) {
   switch (r.name) {
-    case 'routines': return routinesView();
+    case 'today': return todayView();
+    case 'routines': return routinesView(r.query);
     case 'routine': return r.sub === 'edit' ? routineEditView(r.id) : routineView(r.id);
     case 'exercises': return exercisesView();
     case 'exercise': return exerciseView(r.id, r.query);
@@ -36,7 +38,7 @@ function viewFor(r) {
     case 'import': return importView(r.query);
     case 'start': return startView(r.id, r.query);
     case 'workout': return workoutView();
-    default: return routinesView();
+    default: return todayView();
   }
 }
 
@@ -144,6 +146,8 @@ async function init() {
   for (const d of ['#modal']) $(d)?.addEventListener('close', () => setTimeout(() => { if (pending) renderIfSafe(); }, 0));
   document.addEventListener('close', (e) => { if (e.target?.id === 'confirm' && pending) setTimeout(renderIfSafe, 0); }, true);
   window.addEventListener('hashchange', render);
+  // the desktop layout changes the markup (sidebar, master-detail), so redraw when crossing 960px
+  try { matchMedia('(min-width: 960px)').addEventListener('change', () => render()); } catch { /* old browsers */ }
   window.addEventListener('online', () => syncNow());
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && isConfigured() && !hasActive()) syncNow(); });
   // A workout left running: go back to it.

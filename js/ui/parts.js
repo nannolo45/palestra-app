@@ -71,3 +71,9 @@ export function exTag(ex, label) {
 
 /** Turn **bold** into <strong> in already-escaped text. */
 export const bold = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+/** Esercizi | Palestra: the two halves of the Esercizi tab. */
+export function segTabs(which) {
+  const tab = (key, href, label) => `<a href="${href}" class="${which === key ? 'on' : ''}"${which === key ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
+  return `<nav class="seg-tabs" aria-label="${esc(t('tab_exercises'))}">${tab('exercises', '#/exercises', t('exercisesTab'))}${tab('gym', '#/gym', t('gymTab'))}</nav>`;
+}

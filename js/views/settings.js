@@ -13,7 +13,7 @@ import { GUIDE } from '../guide.js';
 import { activeInfo } from '../plans.js';
 
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
-export const APP_VERSION = 'v7';
+export const APP_VERSION = 'v9';
 const VERSION = APP_VERSION;
 
 function statusCard() {
@@ -47,7 +47,7 @@ export function settingsView(sub) {
     ['backup', 'download', t('set_backup'), t('backupSub')],
     ['guide', 'book', t('set_guide'), t('guideSub')],
   ];
-  const html = `<header class="bar">${backLink('#/routines', t('tab_routines'))}</header>
+  const html = `<header class="bar">${backLink('#/today', t('tab_today'))}</header>
     <h1 class="title">${esc(t('settings'))}</h1>
     ${statusCard()}
     <nav class="card list settings-list" aria-label="${esc(t('settings'))}">

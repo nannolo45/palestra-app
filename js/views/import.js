@@ -1,6 +1,6 @@
 // Importa: a plan or single routines from plain text (typed, pasted or a .txt file) or a Palestra .json file.
 // First a preview (what's already yours, what's new, what couldn't be read), then the import.
-import { get, live } from '../store.js';
+import { get, live, upsert, remove } from '../store.js';
 import { t } from '../i18n.js';
 import { esc, fmtNum } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
@@ -9,7 +9,7 @@ import { toast } from '../ui/dialogs.js';
 import { parseImport, planImport, runImport } from '../importer.js';
 import { estMinutes } from '../model.js';
 import { training, refreshEstimates } from '../data.js';
-import { activeInfo, activate, isoDate, nextMonday } from '../plans.js';
+import { activeInfo, activate, isoDate, nextMonday, savePlan } from '../plans.js';
 
 // what's on screen, kept across redraws
 const st = { src: 'paste', text: '', result: null, error: '', asPlan: true, makeActive: false };
@@ -17,8 +17,8 @@ const st = { src: 'paste', text: '', result: null, error: '', asPlan: true, make
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
 
 const HELP = [
-  ['SCHEDA: Push Pull Legs', 'helpPlan'],
-  ['GIORNO: Spinta @ lun 18:00', 'helpDay'],
+  ['WORKOUT: Push Pull Legs', 'helpPlan'],
+  ['SCHEDA: Spinta @ lun 18:00', 'helpDay'],
   ['Panca piana 4x8', 'helpSets'],
   ['… 60 kg', 'helpWeight'],
   ['… rec 2:30  /  rec 90s', 'helpRest'],
@@ -61,15 +61,18 @@ function preview() {
     <p class="lead">${esc(counts)}</p>
     <div class="stack">${sections}
       ${lost.length ? `<section class="card warn-card"><b>${esc(t('linesSkipped', lost.length))}</b>${lost.map((x) => `<div class="imp-row"><span class="muted small">${esc(t('lineN', x.line))}</span><code>${esc(x.text)}</code></div>`).join('')}<p class="muted small">${esc(t('linesSkippedHint'))}</p></section>` : ''}
-      ${data.plan ? `<div class="card">${toggle({ name: 'asPlan', checked: st.asPlan, label: t('saveAsPlan'), hint: t('saveAsPlanHint', data.routines.length) })}
+      ${data.plan && !st.plan && !st.into ? `<div class="card">${toggle({ name: 'asPlan', checked: st.asPlan, label: t('saveAsPlan'), hint: t('saveAsPlanHint', data.routines.length) })}
         ${st.asPlan ? toggle({ name: 'makeActive', checked: st.makeActive, label: t('makeItActive'), hint: a ? t('makeItActiveHint', a.plan.name) : t('makeItActiveHintNone') }) : ''}</div>` : ''}
-      <button type="button" class="btn yellow big wide" data-action="do-import">${esc(data.plan && st.asPlan ? t('importPlan') : t('importNRoutines', data.routines.length))}</button>
+      <button type="button" class="btn yellow big wide" data-action="do-import">${esc(st.into ? t('importInto', get('routines', st.into)?.name || '') : data.plan && st.asPlan && !st.plan ? t('importPlan') : t('importNRoutines', data.routines.length))}</button>
       ${issues.length ? `<button type="button" class="btn ghost wide" data-action="back-edit">${esc(t('fixText'))}</button>` : ''}
     </div>`;
 }
 
 export function importView(query = {}) {
-  if (query.for && st.for !== query.for) { st.for = query.for; }
+  // ?for=plan|routine; ?plan=<id>: the imported schede join that workout; ?into=<id>: their exercises join that scheda
+  const key = `${query.for || ''}|${query.plan || ''}|${query.into || ''}`;
+  if (st.key !== key) Object.assign(st, { key, text: '', result: null, error: '', src: 'paste' }); // opened for something else: start fresh
+  st.for = query.for || null; st.plan = query.plan || null; st.into = query.into || null;
   if (st.result) {
     return {
       html: preview(),
@@ -80,21 +83,33 @@ export function importView(query = {}) {
         view.querySelector('[data-action=do-import]').addEventListener('click', () => {
           const { data } = st.result;
           for (const r of data.routines) for (const it of r.items) delete it._line;
-          const out = runImport(data, { asPlan: st.asPlan });
+          const target = st.plan && get('plans', st.plan);
+          const into = st.into && get('routines', st.into);
+          const out = runImport(data, { asPlan: !target && !into && st.asPlan });
+          if (into) {
+            // the exercises go into the scheda being edited; the schede made by the import aren't kept
+            const add = out.created.flatMap((rid) => get('routines', rid)?.items || []);
+            upsert('routines', { ...into, items: [...(into.items || []), ...add] });
+            for (const rid of out.created) remove('routines', rid);
+          } else if (target) {
+            savePlan({ ...target, days: [...(target.days || []), ...out.created.map((rid, i) => ({ routineId: rid, weekday: Number.isInteger(data.routines[i]?._weekday) ? data.routines[i]._weekday : null, ...(data.routines[i]?._time ? { time: data.routines[i]._time } : {}) }))] });
+          }
           refreshEstimates();
           if (out.planId && st.makeActive) {
             const plan = get('plans', out.planId);
             activate(plan, isoDate(activeInfo() && new Date().getDay() !== 1 ? nextMonday() : Date.now()));
           }
-          toast(out.planId ? t('importedPlan', get('plans', out.planId).name) : t('importDone', out.routines.length));
-          const dest = out.planId ? `#/plan/${encodeURIComponent(out.planId)}` : '#/routines';
-          Object.assign(st, { text: '', result: null, error: '', makeActive: false, asPlan: true, for: null });
+          toast(out.planId ? t('importedPlan', get('plans', out.planId).name) : into ? t('importedInto', into.name) : t('importDone', out.created.length));
+          const dest = into ? `#/routine/${encodeURIComponent(into.id)}/edit` : target ? `#/plan/${encodeURIComponent(target.id)}` : out.planId ? `#/plan/${encodeURIComponent(out.planId)}` : '#/routines';
+          Object.assign(st, { text: '', result: null, error: '', makeActive: false, asPlan: true, for: null, plan: null, into: null });
           location.hash = dest;
         });
       },
     };
   }
-  const backTo = st.for === 'plan' ? ['#/plans', t('plansTitle')] : ['#/routines', t('tab_routines')];
+  const backTo = st.into && get('routines', st.into) ? [`#/routine/${encodeURIComponent(st.into)}/edit`, get('routines', st.into).name]
+    : st.plan && get('plans', st.plan) ? [`#/plan/${encodeURIComponent(st.plan)}`, get('plans', st.plan).name]
+      : st.for === 'plan' ? ['#/plans', t('plansTitle')] : ['#/routines', t('tab_routines')];
   const title = st.for === 'plan' ? t('importAPlan') : st.for === 'routine' ? t('importARoutine') : t('importShort');
   const html = `<header class="bar">${backLink(backTo[0], backTo[1])}</header>
     <h1 class="title">${esc(title)}</h1>

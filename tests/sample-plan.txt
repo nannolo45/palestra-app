@@ -1,7 +1,7 @@
-SCHEDA: Petto e bicipiti · Schiena e tricipiti · Gambe
+WORKOUT: Petto e bicipiti · Schiena e tricipiti · Gambe
 Note: 3 giorni, circa 1:30 ciascuno. Pesi da scegliere alla prima seduta.
 
-GIORNO: Petto e bicipiti
+SCHEDA: Petto e bicipiti
 Ellittica 10 min
 Panca piana (bilanciere) 4x8 rec 2:30
 - Scapole indietro e giù, piedi a terra. Sopra i 60 kg chiedi assistenza.
@@ -17,7 +17,7 @@ Curl a martello (manubri) 3x12 rec 1:00
 Crunch ai cavi 3x15 rec 0:45
 Tapis roulant in salita 20 min
 
-GIORNO: Schiena e tricipiti
+SCHEDA: Schiena e tricipiti
 Vogatore 10 min
 - Prima gambe, poi schiena, poi braccia.
 Lat machine 4x10 rec 2:30
@@ -33,7 +33,7 @@ Push down ai cavi 3x12 rec 1:00
 Dip alle parallele 3x10 rec 1:30
 Bike 15 min
 
-GIORNO: Gambe
+SCHEDA: Gambe
 Bike 10 min
 Squat con bilanciere 4x8 rec 3:00
 - Ginocchia nella direzione delle punte, almeno a cosce parallele.

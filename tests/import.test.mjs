@@ -49,3 +49,14 @@ test('weekday and time on a day line', () => {
   const { data } = parseText('SCHEDA: X\nGIORNO: Gambe @ ven 18:30\nSquat 4x8\nGIORNO: Petto @ 7.15\nPanca 3x10\nGIORNO: Schiena\nRematore 3x10\n');
   assert.deepEqual(data.routines.map((r) => [r.name, r._weekday, r._time]), [['Gambe', 4, '18:30'], ['Petto', undefined, '07:15'], ['Schiena', undefined, undefined]]);
 });
+
+test('v9 keywords: WORKOUT names the plan, SCHEDA starts a routine; old files still read', () => {
+  const nu = parseText('WORKOUT: PPL\nSCHEDA: Spinta @ lun\nPanca 3x10\nSCHEDA: Tirata\nRematore 3x10\n').data;
+  assert.equal(nu.plan?.name || nu.title, 'PPL');
+  assert.deepEqual(nu.routines.map((r) => r.name), ['Spinta', 'Tirata']);
+  const old = parseText('SCHEDA: PPL\nGIORNO: Spinta\nPanca 3x10\nGIORNO: Tirata\nRematore 3x10\n').data;
+  assert.equal(old.plan?.name || old.title, 'PPL');
+  assert.deepEqual(old.routines.map((r) => r.name), ['Spinta', 'Tirata']);
+  const one = parseText('SCHEDA: Solo braccia\nCurl 3x10\n').data;
+  assert.deepEqual(one.routines.map((r) => r.name), ['Solo braccia']);
+});

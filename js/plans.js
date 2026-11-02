@@ -142,13 +142,13 @@ const EQ_TXT = { barbell: 'bilanciere', dumbbell: 'manubri', cable: 'cavi', mach
 
 /** The plan as text, in the import format (so it can be shared and imported again). */
 export function planToText(plan) {
-  const lines = [`SCHEDA: ${plan.name}`];
+  const lines = [`WORKOUT: ${plan.name}`];
   if (plan.note) lines.push(`Note: ${plan.note}`);
   for (const d of planDays(plan)) {
     const r = get('routines', d.routineId);
     const wd = Number.isInteger(d.weekday) ? ` @ ${WD_TXT[d.weekday]}` : '';
     const tm = validTime(d.time) ? `${wd ? '' : ' @'} ${d.time}` : '';
-    lines.push('', `GIORNO: ${r.name}${wd}${tm}`);
+    lines.push('', `SCHEDA: ${r.name}${wd}${tm}`);
     for (const it of r.items || []) {
       const ex = get('exercises', it.exerciseId);
       if (!ex) continue;
@@ -179,3 +179,46 @@ const MEASURE_TXT = {
 };
 
 export { state };
+
+// ---- moves: "Sposta a domani" ----
+// prefs "moves": [{ routineId, from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' }]. Only this week's are kept. Everyday reads
+// them to re-plan the block (see the README); Palestra uses them for the weekday it shows.
+
+export function movesThisWeek(now = Date.now()) {
+  const ws = isoDate(weekStart(now));
+  return (pref('moves', []) || []).filter((m) => m && m.from >= ws);
+}
+
+/** The weekday (0 = Monday) a plan day falls on this week, after any move. */
+export function effectiveWeekday(day, now = Date.now()) {
+  const m = movesThisWeek(now).filter((x) => x.routineId === day.routineId).pop();
+  if (m) return (new Date(dateOf(m.to)).getDay() + 6) % 7;
+  return Number.isInteger(day.weekday) ? day.weekday : null;
+}
+
+export function moveToTomorrow(routineId, now = Date.now()) {
+  const from = isoDate(now);
+  const to = isoDate(dateOf(from) + DAY + 3600000); // +1h guards against a DST day of 23 hours
+  const keep = movesThisWeek(now).filter((m) => !(m.routineId === routineId && m.to === from));
+  setPref('moves', [...keep, { routineId, from, to }]);
+  return to;
+}
+
+export function undoMove(routineId, now = Date.now()) {
+  setPref('moves', movesThisWeek(now).filter((m) => m.routineId !== routineId));
+}
+
+/**
+ * Today's routine in the active plan: one not done this week whose weekday (after moves) is today; else null.
+ */
+export function todayDay(plan, now = Date.now()) {
+  const status = weekStatus(plan, now);
+  const wd = (new Date(now).getDay() + 6) % 7;
+  const i = status.days.findIndex((x) => !x.done && effectiveWeekday(x.day, now) === wd);
+  return i >= 0 ? { ...status.days[i], index: i } : null;
+}
+
+/** The workouts a routine is in. */
+export function plansWith(routineId) {
+  return plans().filter((p) => (p.days || []).some((d) => d.routineId === routineId));
+}

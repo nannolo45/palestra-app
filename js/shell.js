@@ -8,7 +8,7 @@ const $ = (sel) => document.querySelector(sel);
 
 /** "#/routine/abc/edit?block=x" → { name:'routine', id:'abc', sub:'edit', query:{block:'x'} } */
 export function route() {
-  const raw = location.hash.replace(/^#\/?/, '') || 'routines';
+  const raw = location.hash.replace(/^#\/?/, '') || 'today';
   const [path, qs] = raw.split('?');
   const [name, id, sub] = path.split('/').map((x) => (x ? decodeURIComponent(x) : x));
   const query = Object.fromEntries(new URLSearchParams(qs || ''));
@@ -16,17 +16,21 @@ export function route() {
 }
 
 export const TAB_OF = {
-  routines: 'routines', routine: 'routines', exercises: 'exercises', exercise: 'exercises',
-  gym: 'gym', machine: 'gym', history: 'history', session: 'history', plans: 'routines', plan: 'routines', import: 'routines',
+  today: 'today', plans: 'plans', plan: 'plans', routines: 'routines', routine: 'routines', import: 'routines',
+  exercises: 'exercises', exercise: 'exercises', gym: 'exercises', machine: 'exercises', history: 'history', session: 'history', settings: 'settings',
 };
 
 export function renderTabs() {
-  for (const a of document.querySelectorAll('nav.tabs a')) a.querySelector('.label').textContent = t(`tab_${a.dataset.tab}`);
+  for (const a of document.querySelectorAll('nav.tabs a[data-tab]')) a.querySelector('.label').textContent = a.dataset.tab === 'settings' ? t('settings') : t(`tab_${a.dataset.tab}`);
+  const gym = document.querySelector('nav.tabs .label-gym');
+  if (gym) gym.textContent = t('gymTab');
+  const nav = document.querySelector('nav.tabs');
+  if (nav) nav.setAttribute('aria-label', t('mainNav'));
 }
 
 export function setActiveTab(routeName) {
-  for (const a of document.querySelectorAll('nav.tabs a')) {
-    const on = a.dataset.tab === TAB_OF[routeName];
+  for (const a of document.querySelectorAll('nav.tabs a[data-tab]')) {
+    const on = a.dataset.tab === (TAB_OF[routeName] || 'today');
     a.classList.toggle('active', on);
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   }
@@ -45,7 +49,7 @@ export function syncStatus(syncing) {
 let lastRendered = '';
 
 export function paint(view, html, after = () => {}) {
-  const here = location.hash || '#/routines';
+  const here = location.hash || '#/today';
   const keepY = here === lastRendered ? window.scrollY : null;
   lastRendered = here;
   const active = document.activeElement;
@@ -71,3 +75,6 @@ export function go(hash) {
   if (location.hash === hash) window.dispatchEvent(new HashChangeEvent('hashchange'));
   else location.hash = hash;
 }
+
+/** The desktop layout (sidebar, two columns, master-detail) from 960px. */
+export const isWide = () => typeof matchMedia === 'function' && matchMedia('(min-width: 960px)').matches;

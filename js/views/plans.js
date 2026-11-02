@@ -1,4 +1,4 @@
-// Schede: weekly plans. The list (one active), a plan's editor with weekdays, and switching the active plan.
+// Workout: weekly plans (code: plans). The list (one active), a plan's editor with weekdays, and switching the active plan.
 import { get, upsert, remove, restore, uid, live } from '../store.js';
 import { t } from '../i18n.js';
 import { esc, minText, shortDate } from '../ui/format.js';
@@ -49,15 +49,17 @@ export function plansView() {
       ${upcoming ? `<button type="button" class="btn small" data-activate-now="${esc(p.id)}">${esc(t('activateToday'))}</button>` : `<button type="button" class="btn small" data-activate="${esc(p.id)}">${esc(t('makeActive'))}</button>`}
     </div>`;
   };
-  const html = `<header class="bar">${backLink('#/routines', t('tab_routines'))}<a class="bar-action" href="#/import">${esc(t('importShort'))}</a></header>
-    <h1 class="title">${esc(t('plansTitle'))}</h1>
+  const html = `<header class="page-head">
+      <div><h1>${esc(t('plansTitle'))}</h1><p class="sub">${esc(a ? t('activeIs', a.plan.name) : t('noActivePlanShort'))}</p></div>
+      <div class="head-actions"><a class="round-btn only-narrow" href="#/settings" aria-label="${esc(t('settings'))}">${icon('gear')}</a></div>
+    </header>
+    <div class="two-actions"><button type="button" class="btn primary" data-action="new-plan">${icon('plus', 18)}${esc(t('newPlan'))}</button><a class="btn" href="#/import?for=plan">${icon('book', 18)}${esc(t('importShort'))}</a></div>
     <p class="lead">${esc(t('plansIntro'))}</p>
     ${all.length ? `<div class="stack">
       ${active ? card(active, true) : `<div class="card plain-note">${esc(t('noActivePlan'))}</div>`}
       ${a && a.upcoming ? `<h2 class="section-title">${esc(t('upcomingPlan'))}</h2>${card(a.upcoming.plan, false, true)}` : ''}
       ${others.filter((p) => !(a && a.upcoming && a.upcoming.planId === p.id)).length ? `<h2 class="section-title">${esc(t('otherPlans'))}</h2>${others.filter((p) => !(a && a.upcoming && a.upcoming.planId === p.id)).map((p) => card(p, false)).join('')}` : ''}
-    </div>` : empty(t('esPlansTitle'), t('esPlansText'), `<div class="button-row"><a class="btn" href="#/import">${esc(t('importShort'))}</a></div>`)}
-    <button type="button" class="btn dashed wide" data-action="new-plan">${icon('plus', 18)}${esc(t('newPlan'))}</button>`;
+    </div>` : empty(t('esPlansTitle'), t('esPlansText'))}`;
   return {
     html,
     bind(view) {
@@ -129,7 +131,7 @@ export function planView(id) {
     </form>
     <div class="field-head row-head"><span>${esc(t('daysTitle'))}</span><small class="muted">${esc(t('dragToReorder'))}</small></div>
     <div class="stack tight" data-sortable="days">${rows}</div>
-    <button type="button" class="btn dashed wide" data-action="add-day">${icon('plus', 18)}${esc(t('addRoutineToPlan'))}</button>
+    <div class="two-actions"><button type="button" class="btn dashed" data-action="add-day">${icon('plus', 18)}${esc(t('addRoutineToPlan'))}</button><a class="btn" href="#/import?for=routine&plan=${encodeURIComponent(p.id)}">${icon('book', 18)}${esc(t('importShort'))}</a></div>
     <div class="card kv-list">
       <div class="kv"><span>${esc(t('perWeekLabel'))}</span><b>${esc(`${t('nDays', days.length)} · ${minText(planMinutes(p))}`)}</b></div>
       <div class="kv"><span>${esc(t('autoIncrease'))}</span><b>${esc(t('onNofM', days.filter((x) => x.r.autoIncrease).length, days.length))}</b></div>
@@ -176,7 +178,7 @@ export function planView(id) {
       view.querySelector('[data-action=export]').addEventListener('click', async () => {
         const cur = get('plans', id);
         const text = planToText(cur);
-        const file = new File([text], `${cur.name.replace(/[^\p{L}\p{N} ._-]+/gu, '').trim() || 'scheda'}.txt`, { type: 'text/plain' });
+        const file = new File([text], `${cur.name.replace(/[^\p{L}\p{N} ._-]+/gu, '').trim() || 'workout'}.txt`, { type: 'text/plain' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           try { await navigator.share({ files: [file], title: cur.name }); return; } catch { /* cancelled: fall back to a download */ }
         }
@@ -203,7 +205,7 @@ async function addDay(planId) {
   const list = routines().filter((r) => !inPlan.has(r.id));
   const html = `<h2>${esc(t('addRoutineToPlan'))}</h2>
     ${list.length ? `<div class="pick-list">${list.map((r) => `<button type="button" class="row pick" data-pick="${esc(r.id)}"><span class="min-badge"><b>${routineMinutes(r)}</b><small>min</small></span><span class="row-text"><span class="row-title">${esc(r.name)}</span><span class="row-sub">${esc(t('nExercises', (r.items || []).length))}</span></span></button>`).join('')}</div>` : `<p>${esc(t('allRoutinesInPlan'))}</p>`}
-    <div class="button-row"><button type="button" class="btn" data-new>${esc(t('newRoutine'))}</button><a class="btn" href="#/import?for=routine" data-close>${esc(t('importShort'))}</a><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+    <div class="button-row"><button type="button" class="btn" data-new>${esc(t('newRoutine'))}</button><a class="btn" href="#/import?for=routine&plan=${encodeURIComponent(planId)}" data-close>${esc(t('importShort'))}</a><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
   await openSheet(html, (form, close) => {
     form.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => {
       const cur = get('plans', planId);

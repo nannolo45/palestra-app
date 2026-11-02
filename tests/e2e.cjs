@@ -83,7 +83,9 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   console.log('First run');
   await page.goto(base);
   await page.waitForSelector('.page-head h1');
-  check((await page.textContent('.page-head h1')) === 'Allenamenti', 'opens on Allenamenti, in Italian');
+  check((await page.textContent('.page-head h1')) === 'Oggi', 'opens on Oggi, in Italian');
+  const tabs = await page.$$eval('nav.tabs a[data-tab]', (as) => as.filter((a) => a.getClientRects().length).map((a) => a.textContent.trim()));
+  check(tabs.join('|') === 'Oggi|Workout|Schede|Esercizi|Storico', `five tabs (${tabs.join('|')})`);
   await shot('01-empty');
 
   console.log('Connect GitHub');
@@ -162,7 +164,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
 
   console.log('Routine');
   await go('#/routines');
-  await page.click('.page-head [data-action=new-routine]');
+  await page.click('.two-actions [data-action=new-routine]');
   await page.click('#modal [data-choice=empty]');
   await page.waitForSelector('#r-name');
   await page.fill('#r-name', 'Gambe');
@@ -251,11 +253,16 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.clock.setFixedTime(new Date(2026, 10, 3, 18, 0));
   await page.click('[data-action=sync]');
   await page.waitForTimeout(500);
-  await go('#/routines');
-  await page.waitForSelector('.hero');
-  check((await page.textContent('.hero')).includes('Gambe'), 'next workout from Everyday shown');
-  await shot('15-routines-next');
-  await page.click('.hero .btn');
+  await go('#/today');
+  await page.waitForSelector('.today-hero');
+  check((await page.textContent('.today-hero')).includes('Gambe'), 'next workout from Everyday shown');
+  await shot('15-today-next');
+  const gid = await page.evaluate(() => document.querySelector('.today-hero .hero-title').getAttribute('href').split('/').pop());
+  await go(`#/routine/${gid}`);
+  const lw = await page.$$eval('.last-w', (els) => els.map((e) => e.textContent).join(' | '));
+  check(lw.includes('ultima 100 kg'), `last weight shown on the scheda (${lw})`);
+  await go('#/today');
+  await page.click('.today-hero .btn.yellow');
   await page.waitForSelector('.inc-row');
   await shot('16-increase', { fullPage: true });
   const incText = await page.textContent('.w-card.list');
@@ -278,9 +285,9 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('[data-form=plan]');
   check((await page.inputValue('#p-name')).includes('Spinta'), 'JSON plan saved as a plan');
   check(await page.isChecked('[name=active]'), 'first plan made active');
-  await go('#/routines');
+  await go('#/today');
   await page.waitForSelector('.plan-hero');
-  await shot('18-home-plan');
+  await shot('18-today-plan', { fullPage: true });
   const days = await page.$$eval('.day-home .row-title', (els) => els.map((e) => e.textContent));
   check(days.join('|') === 'A · Spinta|B · Tirata|C · Gambe', 'home shows the active plan\'s days');
   const mins = await page.$$eval('.day-home .row-sub', (els) => els.map((e) => Number(e.textContent.match(/(\d+) min/)[1])));
@@ -347,9 +354,38 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(ap.from === '2026-11-09', `active from next Monday (${ap.from})`);
   check(ap.previous && ap.previous.days.length === 3, 'the plan in force until then is in the record too');
   await page.clock.setFixedTime(new Date(2026, 10, 9, 9, 0));
-  await go('#/routines');
+  await go('#/today');
   await page.waitForSelector('.plan-hero');
   check((await page.textContent('.plan-hero-name')).includes('Petto e bicipiti'), 'on Monday the new plan is in force');
+  check((await page.textContent('.today-hero .hero-title')) === 'Petto e bicipiti', 'today\'s scheda is Monday\'s');
+  await page.click('[data-move]');
+  await page.waitForTimeout(150);
+  const moves = await page.evaluate(async () => {
+    const db = await new Promise((r) => { const q = indexedDB.open('palestra'); q.onsuccess = () => r(q.result); });
+    return new Promise((r) => { const q = db.transaction('kv').objectStore('kv').get('prefs'); q.onsuccess = () => r((q.result || []).find((p) => p.id === 'moves')?.value); });
+  });
+  check(moves && moves[0].from === '2026-11-09' && moves[0].to === '2026-11-10', `moved to tomorrow in prefs (${JSON.stringify(moves)})`);
+  check((await page.textContent('.day-home')).includes('Spostata'), 'the week shows it moved');
+  await shot('19-moved');
+  await page.click('[data-unmove]');
+  await page.waitForTimeout(150);
+  check(Boolean(await page.$('[data-move]')), 'back to today');
+
+  console.log('Duplicate a scheda into another workout');
+  await go('#/routines');
+  const nPlans = (await page.$$('.lib-row')).length;
+  await page.click('.lib-row');
+  await page.click('[data-action=duplicate-to]');
+  await page.waitForSelector('#modal[open] .pick');
+  await page.click('#modal .pick');
+  await page.waitForSelector('[data-form=plan]');
+  check((await page.$$('.day-row')).length === 4, 'the copy joined the other workout');
+  await go('#/routines');
+  check((await page.$$('.lib-row')).length === nPlans + 1, 'the copy is in the library');
+  await page.click('[data-filter=none]');
+  await page.waitForTimeout(100);
+  check((await page.$$('.lib-row')).length >= 1, 'filter: schede in no workout');
+  await page.click('[data-filter=all]');
   check(repo.has('data/plans.json') && JSON.parse(repo.get('data/plans.json').text).length === 2, 'plans synced');
 
   console.log('New routine by importing text');
@@ -357,19 +393,19 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.click('[data-action=new-routine]');
   await page.click('#modal [data-choice=import]');
   await page.waitForSelector('#imp-text');
-  check((await page.textContent('.title')) === 'Importa un allenamento', 'import opened for a routine');
+  check((await page.textContent('.title')) === 'Importa una scheda', 'import opened for a routine');
   await page.fill('#imp-text', 'Panca piana 4x8 rec 2:30\nCroci ai cavi 3x12\nPlank 3x45s');
   await page.click('[data-action=read]');
   await page.waitForSelector('.imp-day');
   check(!(await page.$('[name=asPlan]')), 'a single routine is not offered as a plan');
   await page.click('[data-action=do-import]');
   await page.waitForSelector('.page-head');
-  check((await page.textContent('#view')).includes('Allenamento'), 'routine imported');
+  check((await page.textContent('#view')).includes('Scheda'), 'routine imported');
   await go('#/plans');
   await page.click('[data-action=new-plan]');
   await page.click('#modal [data-choice=import]');
   await page.waitForSelector('#imp-text');
-  check((await page.textContent('.title')) === 'Importa una scheda', 'import opened for a plan');
+  check((await page.textContent('.title')) === 'Importa un workout', 'import opened for a plan');
 
   console.log('A newer app raised the contract');
   const pr = JSON.parse(repo.get('data/prefs.json').text).map((p) => (p.id === 'contract' ? { ...p, value: 2, updatedAt: Date.now() + 2e9 } : p));
@@ -384,6 +420,135 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForTimeout(500);
   check(repo.get('data/routines.json').sha === routinesSha, 'stops writing when the contract is newer');
   check(Boolean(await page.$('.warn')), 'says to update the app');
+
+
+  console.log('Nothing scrolls sideways on a narrow phone');
+  const overflowAt = async (label) => {
+    const bad = await page.evaluate(() => {
+      const W = window.innerWidth;
+      const out = [];
+      if (document.scrollingElement.scrollWidth > W + 1) out.push(`page ${document.scrollingElement.scrollWidth}px`);
+      for (const el of document.querySelectorAll('body *')) {
+        if (el.closest('.sr') || el.closest('nav.tabs') || !el.getClientRects().length) continue;
+        const cs = getComputedStyle(el);
+        if (cs.position === 'fixed') continue;
+        const scrollsX = /(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
+        const r = el.getBoundingClientRect();
+        const sticksOut = r.right > W + 1 && !el.closest('[style*="transform"]');
+        if (scrollsX || sticksOut) out.push(`${el.tagName.toLowerCase()}.${String(el.className).split(' ').join('.')} ${scrollsX ? 'scrolls' : `ends at ${Math.round(r.right)}px`}`);
+      }
+      return [...new Set(out)].slice(0, 6);
+    });
+    check(bad.length === 0, `${label}: nothing wider than the screen${bad.length ? ` (${bad.join('; ')})` : ''}`);
+  };
+  await page.setViewportSize({ width: 320, height: 700 });
+  const planId = await page.evaluate(() => location.hash);
+  const ids = await page.evaluate(async () => {
+    const db = await new Promise((r) => { const q = indexedDB.open('palestra'); q.onsuccess = () => r(q.result); });
+    const get = (k) => new Promise((r) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => r(q.result || []); });
+    const live = (xs) => xs.filter((x) => !x.deleted);
+    return { r: live(await get('routines'))[0].id, p: live(await get('plans'))[0].id, e: live(await get('exercises')).find((x) => x.type === 'weights').id,
+      c: live(await get('exercises')).find((x) => x.type === 'cardio').id, s: live(await get('sessions'))[0].id };
+  });
+  const routes = ['#/today', '#/routines', '#/plans', `#/plan/${ids.p}`, '#/import', '#/import?for=routine', '#/exercises', `#/exercise/${ids.e}`, `#/exercise/${ids.c}`, '#/exercise/new',
+    '#/gym', '#/history', `#/session/${ids.s}`, `#/routine/${ids.r}`, `#/routine/${ids.r}/edit`, '#/settings',
+    ...['github', 'increase', 'training', 'gym', 'everyday', 'lang', 'backup', 'guide'].map((x) => `#/settings/${x}`)];
+  for (const r of routes) { await go(r); await page.waitForTimeout(120); await overflowAt(r); if (['#/exercises', '#/settings/increase', '#/routines'].includes(r)) await shot(`narrow-${r.replace(/\W+/g, '-')}`); }
+  await go('#/import');
+  await page.fill('#imp-text', `SCHEDA: Una scheda con un nome molto molto lungo per vedere se va a capo\nGIORNO: Un allenamento dal nome lunghissimo che non finisce mai\nPanca piana con bilanciere e fermo al petto 4x8 60 kg rec 2:30\nUnaparolalunghissimasenzaspazichenonfiniscemaieancoraeancora 3x10`);
+  await overflowAt('import text with long lines');
+  await page.click('details.help summary');
+  await overflowAt('import help');
+  await page.click('[data-action=read]');
+  await page.waitForSelector('.imp-day');
+  await overflowAt('import preview');
+  await go('#/exercises');
+  await page.click('[data-action=density]');
+  await overflowAt('compact exercises');
+  await page.click('[data-action=density]');
+  await go('#/gym');
+  await page.click('.zone [data-add-machine]');
+  await page.click('#modal .seg-opt:has(input[value=cardio])');
+  await overflowAt('new machine sheet');
+  await page.keyboard.press('Escape');
+  await go(`#/plan/${ids.p}`);
+  await page.click('[data-action=add-day]');
+  await overflowAt('add routine sheet');
+  await page.keyboard.press('Escape');
+  await go(`#/start/${ids.r}`);
+  await page.waitForTimeout(300);
+  if (await page.$('.inc-row')) { await overflowAt('weekly increase'); await page.click('[data-action=skip]'); }
+  await page.waitForSelector('.w-main');
+  await overflowAt('workout: first step');
+  await shot('narrow-workout');
+  await page.click('[data-action=done]');
+  await page.waitForSelector('.ring');
+  await overflowAt('workout: rest');
+  await page.click('[data-action=end-rest]');
+  await page.waitForTimeout(100);
+  await overflowAt('workout: next step');
+  await page.click('[data-action=end]');
+  await page.click('#confirm [data-confirm=ok]');
+  await page.waitForSelector('.summary');
+  await overflowAt('workout: summary');
+  await page.click('[data-action=close]');
+  console.log('Import into a scheda being edited');
+  const before = await page.evaluate(async (rid) => {
+    const db = await new Promise((r) => { const q = indexedDB.open('palestra'); q.onsuccess = () => r(q.result); });
+    return new Promise((r) => { const q = db.transaction('kv').objectStore('kv').get('routines'); q.onsuccess = () => r(q.result.filter((x) => !x.deleted).length); });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await go(`#/routine/${ids.r}/edit`);
+  const nItems = (await page.$$('.edit-row')).length;
+  await page.click('.two-actions a[href*="into="]');
+  await page.waitForSelector('#imp-text');
+  await page.fill('#imp-text', 'Curl con manubri 3x10 12 kg');
+  await page.click('[data-action=read]');
+  await page.waitForSelector('[data-action=do-import]');
+  check((await page.textContent('[data-action=do-import]')).startsWith('Aggiungi a'), 'import offers to add to the scheda');
+  await page.click('[data-action=do-import]');
+  await page.waitForSelector('[data-form=routine]');
+  check((await page.$$('.edit-row')).length === nItems + 1, 'exercise added to the scheda');
+  const after = await page.evaluate(async () => {
+    const db = await new Promise((r) => { const q = indexedDB.open('palestra'); q.onsuccess = () => r(q.result); });
+    return new Promise((r) => { const q = db.transaction('kv').objectStore('kv').get('routines'); q.onsuccess = () => r(q.result.filter((x) => !x.deleted).length); });
+  });
+  check(after === before, 'no extra scheda left behind');
+
+  console.log('Desktop');
+  await page.setViewportSize({ width: 1280, height: 820 });
+  await go('#/today');
+  await page.waitForTimeout(200);
+  const navW = await page.evaluate(() => document.querySelector('nav.tabs').getBoundingClientRect().width);
+  check(navW > 180 && navW < 280, `sidebar on the left (${Math.round(navW)}px)`);
+  const colsOk = await page.evaluate(() => { const m = document.querySelector('.col-main').getBoundingClientRect(); const s = document.querySelector('.col-side').getBoundingClientRect(); return s.left > m.right - 1 && Math.abs(s.top - m.top) < 4; });
+  check(colsOk, 'Oggi in two columns');
+  await shot('d1-today');
+  await go('#/routines');
+  await page.waitForSelector('.md-pane .title');
+  check(Boolean(await page.$('.lib-row.selected')), 'Schede: list and detail side by side');
+  await page.click('.lib-row:not(.selected)');
+  await page.waitForTimeout(150);
+  check(page.url().includes('sel='), 'picking a scheda keeps the list');
+  await shot('d2-routines');
+  await go(`#/routine/${ids.r}/edit`);
+  await page.waitForSelector('.ex-lib');
+  const n0 = (await page.$$('.edit-row')).length;
+  await page.click('.ex-lib .lib-ex:not(.is-in) [data-lib-add]');
+  await page.waitForTimeout(200);
+  check((await page.$$('.edit-row')).length === n0 + 1, 'library panel adds an exercise');
+  await shot('d3-editor');
+  await go('#/exercises');
+  await page.waitForTimeout(150);
+  const gcols = await page.evaluate(() => getComputedStyle(document.querySelector('.groups')).gridTemplateColumns.split(' ').length);
+  check(gcols >= 2, `exercise groups in a grid (${gcols})`);
+  await shot('d4-exercises');
+  await go('#/history');
+  await shot('d5-history');
+  await go('#/plans');
+  await shot('d6-plans');
+  for (const r of ['#/today', '#/routines', '#/plans', `#/plan/${ids.p}`, '#/exercises', '#/gym', '#/history', `#/routine/${ids.r}/edit`, '#/settings']) { await go(r); await page.waitForTimeout(100); await overflowAt(`desktop ${r}`); }
+  await page.setViewportSize({ width: 390, height: 844 });
 
   console.log('English');
   await go('#/settings/lang');

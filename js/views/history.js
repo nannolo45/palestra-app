@@ -76,7 +76,7 @@ export function historyView(query = {}) {
 
   const html = `<header class="page-head"><div><h1>${esc(t('tab_history'))}</h1>
       <p class="sub">${esc(t('monthSummary', monthName(now), thisMonth.length, minText(monthMin)))}</p></div></header>
-    ${ss.length ? `${progress}<h2 class="section-title">${esc(t('sessionsTitle'))}</h2><div class="card list">${rows}</div>` : empty(t('esHistoryTitle'), t('esHistoryText'))}`;
+    ${ss.length ? `<div class="cols side-first">${progress ? `<aside class="col-side">${progress}</aside>` : ''}<div class="col-main"><h2 class="section-title">${esc(t('sessionsTitle'))}</h2><div class="card list">${rows}</div></div></div>` : empty(t('esHistoryTitle'), t('esHistoryText'))}`;
   return {
     html,
     bind(view) {

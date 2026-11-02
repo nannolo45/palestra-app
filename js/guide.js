@@ -8,9 +8,15 @@ export const GUIDE = {
       'Crea un token per questo telefono: GitHub → Settings → Developer settings → **Fine-grained tokens**. Accesso solo a palestra-data, permesso **Contents: Read and write**, nient\'altro. Chiamalo come il dispositivo.',
       'Apri l\'indirizzo dell\'app in Chrome e scegli **Installa app** (o Aggiungi a schermata Home). Da lì aprila dall\'icona: funziona a schermo intero e offline.',
       'In **Impostazioni → Collegamento GitHub** inserisci utente, repository e token, poi **Salva e sincronizza**.',
-      'Prepara nell\'ordine: zone e macchine, poi esercizi, poi allenamenti.',
+      'Prepara nell\'ordine: zone e macchine, poi esercizi, poi schede, poi un workout.',
     ]],
-    ['La tua palestra', 'La scheda **Palestra** è il percorso della tua palestra: gli allenamenti la usano per farti camminare meno, e durante l\'allenamento ti dice dove andare.', [
+    ['Oggi', 'La prima pagina: il **workout attivo**, cosa ti tocca oggi e cosa hai già fatto in settimana.', [
+      'In alto la scheda di oggi, con l\'ora se l\'hai data, e **▶ Inizia**.',
+      '**Sposta a domani**: se oggi salti, la scheda passa a domani, solo per questa settimana. Everyday la ripianifica.',
+      'Sotto la settimana (fatte, prossima, da fare), l\'ultimo allenamento e il mese.',
+      'Senza un workout attivo vedi le tue schede da iniziare e un invito a crearne uno.',
+    ]],
+    ['La tua palestra', 'In **Esercizi → Palestra** c\'è il percorso della tua palestra: le schede lo usano per farti camminare meno, e durante l\'allenamento ti dice dove andare.', [
       '**Zone**: aggiungi le aree in cui ti sposti, poi **Riordina** e trascinale nell\'ordine in cui le attraversi.',
       '**Macchine**: in ogni zona, con il **numero** scritto sopra (M14, C3), un nome e le **regolazioni** (sedile, schienale, perno).',
       'Più macchine uguali possono essere una sola voce (C1–6).',
@@ -23,25 +29,26 @@ export const GUIDE = {
       'Le **note** sono facoltative: come eseguirlo, cosa ricordare. Le vedi sotto la macchina durante l\'allenamento.',
       'In alto nell\'elenco scegli **Per muscolo** o **Per posto**, e filtra per tipo con i chip.',
     ]],
-    ['Allenamenti', 'Un allenamento è una sequenza di esercizi che ripeti, come Gambe o Full body. La **durata stimata** si calcola da sola ed è quella che usa Everyday.', [
-      'Tocca **+**, dai un nome, poi **Aggiungi esercizio** per ognuno. Toccalo per serie, ripetizioni, peso e recupero.',
+    ['Schede', 'Una **scheda** è una sequenza di esercizi che ripeti, come Gambe o Full body. La **durata stimata** si calcola da sola ed è quella che usa Everyday. Un **allenamento** è una scheda fatta davvero, che finisce nello Storico.', [
+      'Nella pagina **Schede** trovi tutte le tue schede: cerca, filtra (nel workout attivo, in nessun workout) e vedi in quale workout è ognuna.',
+      '**Nuova scheda** o **Importa**: dai un nome, poi **Aggiungi esercizio** per ognuno. Toccalo per serie, ripetizioni, peso e recupero. Accanto a ogni esercizio vedi il peso dell\'ultima volta.',
       'In **Modifica** trascina un esercizio dalla maniglia per cambiare l\'ordine. Il riscaldamento cardio di solito va primo.',
-      'Sempre in Modifica attivi l\'**aumento automatico** per quell\'allenamento.',
+      'Sempre in Modifica attivi l\'**aumento automatico** per quella scheda.',
       'La stima parte da circa 3 secondi a ripetizione e poi usa i tuoi tempi veri, dopo qualche seduta.',
     ]],
-    ['Schede e scheda attiva', 'Una **scheda** è la tua settimana: gli allenamenti che fai, ognuno nel suo giorno. Quella **attiva** è quella che vedi in Allenamenti e che Everyday pianifica.', [
-      'In Allenamenti tocca **Schede**: la scheda attiva è in giallo, le altre restano salvate con il loro storico.',
-      'Apri una scheda per cambiarle nome, ordine dei giorni (trascina) e il **giorno della settimana** di ogni allenamento (L M M G V S D), con un\'**ora** facoltativa: con l\'ora Everyday lo mette in agenda da solo, senza la scegli ogni settimana.',
-      '**Rendi attiva**: scegli se da lunedì (finisci la settimana con quella di prima) o da oggi. Everyday pianifica i nuovi giorni.',
-      'In Allenamenti vedi la settimana: cosa hai fatto, il prossimo, e **Inizia** per partire. Gli allenamenti fuori scheda sono sotto.',
-      '**Esporta .txt** salva la scheda come testo, da condividere o reimportare.',
+    ['Workout e workout attivo', 'Un **workout** è la tua settimana: le schede che fai, ognuna nel suo giorno. Quello **attivo** è quello che vedi in Oggi e che Everyday pianifica.', [
+      'Nella pagina **Workout** quello attivo è in giallo, gli altri restano salvati con il loro storico.',
+      'Apri un workout per cambiargli nome, ordine delle schede (trascina) e il **giorno della settimana** di ognuna (L M M G V S D), con un\'**ora** facoltativa: con l\'ora Everyday la mette in agenda da sola, senza la scegli ogni settimana.',
+      '**Aggiungi scheda** o **Importa** per metterci altre schede. Dalla pagina di una scheda, **Duplica in un altro workout** la copia altrove.',
+      '**Rendi attivo**: scegli se da lunedì (finisci la settimana con quello di prima) o da oggi. Everyday pianifica i nuovi giorni.',
+      '**Esporta .txt** salva il workout come testo, da condividere o reimportare.',
     ]],
-    ['Importare', 'Quando crei una scheda o un allenamento scegli **Importa da testo o file**, oppure vai in **Impostazioni → Importa**: incolla un testo, o scegli un file .txt o .json. Prima vedi un\'anteprima.', [
-      '**SCHEDA:** nome della settimana, **GIORNO:** nome di un allenamento, poi un esercizio per riga.',
+    ['Importare', 'Accanto a **Nuovo workout**, **Nuova scheda** e **Aggiungi esercizio** c\'è **Importa**, e c\'è anche in **Impostazioni → Importa**: incolla un testo, o scegli un file .txt o .json. Prima vedi un\'anteprima.', [
+      '**WORKOUT:** nome della settimana, **SCHEDA:** nome di una scheda (dopo **@** giorno e ora, facoltativi: @ lun 18:00), poi un esercizio per riga. I file vecchi con SCHEDA: e GIORNO: si leggono ancora.',
       'Un esercizio: **Panca piana 4x8 60 kg rec 2:30**. Peso e recupero sono facoltativi. A tempo: **Plank 3x45s**. Cardio: **Ellittica 15 min livello 6**.',
       'L\'attrezzo tra parentesi, se vuoi: (bilanciere), (manubri), (cavi), (macchina). Una riga che inizia con **-** è una nota per l\'esercizio sopra.',
       'Nell\'anteprima: **già tuo** riusa il tuo esercizio con la sua macchina, **nuovo** lo crea, **da controllare** segna un pezzo non capito.',
-      'Puoi salvarla come scheda e renderla attiva subito. I pesi mancanti li scegli alla prima seduta.',
+      'Puoi salvarlo come workout e renderlo attivo subito. I pesi mancanti li scegli alla prima seduta.',
     ]],
     ['Durante l\'allenamento', 'Tocca **▶ Inizia** (o **Apri in Palestra** da un blocco di Everyday). Lo schermo diventa scuro e grande, resta acceso e funziona senza rete.', [
       '**Aumenti della settimana** (prima seduta della settimana, se attivo): togli la spunta a quelli che non vuoi, poi **Conferma e inizia**, o **Inizia con i pesi di prima**.',
@@ -55,7 +62,7 @@ export const GUIDE = {
       'In **Impostazioni → Aumento automatico**: di quanto per tipo (macchine +2,5 kg, bilanciere +2,5, manubri +1, cavi +2,5, corpo libero +1 ripetizione, cardio +1 minuto) e quando.',
       '**Se completo**: sale solo se l\'ultima volta hai fatto tutte le serie. **Sempre**: ogni settimana, chiedendo comunque.',
       'Nella **scheda di un esercizio**: come il suo tipo, un passo tuo, o escluso.',
-      'Si attiva per ogni allenamento in **Modifica**.',
+      'Si attiva per ogni scheda in **Modifica**.',
     ]],
     ['Storico', 'I tuoi progressi e tutte le sedute.', [
       'In alto scegli un esercizio: vedi il carico nel tempo, quanto è cambiato e l\'ultima volta.',
@@ -63,8 +70,8 @@ export const GUIDE = {
     ]],
     ['Everyday', 'Palestra decide **cosa** fai in palestra, Everyday **quando**.', [
       'In Everyday: **Impostazioni → Avanzate → Collegamenti → Palestra**, incolla un token per palestra-data con **Contents: Read and write**.',
-      'Ogni allenamento appare in Everyday come **attività salvata**, con la sua durata stimata: pianificalo come le altre (3 volte a settimana, finestre, andata e ritorno).',
-      'Un blocco di allenamento in Everyday ha **▶ Apri in Palestra**, che apre quell\'allenamento pronto a partire.',
+      'Ogni scheda appare in Everyday come **routine**, con la sua durata stimata. Quelle del workout attivo si ripetono da sole nei loro giorni; le altre le pianifichi a mano.',
+      'Un blocco di allenamento in Everyday ha **▶ Apri in Palestra**, che apre quella scheda pronta a partire.',
       'Alla fine Everyday segna fatto il blocco con l\'ora vera di inizio e fine, e la durata stimata si avvicina a quella reale.',
       'Everyday scrive una sola cosa in Palestra: gli allenamenti pianificati, così vedi **Prossimo: Gambe, gio 18:00**.',
     ]],
@@ -90,7 +97,13 @@ export const GUIDE = {
       'In **Settings → GitHub connection** enter user, repository and token, then **Save and sync**.',
       'Set up in this order: zones and machines, then exercises, then routines.',
     ]],
-    ['Your gym', 'The **Palestra** tab is your gym as a walking route: routines use it so you walk less, and the workout tells you where to go next.', [
+    ['Today', 'The first page: the **active workout**, what\'s on today and what you\'ve done this week.', [
+      'At the top, today\'s routine, with its time if you gave one, and **▶ Start**.',
+      '**Move to tomorrow**: if you skip today, the routine moves to tomorrow, for this week only. Everyday re-plans it.',
+      'Below: the week (done, next, to do), the last session and the month.',
+      'With no active workout you see your routines to start and a nudge to make one.',
+    ]],
+    ['Your gym', '**Exercises → Gym** is your gym as a walking route: routines use it so you walk less, and the workout tells you where to go next.', [
       '**Zones**: add the areas you move between, then **Reorder** and drag them into the order you walk them.',
       '**Machines**: in each zone, with the **number** printed on it (M14, C3), a name and its **settings** (seat, back rest, pin).',
       'Several identical machines can be one entry (C1–6).',
@@ -104,24 +117,25 @@ export const GUIDE = {
       'At the top of the list choose **By muscle** or **By place**, and filter by type with the chips.',
     ]],
     ['Routines', 'A routine is a workout you repeat, like Legs or Full body. Its **estimated length** is worked out for you, and it\'s what Everyday plans with.', [
-      'Tap **+**, give it a name, then **Add exercise** for each one. Tap one for sets, reps, weight and rest.',
+      'The **Routines** page lists them all: search, filter (in the active workout, in no workout) and see which workout uses each.',
+      '**New routine** or **Import**: give it a name, then **Add exercise** for each one. Tap one for sets, reps, weight and rest. Each exercise shows last time\'s weight.',
       'In **Edit**, drag an exercise by its handle to change the order. A cardio warm-up usually goes first.',
       'Also in Edit you switch on the **automatic increase** for that routine.',
       'The estimate starts from about 3 seconds a rep and then uses your real times, after a few sessions.',
     ]],
-    ['Plans and the active plan', 'A **plan** is your week: the routines you do, each on its day. The **active** one is what you see in Routines and what Everyday plans.', [
-      'In Routines tap **Plans**: the active plan is in yellow, the others stay saved with their history.',
-      'Open a plan to change its name, the order of the days (drag) and the **weekday** of each routine (M T W T F S S), with an optional **time**: with a time Everyday puts it in your plan by itself, without one you pick it each week.',
+    ['Workouts and the active workout', 'A **workout** is your week: the routines you do, each on its day. The **active** one is what you see in Today and what Everyday plans.', [
+      'On the **Workouts** page the active one is in yellow, the others stay saved with their history.',
+      '**Add routine** or **Import** to put more routines in. From a routine\'s page, **Duplicate into another workout** copies it elsewhere.',
+      'Open a workout to change its name, the order of the days (drag) and the **weekday** of each routine (M T W T F S S), with an optional **time**: with a time Everyday puts it in your plan by itself, without one you pick it each week.',
       '**Make active**: choose from Monday (finish the week with the old one) or from today. Everyday plans the new days.',
-      'Routines shows the week: what you did, the next one, and **Start**. Routines outside the plan are below.',
-      '**Export .txt** saves the plan as text, to share or import again.',
+      '**Export .txt** saves the workout as text, to share or import again.',
     ]],
-    ['Importing', 'When you create a plan or a routine choose **Import from text or a file**, or go to **Settings → Import**: paste text, or pick a .txt or .json file. You see a preview first.', [
-      '**PLAN:** the week\'s name, **DAY:** a routine\'s name, then one exercise per line.',
+    ['Importing', 'Next to **New workout**, **New routine** and **Add exercise** there\'s **Import**, and it\'s also in **Settings → Import**: paste text, or pick a .txt or .json file. You see a preview first.', [
+      '**WORKOUT:** the week\'s name, **ROUTINE:** a routine\'s name (after **@** an optional day and time: @ mon 18:00), then one exercise per line. Older files with PLAN: and DAY: still read.',
       'An exercise: **Bench press 4x8 60 kg rest 2:30**. Weight and rest are optional. Timed: **Plank 3x45s**. Cardio: **Elliptical 15 min level 6**.',
       'Equipment in brackets if you like: (barbell), (dumbbells), (cables), (machine). A line starting with **-** is a note for the exercise above.',
       'In the preview: **yours** reuses your exercise and its machine, **new** creates it, **check** marks a bit it didn\'t understand.',
-      'You can save it as a plan and make it active straight away. Missing weights are picked in the first session.',
+      'You can save it as a workout and make it active straight away. Missing weights are picked in the first session.',
     ]],
     ['During the workout', 'Tap **▶ Start** (or **Open in Palestra** on an Everyday block). The screen turns dark and large, stays on and works without signal.', [
       '**This week\'s increases** (first session of the week, if on): untick any you don\'t want, then **Confirm and start**, or **Start with the old weights**.',
@@ -143,7 +157,7 @@ export const GUIDE = {
     ]],
     ['Everyday', 'Palestra decides **what** you do at the gym, Everyday **when**.', [
       'In Everyday: **Settings → Advanced → Connections → Palestra**, paste a token for palestra-data with **Contents: Read and write**.',
-      'Each routine shows in Everyday as a **saved task**, with its estimated length: plan it like any other (3 times a week, windows, trips there and back).',
+      'Each routine shows in Everyday as a **routine**, with its estimated length. The active workout\'s ones repeat on their days by themselves; plan the others by hand.',
       'A workout block in Everyday has **▶ Open in Palestra**, which opens that routine ready to start.',
       'At the end Everyday ticks the block with the real start and end, and the estimate gets closer to the real length.',
       'Everyday writes only one thing to Palestra: the planned workouts, so you see **Next: Legs, Thu 18:00**.',

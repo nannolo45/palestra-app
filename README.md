@@ -55,8 +55,8 @@ Unknown fields are kept on every write.
 | `data/exercises.json` | an exercise | `name`, `type` (`weights`/`bodyweight`/`cardio`), `equipment` (`machine`/`barbell`/`dumbbell`/`cable`), `machineId`, `placeId`, `muscles`, `defaultRest`, `notes`, `timed`, `cardio: {kind, targets}`, `increase: {mode: type/custom/off, step}` |
 | `data/routines.json` | a routine | `name`, `items: [{exerciseId, sets, reps` or `seconds, weight, rest, targets}]`, `restBetween`, `estMinutes`, `autoIncrease`, `increaseWeek` |
 | `data/sessions/YYYY-MM.json` | a workout done | `routineId`, `start`, `end` (ms), `minutes` (without pauses), `sets: [{exerciseId, n, reps, weight, seconds, targets, distance, dur, restTaken, restPlanned}]`, `breakdown: {work, rest, walk, pause}` (s), `outcome` (`done`/`partial`), `everydayBlockId` |
-| `data/plans.json` | a weekly plan (scheda) | `name`, `note`, `days: [{routineId, weekday, time?}]` (0 = Monday … 6 = Sunday, or `null`; `time` "HH:MM") |
-| `data/prefs.json` | a setting, `{id, value}` | `contract` (the contract version, `1`), `activePlan` (read by Everyday, below), `increase`, `training`, `gymName`; and `planned`, written by Everyday |
+| `data/plans.json` | a weekly plan (a **workout** in the app since v9) | `name`, `note`, `days: [{routineId, weekday, time?}]` (0 = Monday … 6 = Sunday, or `null`; `time` "HH:MM") |
+| `data/prefs.json` | a setting, `{id, value}` | `contract` (the contract version, `1`), `activePlan` and `moves` (read by Everyday, below), `increase`, `training`, `gymName`; and `planned`, written by Everyday |
 
 ### Data contract with Everyday (v1)
 
@@ -69,6 +69,12 @@ rewritten in full on each sync with the next 14 days.
 
 The contract version is the prefs record `{id: "contract", value: 1}`, as in Ricette. A higher value than the app
 knows makes it keep reading but stop writing until it's updated. Changing a listed field means contract v2.
+
+**Names (v9).** In the app a routine is a **scheda** (EN: routine) and a plan is a **workout** (EN: workout); a session done is an **allenamento**. The data keeps the old keys (`routines`, `plans`, `sessions`), so the contract doesn't change.
+
+**Moves** (prefs record `moves`, proposed for Everyday): `[{routineId, from: "YYYY-MM-DD", to: "YYYY-MM-DD"}]`, written by *Sposta a domani* on Oggi. Only the current week's moves are kept. For that week the routine's day is `to` instead of its weekday in `activePlan`.
+
+**Text import.** `WORKOUT:` names the plan, `SCHEDA:` (or `ROUTINE:`) starts a routine, optionally `@ lun 18:00`. A file with `GIORNO:`/`DAY:` lines and no `WORKOUT:` is read the old way (`SCHEDA:` = plan name).
 
 **Active plan** (prefs record `activePlan`, read by Everyday): `{planId, name, from: "YYYY-MM-DD", days: [{routineId, weekday, time?}], previous?}`. `time` ("HH:MM") is optional: with
 it Everyday places the routine at that time every week; without it, the person picks the time each week in Everyday.

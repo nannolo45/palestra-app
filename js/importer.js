@@ -29,8 +29,10 @@ export function parseImport(text) {
 }
 
 // ---- plain text ----
-// SCHEDA: name            the plan (optional)
-// GIORNO: name            starts a routine (also DAY:, ALLENAMENTO:, WORKOUT:)
+// WORKOUT: name           the week's plan (optional; also PLAN:, PIANO:)
+// SCHEDA: name            starts a routine (also ROUTINE:, GIORNO:, DAY:, ALLENAMENTO:)
+//   Files written before v9 used SCHEDA: for the plan and GIORNO: for the days. When a file has GIORNO:/DAY:
+//   lines and no WORKOUT: line, SCHEDA: is still read as the plan's name, so old files import the same.
 // Panca piana 4x8 60 kg rec 2:30     sets x reps, weight, rest (rec/rest/recupero: 2:30, 90s, 2 min)
 // Plank 3x45s             timed
 // Ellittica 15 min livello 6         cardio with targets
@@ -115,16 +117,19 @@ export function parseText(text) {
   const exByKey = new Map();
   let routine = null; let lastEx = null; let planName = ''; let planNote = '';
   const lines = String(text).replace(/\r/g, '').split('\n');
+  const oldStyle = lines.some((l) => /^\s*(giorno|day)\s*\d*\s*:/i.test(l)) && !lines.some((l) => /^\s*(workout|plan|piano)\s*:/i.test(l));
+  const planRe = oldStyle ? /^(scheda|plan|piano)\s*:\s*(.+)$/i : /^(workout|plan|piano)\s*:\s*(.+)$/i;
+  const dayRe = oldStyle ? /^(giorno|day|allenamento|routine)\s*\d*\s*:\s*(.+)$/i : /^(scheda|routine|giorno|day|allenamento)\s*\d*\s*:\s*(.+)$/i;
   lines.forEach((rawLine, i) => {
     const line = rawLine.trim();
     if (!line || line.startsWith('#')) return;
-    let m = line.match(/^(scheda|plan|piano)\s*:\s*(.+)$/i);
+    let m = line.match(planRe);
     if (m) { planName = m[2].trim(); return; }
     m = line.match(/^(note?|nota)\s*:\s*(.*)$/i);
     if (m && !routine) { planNote = m[2].trim(); return; }
-    m = line.match(/^(giorno|day|allenamento|workout)\s*\d*\s*:\s*(.+)$/i);
+    m = line.match(dayRe);
     if (m) {
-      // "GIORNO: Gambe @ ven 18:00": weekday and time are optional
+      // "SCHEDA: Gambe @ ven 18:00": weekday and time are optional
       const [name, when = ''] = m[2].split('@');
       routine = { name: name.trim(), items: [], autoIncrease: true };
       const wd = WEEKDAY_WORDS.findIndex((re) => re.test(when));
@@ -139,7 +144,7 @@ export function parseText(text) {
       else issues.push({ line: i + 1, text: line, reason: 'noteWithoutExercise' });
       return;
     }
-    if (!routine) { routine = { name: planName || 'Allenamento', items: [], autoIncrease: true }; data.routines.push(routine); }
+    if (!routine) { routine = { name: planName || 'Scheda', items: [], autoIncrease: true }; data.routines.push(routine); }
     const p = parseLine(line);
     if (!p.name) { issues.push({ line: i + 1, text: line, reason: 'noName' }); return; }
     if (p.sets == null && p.duration == null) { issues.push({ line: i + 1, text: line, reason: 'noSets' }); return; }
@@ -258,7 +263,7 @@ export function runImport(data, { asPlan = true } = {}) {
       const time = r._time ?? r.time;
       return { routineId, weekday: Number.isInteger(wd) ? wd : given ? null : weekdays[i], ...(typeof time === 'string' && /^\d{2}:\d{2}$/.test(time) ? { time } : {}) };
     });
-    const p = upsert('plans', { id: uid(), name: String(data.plan.name || '').trim() || 'Scheda', note: data.plan.note || '', days }, { silent: true });
+    const p = upsert('plans', { id: uid(), name: String(data.plan.name || '').trim() || 'Workout', note: data.plan.note || '', days }, { silent: true });
     planId = p.id;
   }
   return { ...plan, created, planId };
