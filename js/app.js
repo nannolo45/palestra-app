@@ -2,8 +2,8 @@
 import './sortable.js';
 import { state, load, onChange, COLLECTIONS } from './store.js';
 import { t, getLang } from './i18n.js';
-import { route, renderTabs, setActiveTab, paint } from './shell.js';
-import { syncNow, isConfigured } from './sync.js';
+import { route, renderTabs, setActiveTab, paint, placeTopActions, paintNavSync } from './shell.js';
+import { syncNow, isConfigured, isSyncing } from './sync.js';
 import { isDragging } from './sortable.js';
 import { routinesView, routineView, routineEditView } from './views/routines.js';
 import { todayView } from './views/today.js';
@@ -64,7 +64,8 @@ export function render() {
   document.body.classList.toggle('mode-workout', dark);
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#141518' : '#F5F4F0');
   setActiveTab(r.name);
-  paint(view, resumeBanner(r) + current.html, (v) => current.bind?.(v));
+  paint(view, resumeBanner(r) + current.html, (v) => { current.bind?.(v); placeTopActions(v); });
+  paintNavSync(isSyncing());
 }
 
 // Redraw after data changes, unless the person is in the middle of something.

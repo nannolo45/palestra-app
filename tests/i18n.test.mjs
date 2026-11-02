@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { DICTS } from '../js/i18n.js';
-import { GUIDE } from '../js/guide.js';
+import { GUIDE, shotNames } from '../js/guide.js';
+import { existsSync } from 'node:fs';
 
 function files(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((d) => (d.isDirectory() ? files(join(dir, d.name)) : d.name.endsWith('.js') ? [join(dir, d.name)] : []));
@@ -42,4 +43,12 @@ test('the version shown in Settings matches the offline cache version', () => {
   const app = readFileSync('js/views/settings.js', 'utf8').match(/APP_VERSION = '(v\d+)'/)[1];
   assert.equal(sw, app);
   assert.match(readFileSync('CHANGELOG.md', 'utf8'), new RegExp(`\\| ${app} \\|`));
+});
+
+test('every screenshot the guide shows exists, for the phone and the desktop', () => {
+  for (const device of ['phone', 'desktop']) {
+    const names = shotNames(device);
+    assert.ok(names.length > 8);
+    for (const n of names) assert.ok(existsSync(`guide/${device}/${n}.jpg`), `guide/${device}/${n}.jpg (run node tests/guide-shots.cjs)`);
+  }
 });

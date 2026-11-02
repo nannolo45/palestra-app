@@ -53,7 +53,7 @@ export function plansView() {
       <div><h1>${esc(t('plansTitle'))}</h1><p class="sub">${esc(a ? t('activeIs', a.plan.name) : t('noActivePlanShort'))}</p></div>
       <div class="head-actions"><a class="round-btn only-narrow" href="#/settings" aria-label="${esc(t('settings'))}">${icon('gear')}</a></div>
     </header>
-    <div class="two-actions"><button type="button" class="btn primary" data-action="new-plan">${icon('plus', 18)}${esc(t('newPlan'))}</button><a class="btn" href="#/import?for=plan">${icon('book', 18)}${esc(t('importShort'))}</a></div>
+    <div class="two-actions" data-top-actions><button type="button" class="btn primary" data-action="new-plan">${icon('plus', 18)}${esc(t('newPlan'))}</button><a class="btn" href="#/import?for=plan">${icon('book', 18)}${esc(t('importShort'))}</a></div>
     <p class="lead">${esc(t('plansIntro'))}</p>
     ${all.length ? `<div class="stack">
       ${active ? card(active, true) : `<div class="card plain-note">${esc(t('noActivePlan'))}</div>`}

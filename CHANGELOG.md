@@ -5,6 +5,7 @@ Phones download the new version in the background and show the *Aggiorna* bar.
 
 | Version | What changed |
 |---|---|
+| v10 | Desktop like Ricette and Everyday: tabs, page actions, sync and the settings gear in a top bar. The guide comes in a phone and a desktop version, with screenshots of each (made by tests/guide-shots.cjs) |
 | v9 | New names: a day's list is a **scheda**, the week is a **workout**. Five tabs: Oggi, Workout, Schede, Esercizi (with Palestra), Storico. Sposta a domani, Duplica in un altro workout, last weights in a scheda, Importa beside every Nuovo. Desktop: sidebar, two columns, master-detail, exercise library beside the editor. Text import reads WORKOUT: and SCHEDA: (old files still work) |
 | v8 | Nothing scrolls sideways: filters, headers and steppers wrap; the import text wraps long lines |
 | v7 | Exercise list: compact view, collapsible groups, filters on one row, no repeated type line |

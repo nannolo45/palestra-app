@@ -9,11 +9,12 @@ import { syncStatus } from '../shell.js';
 import { syncNow, isSyncing, isConfigured, testConnection, clearFileCache, CONTRACT } from '../sync.js';
 import { training, increaseSettings, refreshEstimates } from '../data.js';
 import { INCREASE_STEP, plannedAhead } from '../model.js';
-import { GUIDE } from '../guide.js';
+import { GUIDE, chapterFor } from '../guide.js';
+import { isWide } from '../shell.js';
 import { activeInfo } from '../plans.js';
 
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
-export const APP_VERSION = 'v9';
+export const APP_VERSION = 'v10';
 const VERSION = APP_VERSION;
 
 function statusCard() {
@@ -216,10 +217,18 @@ const SUB = {
 
   guide() {
     const chapters = GUIDE[getLang()] || GUIDE.it;
-    const body = `<div class="stack tight guide">${chapters.map(([title, intro, steps], i) => `<details class="card guide-ch" ${i === 0 ? 'open' : ''}>
-        <summary><span class="num-dot ink">${i + 1}</span><span class="row-title">${esc(title)}</span>${icon('down', 18, 'class="chev"')}</summary>
-        <div class="guide-body"><p>${bold(intro)}</p>${steps && steps.length ? `<ol>${steps.map((s) => `<li>${bold(s)}</li>`).join('')}</ol>` : ''}</div>
-      </details>`).join('')}</div>`;
+    // the version for the screen it's opened on: phone (bottom tabs) or desktop (top bar)
+    const device = isWide() ? 'desktop' : 'phone';
+    const shot = ([name, caption]) => `<figure class="guide-shot ${device}"><img src="guide/${device}/${name}.jpg" alt="${esc(caption)}" loading="lazy" decoding="async"><figcaption>${esc(caption)}</figcaption></figure>`;
+    const body = `<p class="guide-device">${icon(device === 'desktop' ? 'rows' : 'list', 16)}${esc(t(device === 'desktop' ? 'guideDesktop' : 'guidePhone'))}</p>
+      <div class="stack tight guide">${chapters.map((raw, i) => {
+    const ch = chapterFor(raw, device);
+    return `<details class="card guide-ch" ${i === 0 ? 'open' : ''}>
+        <summary><span class="num-dot ink">${i + 1}</span><span class="row-title">${esc(ch.title)}</span>${icon('down', 18, 'class="chev"')}</summary>
+        <div class="guide-body"><p>${bold(ch.intro)}</p>${ch.steps.length ? `<ol>${ch.steps.map((x) => `<li>${bold(x)}</li>`).join('')}</ol>` : ''}
+          ${ch.shots.length ? `<div class="guide-shots">${ch.shots.map(shot).join('')}</div>` : ''}</div>
+      </details>`;
+  }).join('')}</div>`;
     return page(t('set_guide'), body, () => {}, t('guideIntro'));
   },
 };

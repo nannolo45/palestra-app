@@ -22,8 +22,6 @@ export const TAB_OF = {
 
 export function renderTabs() {
   for (const a of document.querySelectorAll('nav.tabs a[data-tab]')) a.querySelector('.label').textContent = a.dataset.tab === 'settings' ? t('settings') : t(`tab_${a.dataset.tab}`);
-  const gym = document.querySelector('nav.tabs .label-gym');
-  if (gym) gym.textContent = t('gymTab');
   const nav = document.querySelector('nav.tabs');
   if (nav) nav.setAttribute('aria-label', t('mainNav'));
 }
@@ -78,3 +76,27 @@ export function go(hash) {
 
 /** The desktop layout (sidebar, two columns, master-detail) from 960px. */
 export const isWide = () => typeof matchMedia === 'function' && matchMedia('(min-width: 960px)').matches;
+
+/** The desktop top bar's sync pill (the phone shows it on Oggi). */
+export function paintNavSync(syncing) {
+  const el = document.getElementById('nav-sync');
+  if (!el) return;
+  const st = syncStatus(syncing);
+  el.className = `nav-sync st-${st}`;
+  el.querySelector('.nav-sync-text').textContent = t(`st_${st}`);
+}
+
+/**
+ * On a wide screen a page's main actions (Nuova scheda · Importa) sit in the top bar, as in Ricette and Everyday.
+ * The nodes are moved, not copied, so the listeners the view bound stay on them.
+ */
+export function placeTopActions(view) {
+  const slot = document.getElementById('nav-actions');
+  if (!slot) return;
+  slot.replaceChildren();
+  if (!isWide()) return;
+  const src = view.querySelector('[data-top-actions]');
+  if (!src) return;
+  slot.append(...src.children);
+  src.remove();
+}

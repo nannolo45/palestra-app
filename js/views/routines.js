@@ -64,7 +64,7 @@ export function routinesView(query = {}) {
       <div><h1>${esc(t('tab_routines'))}</h1><p class="sub">${esc(t('nRoutines', all.length))}</p></div>
       <div class="head-actions"><a class="round-btn only-narrow" href="#/settings" aria-label="${esc(t('settings'))}">${icon('gear')}</a></div>
     </header>
-    <div class="two-actions"><button type="button" class="btn primary" data-action="new-routine">${icon('plus', 18)}${esc(t('newRoutine'))}</button><a class="btn" href="#/import?for=routine">${icon('book', 18)}${esc(t('importShort'))}</a></div>`;
+    <div class="two-actions" data-top-actions><button type="button" class="btn primary" data-action="new-routine">${icon('plus', 18)}${esc(t('newRoutine'))}</button><a class="btn" href="#/import?for=routine">${icon('book', 18)}${esc(t('importShort'))}</a></div>`;
   const listHtml = all.length ? `<div class="lib-tools">
       <label class="search"><span class="sr">${esc(t('searchRoutine'))}</span>${icon('search', 18)}<input id="lib-q" type="search" placeholder="${esc(t('searchRoutine'))}" autocomplete="off"></label>
       <div class="filter-row">${filters.map(([k, l]) => `<button type="button" class="chip-btn${filter === k ? ' on' : ''}" data-filter="${k}" aria-pressed="${filter === k}">${esc(l)}</button>`).join('')}</div>

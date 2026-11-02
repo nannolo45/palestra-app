@@ -99,3 +99,9 @@ Phones only fetch new files when `sw.js` changes: they download the new version 
 npm test        # model, workout timing, translations (Node 20+)
 npm run e2e     # the whole app in Chromium with a fake GitHub and a controlled clock (needs Playwright)
 ```
+
+## Guide screenshots
+
+The guide (Settings → Guida) has a phone version and a desktop version, chosen by the screen it's opened on, each with
+screenshots of that layout in `guide/phone/` and `guide/desktop/`. They're taken from the real app with a sample gym:
+`node tests/guide-shots.cjs`. Run it again after a visible change; a unit test checks every screenshot the guide names exists.

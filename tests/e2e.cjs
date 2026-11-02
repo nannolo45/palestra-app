@@ -481,7 +481,8 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('.w-main');
   await overflowAt('workout: first step');
   await shot('narrow-workout');
-  await page.click('[data-action=done]');
+  await page.clock.runFor(500); // let the page's frames run before clicking below the fold
+  await (await page.$('[data-action=done]')).click();
   await page.waitForSelector('.ring');
   await overflowAt('workout: rest');
   await page.click('[data-action=end-rest]');
@@ -519,13 +520,19 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.setViewportSize({ width: 1280, height: 820 });
   await go('#/today');
   await page.waitForTimeout(200);
-  const navW = await page.evaluate(() => document.querySelector('nav.tabs').getBoundingClientRect().width);
-  check(navW > 180 && navW < 280, `sidebar on the left (${Math.round(navW)}px)`);
+  const nav = await page.evaluate(() => { const r = document.querySelector('nav.tabs').getBoundingClientRect(); return { top: r.top, h: r.height, w: r.width }; });
+  check(nav.top === 0 && nav.h < 80 && nav.w === 1280, `tabs in a top bar, as in Ricette and Everyday (${JSON.stringify(nav)})`);
+  const gear = await page.evaluate(() => { const r = document.querySelector('nav.tabs .nav-gear').getBoundingClientRect(); return r.right > 1180 && r.top < 64; });
+  check(gear, 'settings gear at the top right');
   const colsOk = await page.evaluate(() => { const m = document.querySelector('.col-main').getBoundingClientRect(); const s = document.querySelector('.col-side').getBoundingClientRect(); return s.left > m.right - 1 && Math.abs(s.top - m.top) < 4; });
   check(colsOk, 'Oggi in two columns');
   await shot('d1-today');
   await go('#/routines');
   await page.waitForSelector('.md-pane .title');
+  check(Boolean(await page.$('#nav-actions [data-action=new-routine]')) && !(await page.$('#view [data-top-actions]')), 'Nuova scheda · Importa moved to the top bar');
+  await page.click('#nav-actions [data-action=new-routine]');
+  check(Boolean(await page.$('#modal[open] [data-choice]')), 'the moved button still works');
+  await page.keyboard.press('Escape');
   check(Boolean(await page.$('.lib-row.selected')), 'Schede: list and detail side by side');
   await page.click('.lib-row:not(.selected)');
   await page.waitForTimeout(150);
@@ -548,7 +555,18 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await go('#/plans');
   await shot('d6-plans');
   for (const r of ['#/today', '#/routines', '#/plans', `#/plan/${ids.p}`, '#/exercises', '#/gym', '#/history', `#/routine/${ids.r}/edit`, '#/settings']) { await go(r); await page.waitForTimeout(100); await overflowAt(`desktop ${r}`); }
+  await go('#/settings/guide');
+  await page.waitForTimeout(150);
+  const dsrc = await page.$$eval('.guide-shot img', (xs) => xs.map((x) => x.getAttribute('src')));
+  check(dsrc.length > 10 && dsrc.every((x) => x.startsWith('guide/desktop/')), `guide on a computer shows desktop screenshots (${dsrc.length})`);
+  await shot('d7-guide');
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(200);
+  check(!(await page.$('#nav-actions [data-action]')), 'top bar actions cleared on the phone');
+  const psrc = await page.$$eval('.guide-shot img', (xs) => xs.map((x) => x.getAttribute('src')));
+  check(psrc.length > 10 && psrc.every((x) => x.startsWith('guide/phone/')), `guide on a phone shows phone screenshots (${psrc.length})`);
+  await go('#/routines');
+  check(Boolean(await page.$('#view .two-actions [data-action=new-routine]')), 'on the phone the actions stay in the page');
 
   console.log('English');
   await go('#/settings/lang');
