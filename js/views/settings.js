@@ -12,7 +12,9 @@ import { INCREASE_STEP, plannedAhead } from '../model.js';
 import { activeInfo } from '../plans.js';
 
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
-export const APP_VERSION = 'v13';
+import { themeChoice, systemDark, setTheme } from '../theme.js';
+
+export const APP_VERSION = 'v14';
 const VERSION = APP_VERSION;
 
 function statusCard() {
@@ -53,6 +55,7 @@ export function settingsView(sub) {
   const html = `<header class="bar">${backLink('#/today', t('tab_today'))}</header>
     <h1 class="title">${esc(t('settings'))}</h1>
     ${statusCard()}
+    ${aspectCard()}
     <nav class="card list settings-list" aria-label="${esc(t('settings'))}">
       ${rows.map(([k, ic, title, sub2]) => `<a class="row list-row" href="${k === 'plans' ? '#/plans' : k === 'import' ? '#/import' : k === 'guide' ? guideHref() : `#/settings/${k}`}">
         <span class="icon-tile" aria-hidden="true">${icon(ic)}</span>
@@ -62,8 +65,22 @@ export function settingsView(sub) {
   return { html, bind: bindStatus };
 }
 
+/** Aspetto: Automatico (like the device), Chiaro, Scuro. */
+function aspectCard() {
+  const cur = themeChoice();
+  const opt = (k, ic, label, sub) => `<button type="button" class="theme-opt${cur === k ? ' on' : ''}" data-theme-choice="${k}" aria-pressed="${cur === k}">${icon(ic, 22)}<b>${esc(label)}</b><small>${esc(sub)}</small></button>`;
+  const hint = cur === 'auto' ? t('themeAutoHint', systemDark() ? t('themeNowDark') : t('themeNowLight')) : cur === 'dark' ? t('themeDarkHint') : t('themeLightHint');
+  return `<section class="card aspect-card" aria-labelledby="aspect-title">
+    <h2 id="aspect-title">${esc(t('appearance'))}</h2>
+    <div class="theme-opts" role="group" aria-labelledby="aspect-title">${opt('auto', 'half', t('themeAuto'), t('themeAutoSub'))}${opt('light', 'sun', t('themeLight'), t('themeAlways'))}${opt('dark', 'moon', t('themeDark'), t('themeAlways'))}</div>
+    <p class="muted small">${esc(hint)}</p>
+    <p class="aspect-foot small">${esc(t('workoutAlwaysDark'))}</p>
+  </section>`;
+}
+
 function bindStatus(view) {
   view.querySelector('[data-action=sync]')?.addEventListener('click', () => syncNow());
+  view.querySelectorAll('[data-theme-choice]').forEach((b) => b.addEventListener('click', () => setTheme(b.dataset.themeChoice)));
 }
 
 function page(title, body, bind = () => {}, intro = '') {

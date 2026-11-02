@@ -1,6 +1,6 @@
 # Builds guide-en.html and guide-it.html from docs/guide/*.md (run: python3 docs/guide/build.py)
 # Copied from Everyday's build (see the handover "user guides and the settings gear"); changed: the app name, the
-# colours in the first two CSS lines, and the paths (Palestra's files sit at the top of the repository, not in app/).
+# colours in the first CSS lines (and the app's own Chiaro/Scuro choice, which the guide follows), and the paths (Palestra's files sit at the top of the repository, not in app/).
 # Two extra steps before building, both optional:
 #   --desk DIR   turns the computer screenshots in DIR/<lang>/*.png into guide/<lang>/desk/*.webp (quality 82)
 #   phone PNGs are re-saved with a 256-colour palette when they aren't already, which makes them about three times smaller
@@ -24,8 +24,9 @@ for f in sorted((app / 'guide').glob('*/*.png')):
         im.convert('RGB').quantize(256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(f, optimize=True)
 
 CSS = """
-:root{color-scheme:light dark;--bg:#F5F4F0;--ink:#17181B;--muted:#5E6066;--line:#E2E0DA;--acc:#7A5A00;--card:#FFFFFF}
-@media(prefers-color-scheme:dark){:root{--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}}
+:root{color-scheme:light;--bg:#F5F4F0;--ink:#17181B;--muted:#5E6066;--line:#E2E0DA;--acc:#7A5A00;--card:#FFFFFF}
+html[data-theme=dark]{color-scheme:dark;--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}
+@media(prefers-color-scheme:dark){html:not([data-theme=light]){color-scheme:dark;--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 main{max-width:720px;margin:0 auto;padding:16px 18px 60px}
 h1{font-family:Georgia,serif;font-size:1.9rem;margin:.4em 0}h2{font-family:Georgia,serif;margin-top:2em;border-top:1px solid var(--line);padding-top:1em}
@@ -47,7 +48,7 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 .zoom{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:2vw;cursor:zoom-out}
 .zoom img{max-width:100%;max-height:100%;width:auto;margin:0;border:0;box-shadow:none;cursor:zoom-out}
 """
-HEAD_JS = "(function(){var m;try{m=localStorage.getItem('guideMode')}catch(e){}var w=innerWidth,d=m?m==='desk':w>=1000||(w>=700&&matchMedia('(pointer:fine)').matches);if(d)document.documentElement.classList.add('desk')})()"
+HEAD_JS = "(function(){var m,t;try{m=localStorage.getItem('guideMode');t=localStorage.getItem('palestraTheme')}catch(e){}if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;var w=innerWidth,d=m?m==='desk':w>=1000||(w>=700&&matchMedia('(pointer:fine)').matches);if(d)document.documentElement.classList.add('desk')})()"
 BODY_JS = """<script>
 document.addEventListener('click',function(e){var z=document.querySelector('.zoom');if(z){z.remove();return;}var i=e.target.closest('main img');if(!i)return;var d=document.createElement('div');d.className='zoom';var b=document.createElement('img');b.src=i.currentSrc||i.src;b.alt=i.alt;d.appendChild(b);document.body.appendChild(d);});
 function setMode(m,keep){document.documentElement.classList.toggle('desk',m==='desk');document.querySelectorAll('.mode button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.mode===m));});if(keep){try{localStorage.setItem('guideMode',m)}catch(e){}}}

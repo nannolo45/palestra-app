@@ -10,7 +10,7 @@ const SHOTS = path.join(__dirname, 'shots');
 fs.mkdirSync(SHOTS, { recursive: true });
 
 // ---- static server ----
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff': 'font/woff' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff': 'font/woff', '.webp': 'image/webp' };
 function serve() {
   return new Promise((resolve) => {
     const srv = http.createServer((req, res) => {
@@ -452,7 +452,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   });
   const routes = ['#/today', '#/routines', '#/plans', `#/plan/${ids.p}`, '#/import', '#/import?for=routine', '#/exercises', `#/exercise/${ids.e}`, `#/exercise/${ids.c}`, '#/exercise/new',
     '#/gym', '#/history', `#/session/${ids.s}`, `#/routine/${ids.r}`, `#/routine/${ids.r}/edit`, '#/settings',
-    ...['github', 'increase', 'training', 'gym', 'everyday', 'lang', 'backup', 'guide'].map((x) => `#/settings/${x}`)];
+    ...['github', 'increase', 'training', 'gym', 'everyday', 'lang', 'backup'].map((x) => `#/settings/${x}`)];
   for (const r of routes) { await go(r); await page.waitForTimeout(120); await overflowAt(r); if (['#/exercises', '#/settings/increase', '#/routines'].includes(r)) await shot(`narrow-${r.replace(/\W+/g, '-')}`); }
   await go('#/import');
   await page.fill('#imp-text', `SCHEDA: Una scheda con un nome molto molto lungo per vedere se va a capo\nGIORNO: Un allenamento dal nome lunghissimo che non finisce mai\nPanca piana con bilanciere e fermo al petto 4x8 60 kg rec 2:30\nUnaparolalunghissimasenzaspazichenonfiniscemaieancoraeancora 3x10`);
@@ -522,7 +522,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForTimeout(200);
   const nav = await page.evaluate(() => { const r = document.querySelector('nav.tabs').getBoundingClientRect(); return { top: r.top, h: r.height, w: r.width }; });
   check(nav.top === 0 && nav.h < 80 && nav.w === 1280, `tabs in a top bar, as in Ricette and Everyday (${JSON.stringify(nav)})`);
-  const gear = await page.evaluate(() => { const r = document.querySelector('nav.tabs .nav-gear').getBoundingClientRect(); return r.right > 1180 && r.top < 64; });
+  const gear = await page.evaluate(() => { const r = document.querySelector('#gear').getBoundingClientRect(); return r.right > 1180 && r.top < 64; });
   check(gear, 'settings gear at the top right');
   const colsOk = await page.evaluate(() => { const m = document.querySelector('.col-main').getBoundingClientRect(); const s = document.querySelector('.col-side').getBoundingClientRect(); return s.left > m.right - 1 && Math.abs(s.top - m.top) < 4; });
   check(colsOk, 'Oggi in two columns');
@@ -555,25 +555,79 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await go('#/plans');
   await shot('d6-plans');
   for (const r of ['#/today', '#/routines', '#/plans', `#/plan/${ids.p}`, '#/exercises', '#/gym', '#/history', `#/routine/${ids.r}/edit`, '#/settings']) { await go(r); await page.waitForTimeout(100); await overflowAt(`desktop ${r}`); }
-  await go('#/settings/guide');
+  await go('#/settings');
   await page.waitForTimeout(150);
-  const dsrc = await page.$$eval('.guide-shot img', (xs) => xs.map((x) => x.getAttribute('src')));
-  check(dsrc.length > 10 && dsrc.every((x) => x.startsWith('guide/desktop/')), `guide on a computer shows desktop screenshots (${dsrc.length})`);
-  await shot('d7-guide');
+  check(await page.evaluate(() => document.getElementById('gear').classList.contains('active')), 'the gear is filled on Settings');
+  check((await page.textContent('#gear-label')) === 'Impostazioni' && await page.isVisible('#gear-label'), 'on a wide screen the gear says Impostazioni');
+  check((await page.getAttribute('#gear', 'aria-label')) === 'Impostazioni', 'the gear has a translated label');
+  await go('#/today');
+  check(!(await page.evaluate(() => document.getElementById('gear').classList.contains('active'))), 'the gear is plain elsewhere');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(200);
   check(!(await page.$('#nav-actions [data-action]')), 'top bar actions cleared on the phone');
-  const psrc = await page.$$eval('.guide-shot img', (xs) => xs.map((x) => x.getAttribute('src')));
-  check(psrc.length > 10 && psrc.every((x) => x.startsWith('guide/phone/')), `guide on a phone shows phone screenshots (${psrc.length})`);
+  console.log('Dark theme');
+  await go('#/settings');
+  check((await page.getAttribute('[data-theme-choice=auto]', 'aria-pressed')) === 'true', 'Aspetto starts on Automatico');
+  check((await page.evaluate(() => document.documentElement.dataset.theme)) === 'light', 'a light device gives the light theme');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.waitForTimeout(150);
+  check((await page.evaluate(() => document.documentElement.dataset.theme)) === 'dark', 'Automatico follows the device to dark');
+  await page.click('[data-theme-choice=light]');
+  await page.waitForTimeout(150);
+  check((await page.evaluate(() => document.documentElement.dataset.theme)) === 'light', 'Chiaro stays light on a dark device');
+  await page.click('[data-theme-choice=dark]');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.waitForTimeout(150);
+  check((await page.evaluate(() => [document.documentElement.dataset.theme, getComputedStyle(document.body).backgroundColor])).join() === 'dark,rgb(20, 21, 24)', 'Scuro stays dark on a light device');
+  await page.reload();
+  check((await page.evaluate(() => document.documentElement.dataset.theme)) === 'dark', 'the choice is there before the app loads');
+  await page.waitForSelector('.title');
+  await shot('dark-settings');
+  await go('#/today'); await page.waitForTimeout(150); await overflowAt('dark: Oggi'); await shot('dark-today');
+  await go('#/settings');
+  await page.click('[data-theme-choice=auto]');
+  await page.waitForTimeout(150);
+  for (const r of ['#/today', '#/plans', '#/routines', '#/exercises', '#/gym', '#/history']) {
+    await go(r);
+    const g = await page.evaluate(() => { const el = document.querySelector('#view .gear'); if (!el) return null; const b = el.getBoundingClientRect(); return { right: Math.round(innerWidth - b.right), top: Math.round(b.top) }; });
+    check(g && g.right < 40 && g.top < 60, `${r}: the gear at the top right on the phone (${JSON.stringify(g)})`);
+  }
   await go('#/routines');
   check(Boolean(await page.$('#view .two-actions [data-action=new-routine]')), 'on the phone the actions stay in the page');
 
   console.log('English');
   await go('#/settings/lang');
   await page.click('.seg-opt:has(input[value=en])');
-  await go('#/settings/guide');
-  await shot('17-guide-en', { fullPage: true });
-  check((await page.textContent('.title')) === 'Guide', 'guide in English');
+
+  console.log('The user guide');
+  await go('#/settings');
+  await page.click('a[href="guide-en.html"]');
+  await page.waitForURL(/guide-en\.html$/);
+  check((await page.textContent('h1')) === 'Palestra: user guide', 'Settings → Guide opens the English guide in the same tab');
+  check(!(await page.evaluate(() => document.documentElement.classList.contains('desk'))), 'on a phone it opens the phone version');
+  const vis = async (sel) => page.$$eval(sel, (xs) => xs.filter((x) => getComputedStyle(x).display !== 'none').length);
+  check((await vis('img.ph')) >= 25 && (await vis('img.dk')) === 0, 'phone pictures only');
+  await shot('17-guide-en');
+  await page.click('.mode [data-mode=desk]');
+  check(await page.evaluate(() => document.documentElement.classList.contains('desk') && localStorage.getItem('guideMode') === 'desk'), 'Computer switches the pictures and is remembered');
+  check((await vis('img.dk')) >= 25 && (await vis('img.ph')) === 0, 'computer pictures only');
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.reload();
+  check(await page.evaluate(() => document.documentElement.classList.contains('desk')), 'the choice survives a reload');
+  await shot('d8-guide');
+  await page.click('main img.dk');
+  check(Boolean(await page.$('.zoom')), 'a click enlarges a picture');
+  await page.keyboard.press('Escape');
+  check(!(await page.$('.zoom')), 'Esc closes it');
+  await page.click('.mode [data-mode=phone]');
+  await page.click('.top a[href="guide-it.html"]');
+  await page.waitForURL(/guide-it\.html$/);
+  check((await page.textContent('h1')) === "Palestra: guida per l'utente", 'link to the Italian guide');
+  check(!(await page.evaluate(() => document.documentElement.classList.contains('desk'))), 'the phone choice is shared by both languages');
+  await page.click('.top a[href="./#/settings"]');
+  await page.waitForSelector('.title');
+  check(page.url().endsWith('#/settings'), `"Torna all'app" lands on Settings (${page.url()})`);
+  await page.setViewportSize({ width: 390, height: 844 });
 
   check(errors.length === 0, `no errors in the page${errors.length ? `: ${errors.join(' | ')}` : ''}`);
   await browser.close();

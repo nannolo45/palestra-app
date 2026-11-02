@@ -83,7 +83,9 @@ A **workout** groups the week's routines, each on its day. In *Workouts* open on
 | *Exercises* | Your exercises and, under *Gym*, the zones and machines |
 | *History* | Your progress and every session you've done |
 
-At the top of each page are its actions, like *New routine* and *Import*. The **gear** at the top right opens *Settings*: the connection, automatic increase, rest, Everyday, language, backup and this guide.
+At the top of each page are its actions, like *New routine* and *Import*. The **gear** at the top right opens *Settings*: appearance, the connection, automatic increase, rest, Everyday, language, backup and this guide.
+
+At the top of Settings, **Appearance** picks the app's colours: *Automatic* follows the device (dark in the evening, if the device is), *Light* and *Dark* stay that way. During a workout the screen is dark either way.
 
 ![Settings: everything in its own section](guide/en/03-settings.png)
 

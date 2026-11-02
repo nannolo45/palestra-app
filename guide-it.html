@@ -1,6 +1,7 @@
-<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Palestra · Guida</title><script>(function(){var m;try{m=localStorage.getItem('guideMode')}catch(e){}var w=innerWidth,d=m?m==='desk':w>=1000||(w>=700&&matchMedia('(pointer:fine)').matches);if(d)document.documentElement.classList.add('desk')})()</script><style>
-:root{color-scheme:light dark;--bg:#F5F4F0;--ink:#17181B;--muted:#5E6066;--line:#E2E0DA;--acc:#7A5A00;--card:#FFFFFF}
-@media(prefers-color-scheme:dark){:root{--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}}
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Palestra · Guida</title><script>(function(){var m,t;try{m=localStorage.getItem('guideMode');t=localStorage.getItem('palestraTheme')}catch(e){}if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;var w=innerWidth,d=m?m==='desk':w>=1000||(w>=700&&matchMedia('(pointer:fine)').matches);if(d)document.documentElement.classList.add('desk')})()</script><style>
+:root{color-scheme:light;--bg:#F5F4F0;--ink:#17181B;--muted:#5E6066;--line:#E2E0DA;--acc:#7A5A00;--card:#FFFFFF}
+html[data-theme=dark]{color-scheme:dark;--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}
+@media(prefers-color-scheme:dark){html:not([data-theme=light]){color-scheme:dark;--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 main{max-width:720px;margin:0 auto;padding:16px 18px 60px}
 h1{font-family:Georgia,serif;font-size:1.9rem;margin:.4em 0}h2{font-family:Georgia,serif;margin-top:2em;border-top:1px solid var(--line);padding-top:1em}
@@ -92,7 +93,8 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 </tr>
 </tbody>
 </table>
-<p>In cima a ogni pagina ci sono le sue azioni, come <em>Nuova scheda</em> e <em>Importa</em>. L'<strong>ingranaggio</strong> in alto a destra apre le <em>Impostazioni</em>: collegamento, aumento automatico, recupero, Everyday, lingua, backup e questa guida.</p>
+<p>In cima a ogni pagina ci sono le sue azioni, come <em>Nuova scheda</em> e <em>Importa</em>. L'<strong>ingranaggio</strong> in alto a destra apre le <em>Impostazioni</em>: aspetto, collegamento, aumento automatico, recupero, Everyday, lingua, backup e questa guida.</p>
+<p>In cima alle Impostazioni, <strong>Aspetto</strong> sceglie i colori dell'app: <em>Automatico</em> segue il telefono (scuro la sera, se il telefono lo è), <em>Chiaro</em> o <em>Scuro</em> restano sempre così. Durante l'allenamento lo schermo è comunque scuro.</p>
 <p><img class="ph" loading="lazy" alt="Impostazioni: ogni cosa nella sua sezione" src="guide/it/03-settings.png" /><img class="dk" loading="lazy" alt="Impostazioni: ogni cosa nella sua sezione" src="guide/it/desk/03-settings.webp" /></p>
 <h2 id="oggi">Oggi</h2>
 <p>La prima pagina ti dice cosa ti tocca oggi. In alto c'è la scheda del giorno, con l'ora se l'hai data, e <em>Inizia</em>. Se Everyday l'ha già messa in agenda, accanto c'è scritto <em>in Everyday</em>.</p>

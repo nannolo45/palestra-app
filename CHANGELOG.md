@@ -5,6 +5,7 @@ Phones download the new version in the background and show the *Aggiorna* bar.
 
 | Version | What changed |
 |---|---|
+| v14 | Dark theme: Impostazioni → Aspetto (Automatico follows the device, Chiaro, Scuro), the same greys as the workout screen with yellow as the accent. The guide pages follow the same choice |
 | v13 | Everyday v60 follows Sposta a domani: the guide and the Everyday page in Settings say so, instead of asking to move the block by hand |
 | v12 | Sposta a domani, ready for Everyday: moves keep their order and a time (`at`), moving again adds a step, and Rimetti oggi after a sync adds the move back instead of deleting the record |
 | v11 | The user guide is now its own page in each language (guide-it.html, guide-en.html), built from Markdown with phone and computer screenshots and a Telefono / Computer switch; Settings → Guida opens it. The settings gear is the one shared with Ricette and Everyday (an 8-tooth cog, labelled on wide screens, filled on Settings) and sits at the top right of every section |

@@ -68,7 +68,7 @@ export async function kvDel(key) {
 export const state = {
   places: [], machines: [], exercises: [], routines: [], plans: [], sessions: [], prefs: [],
   // local to this device, never synced
-  settings: { lang: '', owner: '', repo: 'palestra-data', branch: 'main', token: '' },
+  settings: { lang: '', owner: '', repo: 'palestra-data', branch: 'main', token: '', theme: 'auto' },
   meta: { dirty: false, lastSync: null, lastError: null, contractNewer: false },
 };
 

@@ -83,7 +83,9 @@ Un **workout** raccoglie le schede della settimana, ognuna nel suo giorno. In *W
 | *Esercizi* | Gli esercizi e, in *Palestra*, le zone e le macchine |
 | *Storico* | I tuoi progressi e ogni allenamento fatto |
 
-In cima a ogni pagina ci sono le sue azioni, come *Nuova scheda* e *Importa*. L'**ingranaggio** in alto a destra apre le *Impostazioni*: collegamento, aumento automatico, recupero, Everyday, lingua, backup e questa guida.
+In cima a ogni pagina ci sono le sue azioni, come *Nuova scheda* e *Importa*. L'**ingranaggio** in alto a destra apre le *Impostazioni*: aspetto, collegamento, aumento automatico, recupero, Everyday, lingua, backup e questa guida.
+
+In cima alle Impostazioni, **Aspetto** sceglie i colori dell'app: *Automatico* segue il telefono (scuro la sera, se il telefono lo è), *Chiaro* o *Scuro* restano sempre così. Durante l'allenamento lo schermo è comunque scuro.
 
 ![Impostazioni: ogni cosa nella sua sezione](guide/it/03-settings.png)
 

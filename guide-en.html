@@ -1,6 +1,7 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Palestra · Guide</title><script>(function(){var m;try{m=localStorage.getItem('guideMode')}catch(e){}var w=innerWidth,d=m?m==='desk':w>=1000||(w>=700&&matchMedia('(pointer:fine)').matches);if(d)document.documentElement.classList.add('desk')})()</script><style>
-:root{color-scheme:light dark;--bg:#F5F4F0;--ink:#17181B;--muted:#5E6066;--line:#E2E0DA;--acc:#7A5A00;--card:#FFFFFF}
-@media(prefers-color-scheme:dark){:root{--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Palestra · Guide</title><script>(function(){var m,t;try{m=localStorage.getItem('guideMode');t=localStorage.getItem('palestraTheme')}catch(e){}if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;var w=innerWidth,d=m?m==='desk':w>=1000||(w>=700&&matchMedia('(pointer:fine)').matches);if(d)document.documentElement.classList.add('desk')})()</script><style>
+:root{color-scheme:light;--bg:#F5F4F0;--ink:#17181B;--muted:#5E6066;--line:#E2E0DA;--acc:#7A5A00;--card:#FFFFFF}
+html[data-theme=dark]{color-scheme:dark;--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}
+@media(prefers-color-scheme:dark){html:not([data-theme=light]){color-scheme:dark;--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 main{max-width:720px;margin:0 auto;padding:16px 18px 60px}
 h1{font-family:Georgia,serif;font-size:1.9rem;margin:.4em 0}h2{font-family:Georgia,serif;margin-top:2em;border-top:1px solid var(--line);padding-top:1em}
@@ -92,7 +93,8 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 </tr>
 </tbody>
 </table>
-<p>At the top of each page are its actions, like <em>New routine</em> and <em>Import</em>. The <strong>gear</strong> at the top right opens <em>Settings</em>: the connection, automatic increase, rest, Everyday, language, backup and this guide.</p>
+<p>At the top of each page are its actions, like <em>New routine</em> and <em>Import</em>. The <strong>gear</strong> at the top right opens <em>Settings</em>: appearance, the connection, automatic increase, rest, Everyday, language, backup and this guide.</p>
+<p>At the top of Settings, <strong>Appearance</strong> picks the app's colours: <em>Automatic</em> follows the device (dark in the evening, if the device is), <em>Light</em> and <em>Dark</em> stay that way. During a workout the screen is dark either way.</p>
 <p><img class="ph" loading="lazy" alt="Settings: everything in its own section" src="guide/en/03-settings.png" /><img class="dk" loading="lazy" alt="Settings: everything in its own section" src="guide/en/desk/03-settings.webp" /></p>
 <h2 id="today">Today</h2>
 <p>The first page tells you what's on today. At the top is the day's routine, with its time if you set one, and <em>Start</em>. If Everyday has already put it in your plan, it says <em>in Everyday</em>.</p>

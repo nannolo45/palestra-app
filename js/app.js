@@ -15,6 +15,7 @@ import { plansView, planView } from './views/plans.js';
 import { importView } from './views/import.js';
 import { initWorkout, startView, workoutView, hasActive, activeWorkout, leaveWorkoutScreens } from './views/workout.js';
 import { refreshEstimates } from './data.js';
+import { applyTheme, watchSystemTheme } from './theme.js';
 import { esc } from './ui/format.js';
 import { icon } from './ui/icons.js';
 
@@ -62,7 +63,7 @@ export function render() {
   current = viewFor(r);
   const dark = Boolean(current.dark);
   document.body.classList.toggle('mode-workout', dark);
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#141518' : '#F5F4F0');
+  applyTheme(dark);
   setActiveTab(r.name);
   paint(view, resumeBanner(r) + current.html, (v) => { current.bind?.(v); placeTopActions(v); });
   paintNavSync(isSyncing());
@@ -132,6 +133,8 @@ async function registerSW() {
 
 async function init() {
   await load();
+  applyTheme(false);
+  watchSystemTheme();
   await initWorkout();
   renderTabs();
   onChange((kind) => {

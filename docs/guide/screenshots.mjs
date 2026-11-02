@@ -14,8 +14,9 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
-const [LANG = 'it', OUT = `../guide/${LANG}`, MODE] = process.argv.slice(2);
-const DESK = MODE === 'desk';
+const [LANG = 'it', OUT = `../guide/${LANG}`, ...MODES] = process.argv.slice(2);
+const DESK = MODES.includes('desk');
+const DARK = MODES.includes('dark'); // only to check the dark theme by eye; the guide uses the light pictures
 const out = path.resolve(process.cwd(), OUT);
 fs.mkdirSync(out, { recursive: true });
 
@@ -151,7 +152,7 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   const browser = await chromium.launch();
   const ctx = await browser.newContext({
     viewport: DESK ? { width: 1440, height: 900 } : { width: 390, height: 780 }, deviceScaleFactor: DESK ? 1 : 2,
-    locale: LANG === 'it' ? 'it-IT' : 'en-GB', timezoneId: 'Europe/Rome', serviceWorkers: 'block',
+    locale: LANG === 'it' ? 'it-IT' : 'en-GB', timezoneId: 'Europe/Rome', serviceWorkers: 'block', colorScheme: DARK ? 'dark' : 'light',
   });
   await ctx.route('https://api.github.com/**', fakeGithub);
   const page = await ctx.newPage();
