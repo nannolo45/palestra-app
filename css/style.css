@@ -600,7 +600,8 @@ nav.tabs .nav-brand, nav.tabs .nav-actions, nav.tabs .nav-end { display: none; }
   #view { max-width: 1240px; padding: 0 28px 48px; margin: 0 auto; }
   /* the tab bar becomes a top bar, as in Ricette and Everyday: name · tabs · actions · sync · settings */
   nav.tabs { top: 0; bottom: auto; left: 0; right: 0; height: var(--top-h); padding: 0 24px; border-top: 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: row; align-items: center; gap: 6px; }
-  nav.tabs .nav-brand { display: flex; align-items: center; gap: 8px; padding: 0 14px 0 0; font-family: var(--cond); font-size: 24px; font-weight: 700; color: var(--ink); }
+  nav.tabs .nav-brand { display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 0 14px 0 0; font-family: var(--cond); font-size: 24px; font-weight: 700; color: var(--ink); text-decoration: none; border-radius: 10px; }
+  nav.tabs .nav-brand:hover { color: var(--ink); opacity: .85; }
   nav.tabs a[data-tab]:not(.nav-gear) { flex-direction: row; gap: 8px; height: 40px; padding: 0 14px; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--ink-3); }
   nav.tabs a[data-tab]:not(.nav-gear) .ico { display: none; }
   nav.tabs a[data-tab]:hover { background: var(--line-soft); color: var(--ink); }

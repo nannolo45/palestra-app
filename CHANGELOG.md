@@ -5,6 +5,7 @@ Phones download the new version in the background and show the *Aggiorna* bar.
 
 | Version | What changed |
 |---|---|
+| v15 | On a computer, the Palestra logo in the top bar goes back to Oggi |
 | v14 | Dark theme: Impostazioni → Aspetto (Automatico follows the device, Chiaro, Scuro), the same greys as the workout screen with yellow as the accent. The guide pages follow the same choice |
 | v13 | Everyday v60 follows Sposta a domani: the guide and the Everyday page in Settings say so, instead of asking to move the block by hand |
 | v12 | Sposta a domani, ready for Everyday: moves keep their order and a time (`at`), moving again adds a step, and Rimetti oggi after a sync adds the move back instead of deleting the record |

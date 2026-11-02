@@ -22,6 +22,8 @@ export const TAB_OF = {
 
 export function renderTabs() {
   for (const a of document.querySelectorAll('nav.tabs a[data-tab]')) a.querySelector('.label').textContent = a.dataset.tab === 'settings' ? t('settings') : t(`tab_${a.dataset.tab}`);
+  const brand = document.querySelector('nav.tabs .nav-brand');
+  if (brand) { brand.setAttribute('aria-label', `Palestra · ${t('tab_today')}`); brand.title = t('tab_today'); }
   const gear = document.getElementById('gear');
   if (gear) { gear.setAttribute('aria-label', t('settings')); gear.title = t('settings'); document.getElementById('gear-label').textContent = t('settings'); }
   const nav = document.querySelector('nav.tabs');

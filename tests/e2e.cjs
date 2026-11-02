@@ -524,6 +524,10 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(nav.top === 0 && nav.h < 80 && nav.w === 1280, `tabs in a top bar, as in Ricette and Everyday (${JSON.stringify(nav)})`);
   const gear = await page.evaluate(() => { const r = document.querySelector('#gear').getBoundingClientRect(); return r.right > 1180 && r.top < 64; });
   check(gear, 'settings gear at the top right');
+  await go('#/history');
+  await page.click('nav.tabs .nav-brand');
+  await page.waitForTimeout(200);
+  check(page.url().endsWith('#/today') && (await page.textContent('.page-head h1')) === 'Oggi', 'the Palestra logo goes back to Oggi');
   const colsOk = await page.evaluate(() => { const m = document.querySelector('.col-main').getBoundingClientRect(); const s = document.querySelector('.col-side').getBoundingClientRect(); return s.left > m.right - 1 && Math.abs(s.top - m.top) < 4; });
   check(colsOk, 'Oggi in two columns');
   await shot('d1-today');
