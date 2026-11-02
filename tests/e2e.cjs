@@ -452,7 +452,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   });
   const routes = ['#/today', '#/routines', '#/plans', `#/plan/${ids.p}`, '#/import', '#/import?for=routine', '#/exercises', `#/exercise/${ids.e}`, `#/exercise/${ids.c}`, '#/exercise/new',
     '#/gym', '#/history', `#/session/${ids.s}`, `#/routine/${ids.r}`, `#/routine/${ids.r}/edit`, '#/settings',
-    ...['github', 'increase', 'training', 'gym', 'everyday', 'lang', 'backup'].map((x) => `#/settings/${x}`)];
+    ...['github', 'increase', 'training', 'gym', 'everyday', 'look', 'data', 'data/backup', 'data/device'].map((x) => `#/settings/${x}`)];
   for (const r of routes) { await go(r); await page.waitForTimeout(120); await overflowAt(r); if (['#/exercises', '#/settings/increase', '#/routines'].includes(r)) await shot(`narrow-${r.replace(/\W+/g, '-')}`); }
   await go('#/import');
   await page.fill('#imp-text', `SCHEDA: Una scheda con un nome molto molto lungo per vedere se va a capo\nGIORNO: Un allenamento dal nome lunghissimo che non finisce mai\nPanca piana con bilanciere e fermo al petto 4x8 60 kg rec 2:30\nUnaparolalunghissimasenzaspazichenonfiniscemaieancoraeancora 3x10`);
@@ -569,28 +569,43 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(200);
   check(!(await page.$('#nav-actions [data-action]')), 'top bar actions cleared on the phone');
-  console.log('Dark theme');
+  console.log('Light, dark or automatic');
+  const theme = () => page.evaluate(() => document.documentElement.className);
+  const bar = () => page.evaluate(() => [...document.querySelectorAll('meta[name=theme-color]')].map((m) => m.content).join());
   await go('#/settings');
-  check((await page.getAttribute('[data-theme-choice=auto]', 'aria-pressed')) === 'true', 'Aspetto starts on Automatico');
-  check((await page.evaluate(() => document.documentElement.dataset.theme)) === 'light', 'a light device gives the light theme');
+  check((await page.textContent('.set-row[href="#/settings/look"] small')).includes('Automatico'), 'the Lingua e aspetto row says Automatico');
+  await go('#/settings/look');
+  check(await page.isChecked('[name=theme][value=auto]'), 'Aspetto starts on Automatico');
+  check((await theme()) === 'light' && (await bar()) === '#ffffff,#ffffff', 'a light device: light theme, white status bar');
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.waitForTimeout(150);
-  check((await page.evaluate(() => document.documentElement.dataset.theme)) === 'dark', 'Automatico follows the device to dark');
-  await page.click('[data-theme-choice=light]');
+  check((await theme()) === 'dark' && (await bar()) === '#151a1b,#151a1b', 'Automatico follows the device to dark, status bar too');
+  await page.click('.theme-seg label:has([value=light])');
   await page.waitForTimeout(150);
-  check((await page.evaluate(() => document.documentElement.dataset.theme)) === 'light', 'Chiaro stays light on a dark device');
-  await page.click('[data-theme-choice=dark]');
+  check((await theme()) === 'light', 'Chiaro stays light on a dark device');
+  await page.click('.theme-seg label:has([value=dark])');
   await page.emulateMedia({ colorScheme: 'light' });
   await page.waitForTimeout(150);
-  check((await page.evaluate(() => [document.documentElement.dataset.theme, getComputedStyle(document.body).backgroundColor])).join() === 'dark,rgb(20, 21, 24)', 'Scuro stays dark on a light device');
+  check((await theme()) === 'dark' && (await page.evaluate(() => getComputedStyle(document.body).backgroundColor)) === 'rgb(21, 26, 27)', 'Scuro stays dark on a light device');
+  check((await page.evaluate(() => localStorage.getItem('palestra-theme'))) === 'dark', 'kept on this device under palestra-theme');
   await page.reload();
-  check((await page.evaluate(() => document.documentElement.dataset.theme)) === 'dark', 'the choice is there before the app loads');
+  check((await theme()) === 'dark', 'the choice is there before the app loads');
   await page.waitForSelector('.title');
-  await shot('dark-settings');
+  await shot('dark-look');
   await go('#/today'); await page.waitForTimeout(150); await overflowAt('dark: Oggi'); await shot('dark-today');
-  await go('#/settings');
-  await page.click('[data-theme-choice=auto]');
+  // a tapped link must not keep its hover colour on a phone
+  const titleColour = await page.evaluate(() => { const a = document.querySelector('.today-hero .hero-title'); return a ? getComputedStyle(a).color : 'none'; });
+  check(titleColour === 'rgb(233, 238, 236)' || titleColour === 'none', `today's title is light text, not the accent (${titleColour})`);
+  await go('#/settings/look');
+  await page.click('.theme-seg label:has([value=auto])');
   await page.waitForTimeout(150);
+  await go('#/settings');
+  check((await page.$$('.set-sub-h')).length === 3 && (await page.$$('.set-list .set-row')).length >= 10, 'Settings is three groups of rows');
+  await go('#/settings/data');
+  check((await page.$$('.set-row')).length === 2 && (await page.textContent('.set-back')).includes('Impostazioni'), 'I tuoi dati is a list, with the way back');
+  await page.click('.set-row[href="#/settings/data/backup"]');
+  await page.waitForTimeout(150);
+  check((await page.textContent('.set-back')).includes('I tuoi dati') && Boolean(await page.$('[data-action=download]')), 'Backup has its own page under I tuoi dati');
   for (const r of ['#/today', '#/plans', '#/routines', '#/exercises', '#/gym', '#/history']) {
     await go(r);
     const g = await page.evaluate(() => { const el = document.querySelector('#view .gear'); if (!el) return null; const b = el.getBoundingClientRect(); return { right: Math.round(innerWidth - b.right), top: Math.round(b.top) }; });
@@ -600,7 +615,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(Boolean(await page.$('#view .two-actions [data-action=new-routine]')), 'on the phone the actions stay in the page');
 
   console.log('English');
-  await go('#/settings/lang');
+  await go('#/settings/look');
   await page.click('.seg-opt:has(input[value=en])');
 
   console.log('The user guide');
@@ -611,9 +626,11 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(!(await page.evaluate(() => document.documentElement.classList.contains('desk'))), 'on a phone it opens the phone version');
   const vis = async (sel) => page.$$eval(sel, (xs) => xs.filter((x) => getComputedStyle(x).display !== 'none').length);
   check((await vis('img.ph')) >= 25 && (await vis('img.dk')) === 0, 'phone pictures only');
+  check(await page.evaluate(() => [...document.querySelectorAll('img.ph')].every((i) => i.getAttribute('src').endsWith('.webp'))), 'phone pictures are WebP');
+  check((await page.evaluate(() => document.documentElement.classList.contains('light'))), 'the guide follows the app: light here');
   await shot('17-guide-en');
-  await page.click('.mode [data-mode=desk]');
-  check(await page.evaluate(() => document.documentElement.classList.contains('desk') && localStorage.getItem('guideMode') === 'desk'), 'Computer switches the pictures and is remembered');
+  await page.selectOption('#mode', 'desk');
+  check(await page.evaluate(() => document.documentElement.classList.contains('desk') && localStorage.getItem('guideMode') === 'desk'), 'Mostra la guida per → Computer switches the pictures and is remembered');
   check((await vis('img.dk')) >= 25 && (await vis('img.ph')) === 0, 'computer pictures only');
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.reload();
@@ -623,10 +640,10 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(Boolean(await page.$('.zoom')), 'a click enlarges a picture');
   await page.keyboard.press('Escape');
   check(!(await page.$('.zoom')), 'Esc closes it');
-  await page.click('.mode [data-mode=phone]');
-  await page.click('.top a[href="guide-it.html"]');
+  await page.selectOption('#mode', 'phone');
+  await page.selectOption('#lang', 'guide-it.html');
   await page.waitForURL(/guide-it\.html$/);
-  check((await page.textContent('h1')) === "Palestra: guida per l'utente", 'link to the Italian guide');
+  check((await page.textContent('h1')) === "Palestra: guida per l'utente", 'the Lingua dropdown opens the Italian guide');
   check(!(await page.evaluate(() => document.documentElement.classList.contains('desk'))), 'the phone choice is shared by both languages');
   await page.click('.top a[href="./#/settings"]');
   await page.waitForSelector('.title');

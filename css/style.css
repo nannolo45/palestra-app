@@ -8,14 +8,18 @@
 @font-face { font-family: 'Barlow Condensed'; src: url(../fonts/BarlowCondensed-Bold.woff) format('woff'); font-weight: 700; font-display: swap; }
 
 :root {
-  --bg: #F5F4F0; --card: #FFFFFF; --line: #E2E0DA; --line-soft: #ECEAE4; --ink: #17181B; --ink-2: #3B3D42; --muted: #5E6066; --faint: #8A8C92;
-  --gold: #7A5A00; --gold-2: #6B4F00; --yellow: #FFD23F; --yellow-soft: #FFF1BF; --chip: #E9E7E1;
-  --green: #2F7D4F; --green-soft: #E3F1E8; --green-ink: #1F5A37; --red: #B42318;
-  --d-bg: #141518; --d-card: #1F2125; --d-btn: #2E3036; --d-line: #3A3C42; --d-text: #F2F1EC; --d-muted: #A3A5AB; --d-soft: #C9CBD0;
-  /* roles that change with the theme (see html[data-theme=dark] below) */
-  --ink-3: #4A4C52; --btn-line: #D9D6CE; --line-strong: #CFCCC4; --dash: #B9B6AD; --hover: #FBFAF7; --tile: #F0EEE8; --tint: rgba(0,0,0,.06);
+  /* light, "Pulito": the palette shared with Everyday and Ricette; Palestra keeps its yellow accent */
+  --bg: #f3f5f5; --card: #ffffff; --line: #dde3e3; --line-soft: #e8eded; --ink: #162021; --ink-2: #33403f; --muted: #5d696a; --faint: #87938f;
+  --gold: #7A5A00; --gold-2: #6B4F00; --yellow: #FFD23F; --yellow-soft: #FFF1BF; --chip: #e6ebeb;
+  --green: #2F7D4F; --green-soft: #E3F1E8; --green-ink: #1F5A37; --red: #B42318; --warn: #b5780c;
+  --lift: 0 1px 2px rgba(15,35,36,.07), 0 2px 6px rgba(15,35,36,.04);
+  /* the workout screen: always dark */
+  --d-bg: #151a1b; --d-card: #1f2627; --d-btn: #2b3435; --d-line: #3a4546; --d-text: #e9eeec; --d-muted: #94a09f; --d-soft: #c3cccb;
+  /* roles that change with the theme (see :root.dark below) */
+  --ink-3: #46524f; --btn-line: #d3dbdb; --line-strong: #c9d2d2; --dash: #a9b4b4; --hover: #f7f9f9; --tile: #eef2f2; --tint: rgba(15,35,36,.06);
   --soft-ink: #3D2E00; --warn-bg: #FDECEA; --warn-ink: #7A1C14; --focus: #2563EB;
-  --on-ink: #FFFFFF; --on-yellow: #17181B; --hero-bg: #17181B; --hero-line: #17181B; --switch-on: #17181B; --primary: #17181B; --on-primary: #FFFFFF;
+  --on-ink: #FFFFFF; --on-yellow: #17181B; --hero-bg: #162021; --hero-line: #162021; --switch-on: #162021; --primary: #162021; --on-primary: #FFFFFF;
+  --bar: rgba(255,255,255,.88);
   --cond: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --nav-h: 72px;
   --r: 14px;
@@ -255,9 +259,9 @@ body.is-sorting { user-select: none; }
 .chart .line { fill: none; stroke: var(--gold); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
 .chart .pt { fill: var(--card); stroke: var(--gold); stroke-width: 2; }
 .chart .last { fill: var(--gold); }
-.set-list { margin: 0; padding: 4px 16px 12px 36px; display: flex; flex-direction: column; gap: 4px; }
-.set-list li { display: flex; justify-content: space-between; gap: 10px; }
-.set-list small { color: var(--muted); }
+.sets-done { margin: 0; padding: 4px 16px 12px 36px; display: flex; flex-direction: column; gap: 4px; }
+.sets-done li { display: flex; justify-content: space-between; gap: 10px; }
+.sets-done small { color: var(--muted); }
 
 /* breakdown bar */
 .breakdown { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; margin: 10px 0; border-radius: 16px; }
@@ -272,7 +276,7 @@ body.is-sorting { user-select: none; }
 .bd-rest { background: var(--line-strong); }
 .breakdown.dark .bd-rest { background: #E9E7E1; }
 .bd-walk { background: var(--faint); }
-.bd-pause { background: #4A4C52; }
+.bd-pause { background: #475354; }
 .breakdown.dark .bd-pause { outline: 1px solid var(--faint); }
 
 /* ---- settings guide ---- */
@@ -356,7 +360,7 @@ body.mode-workout a { color: var(--yellow); }
 .w-sub { margin: 6px 0 0; font-size: 16px; color: var(--d-soft); }
 .w-setline { margin-top: 10px; display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; }
 .dots { display: flex; gap: 5px; }
-.dots i { width: 10px; height: 10px; border-radius: 5px; border: 2px solid #5A5C63; }
+.dots i { width: 10px; height: 10px; border-radius: 5px; border: 2px solid #566362; }
 .dots i.done { background: var(--yellow); border-color: var(--yellow); }
 .dots i.now { background: var(--d-text); border-color: var(--d-text); }
 .w-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; }
@@ -384,7 +388,7 @@ body.mode-workout a { color: var(--yellow); }
 .btn.dark-btn { background: var(--d-btn); border-color: var(--d-btn); color: var(--d-text); }
 .btn.light { background: var(--d-text); border-color: var(--d-text); color: var(--d-bg); font-weight: 700; }
 .ring { position: relative; width: 260px; height: 260px; }
-.ring-bg { fill: none; stroke: #2A2C31; stroke-width: 14; }
+.ring-bg { fill: none; stroke: #2b3435; stroke-width: 14; }
 .ring-fg { fill: none; stroke: var(--yellow); stroke-width: 14; stroke-linecap: round; transition: stroke-dasharray .25s linear; }
 .ring-fg.over { stroke: var(--d-text); }
 .ring-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
@@ -409,13 +413,13 @@ body.mode-workout a { color: var(--yellow); }
 .next-after { padding-top: 10px; border-top: 1px solid var(--d-btn); display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--d-soft); }
 .inc-row { width: 100%; min-height: 64px; padding: 10px 16px; border: 0; background: transparent; color: var(--d-text); display: flex; align-items: center; gap: 12px; text-align: left; }
 .inc-row + .inc-row { border-top: 1px solid var(--d-btn); }
-.check-box { width: 30px; height: 30px; border-radius: 9px; border: 2px solid #5A5C63; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.check-box { width: 30px; height: 30px; border-radius: 9px; border: 2px solid #566362; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .inc-row.on .check-box { background: var(--yellow); border-color: var(--yellow); color: var(--on-yellow); }
 .check-box.muted { border: 0; background: var(--d-btn); color: var(--d-soft); }
 .inc-name { flex: 1; min-width: 0; font-size: 17px; font-weight: 600; }
 .inc-from { font-family: var(--cond); font-size: 20px; color: var(--d-muted); }
 .inc-to { min-width: 76px; text-align: right; font-family: var(--cond); font-size: 24px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
-.inc-row:not(.on) .inc-to { color: #7C7E85; text-decoration: line-through; }
+.inc-row:not(.on) .inc-to { color: #7d8988; text-decoration: line-through; }
 .w-card.held { margin-top: 10px; display: flex; gap: 12px; align-items: flex-start; }
 .w-card.held div { display: flex; flex-direction: column; gap: 2px; }
 .w-card.held small { color: var(--d-muted); font-size: 14px; }
@@ -555,7 +559,7 @@ nav.tabs .nav-brand, nav.tabs .nav-actions, nav.tabs .nav-end { display: none; }
 .today-hero.done-week { background: var(--green-soft); }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
 .hero-actions .btn.yellow { flex: 1 1 180px; }
-.btn.on-dark { background: transparent; color: var(--d-text); border-color: var(--d-btn, #3A3C42); }
+.btn.on-dark { background: transparent; color: var(--d-text); border-color: var(--d-btn); }
 .btn.on-dark:hover { color: var(--yellow); }
 .badge.moved { background: var(--line-soft); color: var(--ink-3); }
 .plan-hero.light { background: var(--yellow-soft); color: var(--ink); }
@@ -674,33 +678,60 @@ nav.tabs .gear { flex-direction: row; font-size: .9rem; color: var(--ink); }
 
 /* ---- dark theme (Impostazioni → Aspetto: Scuro, or Automatico with a dark phone) ----
    The same greys as the workout screen; yellow stays the accent and, on dark, also serves for links. */
-html[data-theme=dark] {
+:root.dark {
   color-scheme: dark;
-  --bg: #141518; --card: #1F2125; --line: #2E3036; --line-soft: #2A2C31; --ink: #F2F1EC; --ink-2: #C9CBD0; --ink-3: #B5B7BC; --muted: #A3A5AB; --faint: #6E7178;
-  --gold: #FFD23F; --gold-2: #FFE07A; --yellow-soft: #2E2A1A; --chip: #26282D;
-  --green: #7CC28F; --green-soft: #1E3326; --green-ink: #9BD6AC; --red: #E5484D;
-  --btn-line: #3A3C42; --line-strong: #4A4C52; --dash: #55585F; --hover: #24262A; --tile: #2A2C31; --tint: rgba(255,255,255,.08);
-  --soft-ink: #FFD23F; --warn-bg: #3A1D1B; --warn-ink: #F4A7A0; --focus: #7DB3FF;
-  --on-ink: #141518; --hero-bg: #26282D; --hero-line: #3A3C42; --switch-on: #FFD23F; --primary: #FFD23F; --on-primary: #17181B;
+  --bg: #151a1b; --card: #1f2627; --line: #313b3c; --line-soft: #2a3334; --ink: #e9eeec; --ink-2: #c3cccb; --ink-3: #b0bab9; --muted: #94a09f; --faint: #6d7a79;
+  --gold: #FFD23F; --gold-2: #FFE07A; --yellow-soft: #2f2b1a; --chip: #283132;
+  --green: #7CC28F; --green-soft: #1d3326; --green-ink: #9BD6AC; --red: #E5484D; --warn: #c98a12;
+  --lift: none;
+  --btn-line: #3a4546; --line-strong: #475354; --dash: #566362; --hover: #232b2c; --tile: #283132; --tint: rgba(255,255,255,.08);
+  --soft-ink: #FFD23F; --warn-bg: #3a1d1b; --warn-ink: #F4A7A0; --focus: #7DB3FF;
+  --on-ink: #151a1b; --hero-bg: #263031; --hero-line: #3a4546; --switch-on: #FFD23F; --primary: #FFD23F; --on-primary: #17181B;
+  --bar: rgba(31,38,39,.92);
 }
-html[data-theme=dark] .hero, html[data-theme=dark] .today-hero, html[data-theme=dark] .plan-hero:not(.light), html[data-theme=dark] .resume-banner { border: 1px solid var(--hero-line); }
-html[data-theme=dark] .switch:checked::after { background: #17181B; }
-html[data-theme=dark] .seg-opt input:checked + span, html[data-theme=dark] .seg-tabs a.on { background: #3A3C42; box-shadow: none; }
-html[data-theme=dark] dialog::backdrop { background: rgba(0, 0, 0, .6); }
-html[data-theme=dark] .gear { border-color: #4A4C52; }
-html[data-theme=dark] img, html[data-theme=dark] .chart { color-scheme: dark; }
+:root.dark .hero, :root.dark .today-hero, :root.dark .plan-hero:not(.light), :root.dark .resume-banner { border: 1px solid var(--hero-line); }
+:root.dark .switch:checked::after { background: #151a1b; }
+:root.dark .seg-opt input:checked + span, :root.dark .seg-tabs a.on { background: #3a4546; box-shadow: none; }
+:root.dark dialog::backdrop { background: rgba(0, 0, 0, .6); }
+:root.dark .gear { border-color: #475354; }
+:root.dark img, :root.dark .chart { color-scheme: dark; }
 
-/* Impostazioni → Aspetto */
-.aspect-card { padding: 14px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
-.aspect-card h2 { margin: 0; font-size: 16px; }
-.aspect-card p { margin: 0; line-height: 1.35; }
-.aspect-foot { padding-top: 10px; border-top: 1px solid var(--line-soft); color: var(--ink-2); }
-.theme-opts { display: flex; gap: 8px; }
-.theme-opt { flex: 1 1 0; min-width: 0; padding: 10px 6px; border-radius: 12px; border: 1px solid var(--btn-line); background: var(--card); color: var(--ink); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 14px; }
-.theme-opt b { font-weight: 600; overflow-wrap: anywhere; text-align: center; }
-.theme-opt small { font-size: 11px; color: var(--muted); text-align: center; }
-.theme-opt.on { border: 2px solid var(--yellow); background: var(--yellow-soft); }
-.theme-opt.on b { font-weight: 700; }
-html[data-theme=dark] .seg-opt input:checked + span { color: var(--ink); }
-html[data-theme=dark] .seg-type .seg-opt input:checked + span { background: var(--ink); color: var(--on-ink); }
-html[data-theme=dark] .seg-type.type-cardio .seg-opt input[value=cardio]:checked + span { background: var(--yellow); color: var(--on-yellow); }
+/* Settings: lists all the way down (the same list as Everyday and Ricette) */
+.set-list { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; margin-bottom: 4px; }
+.set-row { display: flex; align-items: center; gap: 14px; padding: 14px 14px 14px 16px; min-height: 64px; color: var(--ink); text-decoration: none; border-top: 1px solid var(--line); }
+.set-row:first-child { border-top: 0; }
+.set-row:hover { color: var(--ink); }
+.set-row:active { background: var(--yellow-soft); }
+.set-ico { width: 32px; display: inline-flex; justify-content: center; flex: none; color: var(--ink-2); }
+.set-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.set-text b { font-size: 1rem; font-weight: 600; }
+.set-text small { color: var(--muted); font-size: .85rem; line-height: 1.3; }
+.set-chev { color: var(--muted); flex: none; display: inline-flex; }
+.set-back { display: inline-block; color: var(--muted); text-decoration: none; margin: 14px 4px 0; padding: 6px 0; font-weight: 600; }
+.set-back:hover { color: var(--ink); }
+.set-title { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.set-title .set-ico { color: var(--ink); }
+.set-sub-h { margin: 18px 4px 6px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+/* Lingua e aspetto: Automatico / Chiaro / Scuro */
+.seg.theme-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); max-width: 420px; }
+.seg.theme-seg label { position: relative; display: flex; align-items: center; justify-content: center; padding: 8px 6px; border-radius: 9px; cursor: pointer; color: var(--muted); font-weight: 600; font-size: .9rem; text-align: center; }
+.seg.theme-seg label.on { background: var(--yellow); color: var(--on-yellow); }
+.seg.theme-seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg.theme-seg label:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.field-head { font-size: 13px; font-weight: 600; color: var(--muted); margin: 6px 4px -4px; }
+:root.dark .seg-opt input:checked + span { color: var(--ink); }
+:root.dark .seg-type .seg-opt input:checked + span { background: var(--ink); color: var(--on-ink); }
+:root.dark .seg-type.type-cardio .seg-opt input[value=cardio]:checked + span { background: var(--yellow); color: var(--on-yellow); }
+
+/* light: cards, lists, segmented controls and the gear lift off the page; the bars are white */
+:root:not(.dark) .card, :root:not(.dark) .card-row, :root:not(.dark) .seg, :root:not(.dark) .seg-tabs, :root:not(.dark) .gear, :root:not(.dark) .set-list, :root:not(.dark) .search { box-shadow: var(--lift); }
+nav.tabs { background: var(--bar); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+/* hover colours only where there is a real pointer: on a phone a tapped link would keep them */
+@media (hover: none) {
+  a:hover { color: var(--gold); }
+  .today-hero .hero-title:hover { color: var(--d-text); }
+  .card-row:hover { border-color: var(--line); }
+  .list-row:hover { background: transparent; }
+  .plan-hero.light:hover, .month-card:hover { color: var(--ink); }
+  .btn.on-dark:hover { color: var(--d-text); }
+}

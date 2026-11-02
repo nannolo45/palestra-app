@@ -1,6 +1,6 @@
 // Offline support, as in Ricette. Each app version is cached as a whole; a new version is downloaded in the
 // background and takes over when the user taps "Aggiorna" (or the next time the app starts with no workout open).
-const VERSION = 'palestra-v15'; // keep in step with APP_VERSION in js/views/settings.js
+const VERSION = 'palestra-v16'; // keep in step with APP_VERSION in js/views/settings.js
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
   'js/app.js', 'js/store.js', 'js/sync.js', 'js/i18n.js', 'js/shell.js', 'js/sortable.js', 'js/model.js', 'js/workout.js', 'js/data.js', 'js/theme.js', 'js/importer.js', 'js/plans.js',

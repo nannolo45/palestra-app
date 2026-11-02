@@ -1,19 +1,21 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Palestra · Guide</title><script>(function(){var m,t;try{m=localStorage.getItem('guideMode');t=localStorage.getItem('palestraTheme')}catch(e){}if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;var w=innerWidth,d=m?m==='desk':w>=1000||(w>=700&&matchMedia('(pointer:fine)').matches);if(d)document.documentElement.classList.add('desk')})()</script><style>
-:root{color-scheme:light;--bg:#F5F4F0;--ink:#17181B;--muted:#5E6066;--line:#E2E0DA;--acc:#7A5A00;--card:#FFFFFF}
-html[data-theme=dark]{color-scheme:dark;--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}
-@media(prefers-color-scheme:dark){html:not([data-theme=light]){color-scheme:dark;--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Palestra · Guide</title><script>(function(){var m;try{m=localStorage.getItem('guideMode')}catch(e){}var w=innerWidth,d=m?m==='desk':w>=1000||(w>=700&&matchMedia('(pointer:fine)').matches);if(d)document.documentElement.classList.add('desk');var t='auto';try{t=localStorage.getItem('palestra-theme')||'auto'}catch(e){}document.documentElement.classList.add(t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light')})()</script><style>
+:root{color-scheme:light;--bg:#f3f5f5;--ink:#162021;--muted:#5d696a;--line:#dde3e3;--acc:#7A5A00;--card:#ffffff}
+:root.dark{color-scheme:dark;--bg:#151a1b;--ink:#e9eeec;--muted:#94a09f;--line:#313b3c;--acc:#FFD23F;--card:#1f2627}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
 main{max-width:720px;margin:0 auto;padding:16px 18px 60px}
 h1{font-family:Georgia,serif;font-size:1.9rem;margin:.4em 0}h2{font-family:Georgia,serif;margin-top:2em;border-top:1px solid var(--line);padding-top:1em}
 h3{margin-top:1.6em}a{color:var(--acc)}code{background:var(--card);padding:1px 5px;border-radius:5px;font-size:.92em}
-img{display:block;max-width:300px;width:100%;margin:14px auto;border:1px solid var(--line);border-radius:18px;box-shadow:0 6px 20px rgba(0,0,0,.18);cursor:zoom-in}
+img{display:block;max-width:300px;width:100%;margin:14px auto;border:1px solid var(--line);border-radius:18px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
 table{border-collapse:collapse;width:100%;font-size:.95em}th,td{text-align:left;vertical-align:top;padding:8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}
 .top{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;font-size:.95em}.top a{text-decoration:none}
 nav.toc{background:var(--card);border-radius:14px;padding:10px 16px;margin:16px 0}nav.toc a{display:block;padding:3px 0;text-decoration:none}
+img{cursor:zoom-in}
+/* Phone or computer: a class on <html> (chosen at the top, remembered; guessed the first time). Light or dark: the app's own choice. */
+/* (v62) the two choices at the top are dropdowns: how to read (phone / computer) and the language */
+.top .pick{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:.9em}
+.top select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 28px 6px 10px;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 55%,calc(100% - 10px) 55%;background-size:5px 5px;background-repeat:no-repeat;cursor:pointer}
+.top .picks{display:flex;gap:10px;flex-wrap:wrap}
 html:not(.desk) .dk,html:not(.desk) .desk-only,html.desk .ph,html.desk .phone-only{display:none}
-.mode{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;gap:2px}
-.mode button{border:0;background:none;color:var(--muted);font:inherit;font-size:.88em;padding:4px 12px;border-radius:999px;cursor:pointer}
-.mode button[aria-pressed=true]{background:var(--acc);color:var(--bg);font-weight:600}
 html.desk main{max-width:1080px;padding:24px 32px 80px}
 html.desk main>p,html.desk main>ul,html.desk main>ol,html.desk main>table,html.desk main>h2,html.desk main>h3,html.desk main>div,html.desk nav.toc{max-width:780px;margin-left:auto;margin-right:auto}
 html.desk nav.toc{columns:2;column-gap:24px}
@@ -22,13 +24,14 @@ html.desk img.dk,html.desk img.wide{max-width:100%;border-radius:12px;margin:18p
 html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 .zoom{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:2vw;cursor:zoom-out}
 .zoom img{max-width:100%;max-height:100%;width:auto;margin:0;border:0;box-shadow:none;cursor:zoom-out}
-</style></head><body><main><div class="top"><a href="./#/settings">← Back to the app</a><span class="mode" role="group" aria-label="Show the guide for"><button type="button" data-mode="phone">📱 Phone</button><button type="button" data-mode="desk">💻 Computer</button></span><a href="guide-it.html">Italiano</a></div><h1 id="palestra-user-guide">Palestra: user guide</h1><nav class="toc"><a href="#what-palestra-is">What Palestra is</a><a href="#first-setup">First setup</a><a href="#the-five-sections">The five sections</a><a href="#today">Today</a><a href="#workouts">Workouts</a><a href="#routines">Routines</a><a href="#exercises-and-the-gym">Exercises and the gym</a><a href="#during-the-workout">During the workout</a><a href="#history">History</a><a href="#importing-from-text">Importing from text</a><a href="#with-everyday">With Everyday</a><a href="#a-typical-week">A typical week</a><a href="#on-a-computer">On a computer</a><a href="#tips-and-troubleshooting">Tips and troubleshooting</a></nav>
+</style></head>
+<body><main><div class="top"><a href="./#/settings">← Back to the app</a><span class="picks"><label class="pick"><span>Show the guide for</span><select id="mode" aria-label="Show the guide for"><option value="phone">📱 Phone</option><option value="desk">💻 Computer</option></select></label><label class="pick"><span>Language</span><select id="lang" aria-label="Language"><option value="guide-it.html">Italiano</option><option value="guide-en.html" selected>English</option></select></label></span></div><h1 id="palestra-user-guide">Palestra: user guide</h1><nav class="toc"><a href="#what-palestra-is">What Palestra is</a><a href="#first-setup">First setup</a><a href="#the-five-sections">The five sections</a><a href="#today">Today</a><a href="#workouts">Workouts</a><a href="#routines">Routines</a><a href="#exercises-and-the-gym">Exercises and the gym</a><a href="#during-the-workout">During the workout</a><a href="#history">History</a><a href="#importing-from-text">Importing from text</a><a href="#with-everyday">With Everyday</a><a href="#a-typical-week">A typical week</a><a href="#on-a-computer">On a computer</a><a href="#tips-and-troubleshooting">Tips and troubleshooting</a></nav>
 <p>How to set Palestra up, train with it every week and have it work alongside Everyday.</p>
 <div class="desk-only">
-<p><strong>You're reading the computer guide.</strong> The pictures show the app on a wide screen. Where the guide says <em>tap</em>, on a computer it's a click. At the top, <strong>📱 Phone</strong> shows the phone guide (your choice is kept). Click a picture to enlarge it.</p>
+<p><strong>You're reading the computer guide.</strong> The pictures show the app on a wide screen. Where the guide says <em>tap</em>, on a computer it's a click. In the menu at the top, <em>Show the guide for</em> → <strong>📱 Phone</strong> switches to the phone guide (your choice is kept). Click a picture to enlarge it.</p>
 </div>
 <div class="phone-only">
-<p><em>This is the phone guide. At the top, </em><em>💻 Computer</em><em> shows the one for a computer.</em></p>
+<p><em>This is the phone guide. In the menu at the top, </em>Show the guide for<em> → </em><em>💻 Computer</em><em> switches to the computer one.</em></p>
 </div>
 <h2 id="what-palestra-is">What Palestra is</h2>
 <p>Palestra tells you what to do at the gym, exercise by exercise, and remembers what you did. You set up your <strong>routines</strong> once (Chest and biceps, Legs…), put them in a <strong>workout</strong>, which is your week, and at the gym you follow the screen: set, weight, rest, where to go next.</p>
@@ -42,26 +45,26 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 <h3 id="2-connect-your-github-space">2. Connect your GitHub space</h3>
 <p>On GitHub, create a private, empty repository called <code>palestra-data</code>. Then make a token for this device: <em>Settings → Developer settings → Fine-grained tokens</em>, access to <code>palestra-data</code> only, permission <em>Contents: Read and write</em>. Name it after the device, for example "Tom's phone".</p>
 <p>In Palestra tap the gear, then <em>GitHub connection</em>. Enter your user, the repository and the token, then <em>Save and sync</em>.</p>
-<p><img class="ph" loading="lazy" alt="GitHub connection: user, repository and token" src="guide/en/04-github.png" /><img class="dk" loading="lazy" alt="GitHub connection: user, repository and token" src="guide/en/desk/04-github.webp" /></p>
+<p><img class="ph" loading="lazy" alt="GitHub connection: user, repository and token" src="guide/en/04-github.webp" /><img class="dk" loading="lazy" alt="GitHub connection: user, repository and token" src="guide/en/desk/04-github.webp" /></p>
 <h3 id="3-map-out-your-gym">3. Map out your gym</h3>
 <p>In <em>Exercises → Gym</em> add the <strong>zones</strong> you move between (Entrance and cardio, Machine room, Free weights…) and tap <em>Reorder</em> to put them in the order you walk through them. Routines use this route so you walk less.</p>
-<p><img class="ph" loading="lazy" alt="The gym: zones in the order you walk them" src="guide/en/05-gym.png" /><img class="dk" loading="lazy" alt="The gym: zones in the order you walk them" src="guide/en/desk/05-gym.webp" /></p>
+<p><img class="ph" loading="lazy" alt="The gym: zones in the order you walk them" src="guide/en/05-gym.webp" /><img class="dk" loading="lazy" alt="The gym: zones in the order you walk them" src="guide/en/desk/05-gym.webp" /></p>
 <p>In each zone tap <strong>+</strong> to add a <strong>machine</strong>, with the number printed on it (M14, C3) and your settings (seat, back rest). Several identical machines can be one entry, like treadmills C1–6.</p>
-<p><img class="ph" loading="lazy" alt="New machine: name, number, zone and settings" src="guide/en/06-new-machine.png" /><img class="dk" loading="lazy" alt="New machine: name, number, zone and settings" src="guide/en/desk/06-new-machine.webp" /></p>
+<p><img class="ph" loading="lazy" alt="New machine: name, number, zone and settings" src="guide/en/06-new-machine.webp" /><img class="dk" loading="lazy" alt="New machine: name, number, zone and settings" src="guide/en/desk/06-new-machine.webp" /></p>
 <h3 id="4-add-your-exercises">4. Add your exercises</h3>
 <p>In <em>Exercises</em> tap <strong>+</strong>. Pick the type (<em>Weights</em>, <em>Bodyweight</em> or <em>Cardio</em>), the machine and the usual rest. <strong>Notes</strong> are optional: how to do it, what to remember. You see them again during the workout.</p>
-<p><img class="ph" loading="lazy" alt="An exercise: type, machine, rest and notes" src="guide/en/08-exercise.png" /><img class="dk" loading="lazy" alt="An exercise: type, machine, rest and notes" src="guide/en/desk/08-exercise.webp" /></p>
+<p><img class="ph" loading="lazy" alt="An exercise: type, machine, rest and notes" src="guide/en/08-exercise.webp" /><img class="dk" loading="lazy" alt="An exercise: type, machine, rest and notes" src="guide/en/desk/08-exercise.webp" /></p>
 <h3 id="5-make-your-routines">5. Make your routines</h3>
 <p>In <em>Routines</em> tap <em>New routine</em>, give it a name (say, "Chest and biceps") and add exercises with <em>Add exercise</em>. Tap an exercise to choose sets, reps, weight and rest. <a href="#routines">Inside a routine</a> covers the rest.</p>
-<p><img class="ph" loading="lazy" alt="Edit routine: the order of the exercises and the automatic increase" src="guide/en/12-routine-edit.png" /><img class="dk" loading="lazy" alt="Edit routine: the order of the exercises and the automatic increase" src="guide/en/desk/12-routine-edit.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Edit routine: the order of the exercises and the automatic increase" src="guide/en/12-routine-edit.webp" /><img class="dk" loading="lazy" alt="Edit routine: the order of the exercises and the automatic increase" src="guide/en/desk/12-routine-edit.webp" /></p>
 <h3 id="6-optional-import-a-workout-thats-already-written">6. Optional: import a workout that's already written</h3>
 <p>If Marco, your trainer, wrote your week on a sheet or in a message, you don't have to copy it by hand. Tap <em>Import</em> next to <em>New workout</em> and paste the text: one exercise per line, the way you'd write it. <a href="#importing-from-text">Importing from text</a> explains how to write it.</p>
-<p><img class="ph" loading="lazy" alt="Import: paste the text, how to write it is underneath" src="guide/en/17-import.png" /><img class="dk" loading="lazy" alt="Import: paste the text, how to write it is underneath" src="guide/en/desk/17-import.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Import: paste the text, how to write it is underneath" src="guide/en/17-import.webp" /><img class="dk" loading="lazy" alt="Import: paste the text, how to write it is underneath" src="guide/en/desk/17-import.webp" /></p>
 <p>Tap <em>Read the text</em>. Before saving you see a preview: <strong>yours</strong> reuses one of your exercises with its machine, <strong>new</strong> creates it, <strong>check</strong> marks a bit the app didn't understand.</p>
-<p><img class="ph" loading="lazy" alt="The preview: what it reuses, what it creates, what to check" src="guide/en/18-import-preview.png" /><img class="dk" loading="lazy" alt="The preview: what it reuses, what it creates, what to check" src="guide/en/desk/18-import-preview.webp" /></p>
+<p><img class="ph" loading="lazy" alt="The preview: what it reuses, what it creates, what to check" src="guide/en/18-import-preview.webp" /><img class="dk" loading="lazy" alt="The preview: what it reuses, what it creates, what to check" src="guide/en/desk/18-import-preview.webp" /></p>
 <h3 id="7-make-a-workout-active">7. Make a workout active</h3>
 <p>A <strong>workout</strong> groups the week's routines, each on its day. In <em>Workouts</em> open one and tap <em>Make active</em>: from then on you see it in <em>Today</em> and Everyday plans it. If you switch mid-week, choose to start from Monday or from today.</p>
-<p><img class="ph" loading="lazy" alt="Making a workout active: the old one stays saved" src="guide/en/16-activate.png" /><img class="dk" loading="lazy" alt="Making a workout active: the old one stays saved" src="guide/en/desk/16-activate.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Making a workout active: the old one stays saved" src="guide/en/16-activate.webp" /><img class="dk" loading="lazy" alt="Making a workout active: the old one stays saved" src="guide/en/desk/16-activate.webp" /></p>
 <h2 id="the-five-sections">The five sections</h2>
 <table>
 <thead>
@@ -93,25 +96,25 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 </tr>
 </tbody>
 </table>
-<p>At the top of each page are its actions, like <em>New routine</em> and <em>Import</em>. The <strong>gear</strong> at the top right opens <em>Settings</em>: appearance, the connection, automatic increase, rest, Everyday, language, backup and this guide.</p>
-<p>At the top of Settings, <strong>Appearance</strong> picks the app's colours: <em>Automatic</em> follows the device (dark in the evening, if the device is), <em>Light</em> and <em>Dark</em> stay that way. During a workout the screen is dark either way.</p>
-<p><img class="ph" loading="lazy" alt="Settings: everything in its own section" src="guide/en/03-settings.png" /><img class="dk" loading="lazy" alt="Settings: everything in its own section" src="guide/en/desk/03-settings.webp" /></p>
+<p>At the top of each page are its actions, like <em>New routine</em> and <em>Import</em>. The <strong>gear</strong> at the top right opens <em>Settings</em>: one list in three groups (<em>Connections</em>, <em>Training</em>, <em>App</em>). Each row says how it's set now and opens a page about that one thing; <em>← Settings</em> at the top goes back to the list.</p>
+<p>In <em>Settings → Language and appearance</em>, <strong>Appearance</strong> picks the app's colours: <em>Automatic</em> follows the phone or computer (dark in the evening, if the device is), <em>Light</em> and <em>Dark</em> stay that way. The choice stays on this device, and the guide follows it. During a workout the screen is dark either way.</p>
+<p><img class="ph" loading="lazy" alt="Settings: everything in its own section" src="guide/en/03-settings.webp" /><img class="dk" loading="lazy" alt="Settings: everything in its own section" src="guide/en/desk/03-settings.webp" /></p>
 <h2 id="today">Today</h2>
 <p>The first page tells you what's on today. At the top is the day's routine, with its time if you set one, and <em>Start</em>. If Everyday has already put it in your plan, it says <em>in Everyday</em>.</p>
-<p><img class="ph" loading="lazy" alt="Today: today's routine at 18:00 and the week" src="guide/en/01-today.png" /><img class="dk" loading="lazy" alt="Today: today's routine at 18:00 and the week" src="guide/en/desk/01-today.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Today: today's routine at 18:00 and the week" src="guide/en/01-today.webp" /><img class="dk" loading="lazy" alt="Today: today's routine at 18:00 and the week" src="guide/en/desk/01-today.webp" /></p>
 <h3 id="start-todays-routine">Start today's routine</h3>
 <p>Tap <em>Start</em>. The workout opens full screen: <a href="#during-the-workout">During the workout</a> explains what you see.</p>
 <h3 id="move-to-tomorrow">Move to tomorrow</h3>
 <p>Can't make it today? Tap <em>Move to tomorrow</em>. The routine moves to tomorrow for this week only, and the list of days shows it. <em>Back to today</em> undoes it. If you use Everyday, the block moves there too at the next sync: at the same time if it's free, otherwise in the first free slot tomorrow.</p>
-<p><img class="ph" loading="lazy" alt="After &quot;Move to tomorrow&quot;: the routine has moved, and you can put it back" src="guide/en/02-moved.png" /><img class="dk" loading="lazy" alt="After &quot;Move to tomorrow&quot;: the routine has moved, and you can put it back" src="guide/en/desk/02-moved.webp" /></p>
+<p><img class="ph" loading="lazy" alt="After &quot;Move to tomorrow&quot;: the routine has moved, and you can put it back" src="guide/en/02-moved.webp" /><img class="dk" loading="lazy" alt="After &quot;Move to tomorrow&quot;: the routine has moved, and you can put it back" src="guide/en/desk/02-moved.webp" /></p>
 <h3 id="the-week-and-the-month">The week and the month</h3>
 <p>Below are the week's routines: the ones done, the next one and the ones left. Then the <strong>active workout</strong> with <em>Change</em>, your last session and a square for each day of the month, yellow when you trained.</p>
 <h2 id="workouts">Workouts</h2>
 <p>A workout is your week: the routines you do, each on its day. The <strong>active</strong> one is in yellow at the top; the others stay saved with their history, for when you need them (a deload week, for instance).</p>
-<p><img class="ph" loading="lazy" alt="Your workouts: the active one at the top" src="guide/en/14-plans.png" /><img class="dk" loading="lazy" alt="Your workouts: the active one at the top" src="guide/en/desk/14-plans.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Your workouts: the active one at the top" src="guide/en/14-plans.webp" /><img class="dk" loading="lazy" alt="Your workouts: the active one at the top" src="guide/en/desk/14-plans.webp" /></p>
 <h3 id="create-a-workout">Create a workout</h3>
 <p>Tap <em>New workout</em>, then <em>Add routine</em> for each one. Drag a routine by its handle to change the order. <em>Import</em>, next to <em>Add routine</em>, adds routines written as text.</p>
-<p><img class="ph" loading="lazy" alt="A workout: its routines, days and times" src="guide/en/15-plan.png" /><img class="dk" loading="lazy" alt="A workout: its routines, days and times" src="guide/en/desk/15-plan.webp" /></p>
+<p><img class="ph" loading="lazy" alt="A workout: its routines, days and times" src="guide/en/15-plan.webp" /><img class="dk" loading="lazy" alt="A workout: its routines, days and times" src="guide/en/desk/15-plan.webp" /></p>
 <h3 id="days-and-times">Days and times</h3>
 <p>For each routine tap the weekday (M T W T F S S) and, if you like, pick a <em>Time</em>. With a time Everyday puts it in your plan by itself; without one, you choose when in Everyday each week.</p>
 <h3 id="change-the-active-workout">Change the active workout</h3>
@@ -120,12 +123,12 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 <p><em>Export .txt</em> saves the workout as text, to send to someone or import again. <em>Duplicate</em> makes a copy to change without touching the original.</p>
 <h2 id="routines">Routines</h2>
 <p>A routine is a sequence of exercises you repeat, like "Legs". Palestra works out its <strong>estimated length</strong> from the sets and rests, and corrects it with your real times after a few sessions.</p>
-<p><img class="ph" loading="lazy" alt="Your routines, with the workout each one is in" src="guide/en/10-routines.png" /><img class="dk" loading="lazy" alt="Your routines, with the workout each one is in" src="guide/en/desk/10-routines.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Your routines, with the workout each one is in" src="guide/en/10-routines.webp" /><img class="dk" loading="lazy" alt="Your routines, with the workout each one is in" src="guide/en/desk/10-routines.webp" /></p>
 <h3 id="find-a-routine">Find a routine</h3>
 <p>Type in the search, or pick <em>In the active workout</em> or <em>In no workout</em>. Under each routine you see which workout it's in.</p>
 <h3 id="inside-a-routine">Inside a routine</h3>
 <p>At the top: the estimated length, the sets and the zones. Then the exercises in the order you do them, with arrows where you change zone. On the right of each exercise is <strong>last time</strong>: the weight, minutes or reps from your last session.</p>
-<p><img class="ph" loading="lazy" alt="A routine: today's plan and, underneath, last time" src="guide/en/11-routine.png" /><img class="dk" loading="lazy" alt="A routine: today's plan and, underneath, last time" src="guide/en/desk/11-routine.webp" /></p>
+<p><img class="ph" loading="lazy" alt="A routine: today's plan and, underneath, last time" src="guide/en/11-routine.webp" /><img class="dk" loading="lazy" alt="A routine: today's plan and, underneath, last time" src="guide/en/desk/11-routine.webp" /></p>
 <h3 id="edit-a-routine">Edit a routine</h3>
 <p>Tap <em>Edit</em>.</p>
 <table>
@@ -162,12 +165,12 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 </tr>
 </tbody>
 </table>
-<p><img class="ph" loading="lazy" alt="Add exercise: the list, with each one's machine" src="guide/en/13-add-exercise.png" /><img class="dk" loading="lazy" alt="Add exercise: the list, with each one's machine" src="guide/en/desk/13-add-exercise.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Add exercise: the list, with each one's machine" src="guide/en/13-add-exercise.webp" /><img class="dk" loading="lazy" alt="Add exercise: the list, with each one's machine" src="guide/en/desk/13-add-exercise.webp" /></p>
 <h3 id="duplicate-into-another-workout">Duplicate into another workout</h3>
 <p>In a routine tap <em>Duplicate into another workout</em> and choose where. The copy is yours to change: the original stays as it was.</p>
 <h2 id="exercises-and-the-gym">Exercises and the gym</h2>
 <p><em>Exercises</em> lists all your exercises, grouped <em>By muscle</em> or <em>By place</em>. Filter by type, open and close groups, or switch to the <em>Compact view</em> with the button at the top to see more at once.</p>
-<p><img class="ph" loading="lazy" alt="Exercises: groups, filters and the compact view" src="guide/en/07-exercises.png" /><img class="dk" loading="lazy" alt="Exercises: groups, filters and the compact view" src="guide/en/desk/07-exercises.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Exercises: groups, filters and the compact view" src="guide/en/07-exercises.webp" /><img class="dk" loading="lazy" alt="Exercises: groups, filters and the compact view" src="guide/en/desk/07-exercises.webp" /></p>
 <h3 id="the-three-types">The three types</h3>
 <table>
 <thead>
@@ -191,7 +194,7 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 </tr>
 </tbody>
 </table>
-<p><img class="ph" loading="lazy" alt="A cardio exercise: the machine and its targets" src="guide/en/09-exercise-cardio.png" /><img class="dk" loading="lazy" alt="A cardio exercise: the machine and its targets" src="guide/en/desk/09-exercise-cardio.webp" /></p>
+<p><img class="ph" loading="lazy" alt="A cardio exercise: the machine and its targets" src="guide/en/09-exercise-cardio.webp" /><img class="dk" loading="lazy" alt="A cardio exercise: the machine and its targets" src="guide/en/desk/09-exercise-cardio.webp" /></p>
 <h3 id="the-gym-zones-and-machines">The gym: zones and machines</h3>
 <p>In <em>Exercises → Gym</em> you change the zones, their order and the machines in each zone. Tap a machine for its number, name and settings.</p>
 <h3 id="a-machine-that-isnt-listed">A machine that isn't listed</h3>
@@ -200,28 +203,28 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 <p>The screen turns dark and large, stays on and works without signal. If the phone locks or the app reloads, open it again: it picks up where you were.</p>
 <h3 id="this-weeks-increases">This week's increases</h3>
 <p>At the first session of the week, if the automatic increase is on, Palestra offers your new targets: one exercise per line, before and after. Untick any you don't want, then tap <em>Confirm … and start</em>, or <em>Start with the old weights</em>.</p>
-<p><img class="ph" loading="lazy" alt="Going up? Untick the ones you don't want" src="guide/en/19-increase.png" /><img class="dk" loading="lazy" alt="Going up? Untick the ones you don't want" src="guide/en/desk/19-increase.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Going up? Untick the ones you don't want" src="guide/en/19-increase.webp" /><img class="dk" loading="lazy" alt="Going up? Untick the ones you don't want" src="guide/en/desk/19-increase.webp" /></p>
 <h3 id="a-set">A set</h3>
 <p>You see the exercise, the set (2 of 4), reps and kg, the machine and its zone, and your note. If you did something different, adjust with − and +. Then tap <em>Done</em>.</p>
-<p><img class="ph" loading="lazy" alt="A set: reps, kg, where to go and your note" src="guide/en/20-set.png" /><img class="dk" loading="lazy" alt="A set: reps, kg, where to go and your note" src="guide/en/desk/20-set.webp" /></p>
+<p><img class="ph" loading="lazy" alt="A set: reps, kg, where to go and your note" src="guide/en/20-set.webp" /><img class="dk" loading="lazy" alt="A set: reps, kg, where to go and your note" src="guide/en/desk/20-set.webp" /></p>
 <h3 id="rest">Rest</h3>
 <p>A countdown starts, and you see how long you actually rested. <em>+30 s</em> adds time, <em>Skip</em> moves straight on. At zero the phone vibrates. Underneath is what's next and where to go.</p>
-<p><img class="ph" loading="lazy" alt="Rest: the time left and what comes next" src="guide/en/21-rest.png" /><img class="dk" loading="lazy" alt="Rest: the time left and what comes next" src="guide/en/desk/21-rest.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Rest: the time left and what comes next" src="guide/en/21-rest.webp" /><img class="dk" loading="lazy" alt="Rest: the time left and what comes next" src="guide/en/desk/21-rest.webp" /></p>
 <h3 id="cardio">Cardio</h3>
 <p>For cardio you see the time left and the targets, which you can change with − and +. If you like, enter the distance from the display. Tap <em>Finish</em> when you're done.</p>
-<p><img class="ph" loading="lazy" alt="Cardio: the time left and the targets" src="guide/en/22-cardio.png" /><img class="dk" loading="lazy" alt="Cardio: the time left and the targets" src="guide/en/desk/22-cardio.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Cardio: the time left and the targets" src="guide/en/22-cardio.webp" /><img class="dk" loading="lazy" alt="Cardio: the time left and the targets" src="guide/en/desk/22-cardio.webp" /></p>
 <h3 id="pause-and-finish">Pause and finish</h3>
 <p><em>Pause</em>, at the top right, stops the clock: for a phone call or a queue at a machine. <strong>×</strong> ends early: the sets you did are saved as a partial session. At the end you get the summary: time, sets, total weight, rests and new bests.</p>
-<p><img class="ph" loading="lazy" alt="Finished: the session summary" src="guide/en/23-summary.png" /><img class="dk" loading="lazy" alt="Finished: the session summary" src="guide/en/desk/23-summary.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Finished: the session summary" src="guide/en/23-summary.webp" /><img class="dk" loading="lazy" alt="Finished: the session summary" src="guide/en/desk/23-summary.webp" /></p>
 <h3 id="automatic-increase-in-settings">Automatic increase, in Settings</h3>
 <p>In <em>Settings → Automatic increase</em> choose when (<em>If complete</em>: only if you did every set last time; <em>Always</em>) and by how much per type: machines +2.5 kg, dumbbells +1, bodyweight +1 rep, cardio +1 minute. On an exercise's page you can give it its own step or leave it out.</p>
-<p><img class="ph" loading="lazy" alt="Automatic increase: when, and by how much per type" src="guide/en/27-increase-settings.png" /><img class="dk" loading="lazy" alt="Automatic increase: when, and by how much per type" src="guide/en/desk/27-increase-settings.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Automatic increase: when, and by how much per type" src="guide/en/27-increase-settings.webp" /><img class="dk" loading="lazy" alt="Automatic increase: when, and by how much per type" src="guide/en/desk/27-increase-settings.webp" /></p>
 <h2 id="history">History</h2>
 <p>Pick an exercise at the top: you see how its load has grown, by how much, and the last result. Below are all your sessions, complete or partial.</p>
-<p><img class="ph" loading="lazy" alt="History: an exercise's progress and your sessions" src="guide/en/24-history.png" /><img class="dk" loading="lazy" alt="History: an exercise's progress and your sessions" src="guide/en/desk/24-history.webp" /></p>
+<p><img class="ph" loading="lazy" alt="History: an exercise's progress and your sessions" src="guide/en/24-history.webp" /><img class="dk" loading="lazy" alt="History: an exercise's progress and your sessions" src="guide/en/desk/24-history.webp" /></p>
 <h3 id="a-session">A session</h3>
 <p>Tap one to see where the minutes went (work, rests, walking, pauses) and every set you did.</p>
-<p><img class="ph" loading="lazy" alt="A session: where the minutes went and every set" src="guide/en/25-session.png" /><img class="dk" loading="lazy" alt="A session: where the minutes went and every set" src="guide/en/desk/25-session.webp" /></p>
+<p><img class="ph" loading="lazy" alt="A session: where the minutes went and every set" src="guide/en/25-session.webp" /><img class="dk" loading="lazy" alt="A session: where the minutes went and every set" src="guide/en/desk/25-session.webp" /></p>
 <h2 id="importing-from-text">Importing from text</h2>
 <p>Next to <em>New workout</em>, <em>New routine</em> and <em>Add exercise</em> there's <em>Import</em>. Paste the text or pick a .txt file. Write it the way you would by hand, one thing per line:</p>
 <table>
@@ -265,7 +268,7 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 <p>Older files, with <code>PLAN:</code> for the week and <code>DAY:</code> for the routines, still read.</p>
 <h2 id="with-everyday">With Everyday</h2>
 <p>Palestra decides name, length and exercises; Everyday decides when. To connect them, in Everyday open <em>Settings → Advanced → Connections → Palestra</em> and paste a token for <code>palestra-data</code> with <em>Contents: Read and write</em>.</p>
-<p><img class="ph" loading="lazy" alt="Everyday, in Palestra's settings: what it sees and what it writes" src="guide/en/26-everyday.png" /><img class="dk" loading="lazy" alt="Everyday, in Palestra's settings: what it sees and what it writes" src="guide/en/desk/26-everyday.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Everyday, in Palestra's settings: what it sees and what it writes" src="guide/en/26-everyday.webp" /><img class="dk" loading="lazy" alt="Everyday, in Palestra's settings: what it sees and what it writes" src="guide/en/desk/26-everyday.webp" /></p>
 <ul>
 <li>Each routine shows in Everyday as a <strong>routine</strong>, with its estimated length.</li>
 <li>The active workout's routines repeat on their days by themselves, at the time you chose. You plan the others by hand.</li>
@@ -288,10 +291,11 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 <p><strong>The screen turns off during a workout.</strong> Exclude Palestra from your phone's battery saving, and check that the screen-on option is switched on in <em>Rest and training</em>.</p>
 <p><strong>The block isn't ticked in Everyday.</strong> Sync Palestra (gear → <em>Sync</em>), then Everyday.</p>
 <p><strong>An Update bar appears.</strong> A new version is out: tap it when you're not training.</p>
-<p><strong>You want a copy of everything.</strong> <em>Settings → Backup</em> downloads all your data as one file. The GitHub repository also keeps every past version.</p></main><script>
+<p><strong>You want a copy of everything.</strong> <em>Settings → Your data → Backup</em> downloads all your data as one file. The GitHub repository also keeps every past version.</p></main><script>
 document.addEventListener('click',function(e){var z=document.querySelector('.zoom');if(z){z.remove();return;}var i=e.target.closest('main img');if(!i)return;var d=document.createElement('div');d.className='zoom';var b=document.createElement('img');b.src=i.currentSrc||i.src;b.alt=i.alt;d.appendChild(b);document.body.appendChild(d);});
-function setMode(m,keep){document.documentElement.classList.toggle('desk',m==='desk');document.querySelectorAll('.mode button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.mode===m));});if(keep){try{localStorage.setItem('guideMode',m)}catch(e){}}}
+function setMode(m,keep){document.documentElement.classList.toggle('desk',m==='desk');var s=document.getElementById('mode');if(s)s.value=m;if(keep){try{localStorage.setItem('guideMode',m)}catch(e){}}}
 setMode(document.documentElement.classList.contains('desk')?'desk':'phone',false);
-document.querySelectorAll('.mode button').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();setMode(b.dataset.mode,true);});});
+document.getElementById('mode').addEventListener('change',function(e){setMode(e.target.value,true);});
+document.getElementById('lang').addEventListener('change',function(e){location.href=e.target.value+location.hash;});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'){var z=document.querySelector('.zoom');if(z)z.remove();}});
 </script></body></html>

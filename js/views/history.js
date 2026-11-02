@@ -117,7 +117,7 @@ export function sessionView(id) {
     ${groups.map((g) => {
     const ex = state.exercises.find((e) => e.id === g.exerciseId);
     return `<section class="card"><h2 class="card-title">${esc(ex?.name || '—')}</h2>
-      <ol class="set-list">${g.sets.map((x) => `<li><span>${esc(setText(ex, x))}</span>${x.restTaken ? `<small>${esc(t('restedFor', clock(x.restTaken)))}</small>` : ''}</li>`).join('')}</ol></section>`;
+      <ol class="sets-done">${g.sets.map((x) => `<li><span>${esc(setText(ex, x))}</span>${x.restTaken ? `<small>${esc(t('restedFor', clock(x.restTaken)))}</small>` : ''}</li>`).join('')}</ol></section>`;
   }).join('')}
     <button type="button" class="btn danger-text wide" data-action="delete">${esc(t('deleteSession'))}</button>`;
   return {

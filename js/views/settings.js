@@ -12,9 +12,9 @@ import { INCREASE_STEP, plannedAhead } from '../model.js';
 import { activeInfo } from '../plans.js';
 
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
-import { themeChoice, systemDark, setTheme } from '../theme.js';
+import { themeChoice, applyTheme } from '../theme.js';
 
-export const APP_VERSION = 'v15';
+export const APP_VERSION = 'v16';
 const VERSION = APP_VERSION;
 
 function statusCard() {
@@ -34,58 +34,59 @@ function statusCard() {
 /** The user guide is its own page next to the app (guide-it.html, guide-en.html), opened in the same tab. */
 export const guideHref = () => `guide-${getLang() === 'en' ? 'en' : 'it'}.html`;
 
-export function settingsView(sub) {
+export function settingsView(sub, sub2) {
   if (sub === 'guide') { location.replace(guideHref()); return { html: '' }; }
-  if (sub && SUB[sub]) return SUB[sub]();
+  sub = { lang: 'look', backup: 'data' }[sub] || sub; // addresses from before v16
+  if (sub && SUB[sub]) return SUB[sub](sub2);
   const inc = increaseSettings();
   const tr = training();
   const planned = plannedAhead(pref('planned', []));
-  const rows = [
-    ['github', 'link', t('set_github'), isConfigured() ? `${state.settings.owner}/${state.settings.repo}` : t('notConnected')],
-    ['plans', 'calendar', t('plansTitle'), activeInfo() ? t('activeIs', activeInfo().plan.name) : t('noActivePlanShort')],
-    ['increase', 'trend', t('set_increase'), `${inc.when === 'always' ? t('whenAlways') : t('whenDone')} · ${t('cat_machine').toLowerCase()} +${fmtNum(inc.steps.machine)} kg`],
-    ['training', 'timer', t('set_training'), [t('restBetweenSetsShort', tr.rest), tr.vibrate ? t('vibration') : '', tr.wake ? t('screenOn') : ''].filter(Boolean).join(' · ')],
-    ['gym', 'pin', t('set_gym'), [pref('gymName', '') || t('yourGym'), 'kg, km/h'].join(' · ')],
-    ['everyday', 'calcheck', t('set_everyday'), planned.length ? t('everydayPlannedN', planned.length) : t('everydayHow')],
-    ['lang', 'globe', t('set_lang'), LANGS[getLang()]],
-    ['import', 'arrowDown', t('importShort'), t('importSub')],
-    ['backup', 'download', t('set_backup'), t('backupSub')],
-    ['guide', 'book', t('set_guide'), t('guideSub')],
+  const lang = LANGS[getLang()];
+  const theme = t({ auto: 'themeAuto', light: 'themeLight', dark: 'themeDark' }[themeChoice()]);
+  // one list, in groups; every row opens a page about one thing and says how it's set now
+  const groups = [
+    [t('grpConnections'), [
+      ['github', 'link', t('set_github'), isConfigured() ? `${state.settings.owner}/${state.settings.repo}` : t('notConnected')],
+      ['everyday', 'calcheck', t('set_everyday'), planned.length ? t('everydayPlannedN', planned.length) : t('everydayHow')],
+    ]],
+    [t('grpTraining'), [
+      ['#/plans', 'calendar', t('plansTitle'), activeInfo() ? t('activeIs', activeInfo().plan.name) : t('noActivePlanShort')],
+      ['increase', 'trend', t('set_increase'), `${inc.when === 'always' ? t('whenAlways') : t('whenDone')} · ${t('cat_machine').toLowerCase()} +${fmtNum(inc.steps.machine)} kg`],
+      ['training', 'timer', t('set_training'), [t('restBetweenSetsShort', tr.rest), tr.vibrate ? t('vibration') : '', tr.wake ? t('screenOn') : ''].filter(Boolean).join(' · ')],
+      ['gym', 'pin', t('set_gym'), [pref('gymName', '') || t('yourGym'), 'kg, km/h'].join(' · ')],
+    ]],
+    [t('grpApp'), [
+      ['look', 'globe', t('set_langLook'), `${lang} · ${theme}`],
+      ['#/import', 'arrowDown', t('importShort'), t('importSub')],
+      ['data', 'download', t('set_data'), t('dataSub')],
+      [guideHref(), 'book', t('set_guide'), t('guideSub')],
+    ]],
   ];
   const html = `<header class="bar">${backLink('#/today', t('tab_today'))}</header>
     <h1 class="title">${esc(t('settings'))}</h1>
     ${statusCard()}
-    ${aspectCard()}
-    <nav class="card list settings-list" aria-label="${esc(t('settings'))}">
-      ${rows.map(([k, ic, title, sub2]) => `<a class="row list-row" href="${k === 'plans' ? '#/plans' : k === 'import' ? '#/import' : k === 'guide' ? guideHref() : `#/settings/${k}`}">
-        <span class="icon-tile" aria-hidden="true">${icon(ic)}</span>
-        <span class="row-text"><span class="row-title">${esc(title)}</span><span class="row-sub">${esc(sub2)}</span></span>${icon('chevron', 18, 'class="chev"')}</a>`).join('')}
-    </nav>
+    ${groups.map(([h, rows]) => `<div class="set-sub-h">${esc(h)}</div>${setList(rows)}`).join('')}
     <p class="version">Palestra ${VERSION}</p>`;
   return { html, bind: bindStatus };
 }
 
-/** Aspetto: Automatico (like the device), Chiaro, Scuro. */
-function aspectCard() {
-  const cur = themeChoice();
-  const opt = (k, ic, label, sub) => `<button type="button" class="theme-opt${cur === k ? ' on' : ''}" data-theme-choice="${k}" aria-pressed="${cur === k}">${icon(ic, 22)}<b>${esc(label)}</b><small>${esc(sub)}</small></button>`;
-  const hint = cur === 'auto' ? t('themeAutoHint', systemDark() ? t('themeNowDark') : t('themeNowLight')) : cur === 'dark' ? t('themeDarkHint') : t('themeLightHint');
-  return `<section class="card aspect-card" aria-labelledby="aspect-title">
-    <h2 id="aspect-title">${esc(t('appearance'))}</h2>
-    <div class="theme-opts" role="group" aria-labelledby="aspect-title">${opt('auto', 'half', t('themeAuto'), t('themeAutoSub'))}${opt('light', 'sun', t('themeLight'), t('themeAlways'))}${opt('dark', 'moon', t('themeDark'), t('themeAlways'))}</div>
-    <p class="muted small">${esc(hint)}</p>
-    <p class="aspect-foot small">${esc(t('workoutAlwaysDark'))}</p>
-  </section>`;
+/** Rows that each open a page: icon, title, the current state, chevron. A key is a page here, or a full address. */
+function setList(rows) {
+  return `<nav class="set-list">${rows.map(([k, ic, title, sub]) => {
+    const href = k.startsWith('#') || k.endsWith('.html') ? k : `#/settings/${k}`;
+    return `<a class="set-row" href="${href}"><span class="set-ico" aria-hidden="true">${icon(ic)}</span><span class="set-text"><b>${esc(title)}</b><small>${esc(sub)}</small></span><span class="set-chev" aria-hidden="true">${icon('chevron', 18)}</span></a>`;
+  }).join('')}</nav>`;
 }
 
 function bindStatus(view) {
   view.querySelector('[data-action=sync]')?.addEventListener('click', () => syncNow());
-  view.querySelectorAll('[data-theme-choice]').forEach((b) => b.addEventListener('click', () => setTheme(b.dataset.themeChoice)));
 }
 
-function page(title, body, bind = () => {}, intro = '') {
+/** A settings page: ← the list it came from, then its title with its icon. */
+function page(title, body, bind = () => {}, intro = '', { ic = '', back = ['#/settings', t('settings')] } = {}) {
+  ic = ic || { [t('set_github')]: 'link', [t('set_increase')]: 'trend', [t('set_training')]: 'timer', [t('set_gym')]: 'pin', [t('set_everyday')]: 'calcheck' }[title] || '';
   return {
-    html: `<header class="bar">${backLink('#/settings', t('settings'))}</header><h1 class="title">${esc(title)}</h1>${intro ? `<p class="lead">${esc(intro)}</p>` : ''}${body}`,
+    html: `<a class="set-back" href="${back[0]}">← ${esc(back[1])}</a><h1 class="title set-title">${ic ? `<span class="set-ico" aria-hidden="true">${icon(ic)}</span>` : ''}${esc(title)}</h1>${intro ? `<p class="lead">${esc(intro)}</p>` : ''}${body}`,
     bind,
   };
 }
@@ -200,37 +201,68 @@ const SUB = {
     return page(t('set_everyday'), body, () => {}, t('everydayIntro'));
   },
 
-  lang() {
-    const body = `<form class="stack form" data-form="lang">${segmented({ name: 'lang', value: getLang(), options: Object.entries(LANGS), label: t('set_lang') })}</form>`;
-    return page(t('set_lang'), body, (view) => {
+  /** Lingua e aspetto: the language, and Automatico / Chiaro / Scuro (kept on this device only). */
+  look() {
+    const cur = themeChoice();
+    const opts = [['auto', t('themeAuto')], ['light', t('themeLight')], ['dark', t('themeDark')]];
+    const body = `<form class="stack form" data-form="look">
+      ${segmented({ name: 'lang', value: getLang(), options: Object.entries(LANGS), label: t('set_lang') })}
+      <div class="field-head">${esc(t('appearance'))}</div>
+      <div class="seg theme-seg" role="radiogroup" aria-label="${esc(t('appearance'))}">${opts.map(([v, l]) => `<label class="${cur === v ? 'on' : ''}"><input type="radio" name="theme" value="${v}" ${cur === v ? 'checked' : ''}><span>${esc(l)}</span></label>`).join('')}</div>
+      <p class="muted small">${esc(t('themeHint'))}</p>
+      <p class="muted small">${esc(t('workoutAlwaysDark'))}</p>
+    </form>`;
+    return page(t('set_langLook'), body, (view) => {
       view.querySelectorAll('[name=lang]').forEach((x) => x.addEventListener('change', () => saveSettings({ lang: x.value })));
-    });
+      view.querySelectorAll('[name=theme]').forEach((x) => x.addEventListener('change', () => {
+        applyTheme(x.value);
+        view.querySelectorAll('.theme-seg label').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked));
+      }));
+    }, '', { ic: 'globe' });
   },
 
-  backup() {
-    const body = `<div class="stack"><p>${esc(t('backupText'))}</p>
-      <button type="button" class="btn primary wide" data-action="download">${icon('download', 18)}${esc(t('downloadBackup'))}</button>
-      <p class="muted small">${esc(t('backupRepoHint'))}</p>
-      <h2 class="section-title">${esc(t('thisDevice'))}</h2>
-      <button type="button" class="btn danger-text wide" data-action="wipe">${esc(t('wipeDevice'))}</button></div>`;
-    return page(t('set_backup'), body, (view) => {
-      view.querySelector('[data-action=download]').addEventListener('click', async () => {
-        const data = { app: 'palestra', version: VERSION, contract: CONTRACT, exportedAt: new Date().toISOString() };
-        for (const c of COLLECTIONS) data[c] = state[c];
-        data.active = await kvGet('active');
-        const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `palestra-backup-${new Date().toISOString().slice(0, 10)}.json`;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      });
-      view.querySelector('[data-action=wipe]').addEventListener('click', async () => {
-        if (!(await askConfirm({ text: isConfigured() ? t('wipeQSynced') : t('wipeQLocal'), ok: t('wipe'), danger: true }))) return;
-        await resetLocal();
-        toast(t('wiped'));
-        if (isConfigured()) syncNow();
-      });
-    });
+  /** I tuoi dati: a list, one page each (the backup; this device). */
+  data(sub) {
+    if (sub === 'backup') return backupPage();
+    if (sub === 'device') return devicePage();
+    const body = setList([
+      ['data/backup', 'download', t('set_backup'), t('backupSub')],
+      ['data/device', 'trash', t('thisDevice'), t('thisDeviceSub')],
+    ]);
+    return page(t('set_data'), body, () => {}, '', { ic: 'download' });
   },
 };
+
+const toData = () => ['#/settings/data', t('set_data')];
+
+function backupPage() {
+  const body = `<div class="stack"><p>${esc(t('backupText'))}</p>
+      <button type="button" class="btn primary wide" data-action="download">${icon('download', 18)}${esc(t('downloadBackup'))}</button>
+      <p class="muted small">${esc(t('backupRepoHint'))}</p></div>`;
+  return page(t('set_backup'), body, (view) => {
+    view.querySelector('[data-action=download]').addEventListener('click', async () => {
+      const data = { app: 'palestra', version: VERSION, contract: CONTRACT, exportedAt: new Date().toISOString() };
+      for (const c of COLLECTIONS) data[c] = state[c];
+      data.active = await kvGet('active');
+      const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `palestra-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    });
+  }, '', { ic: 'download', back: toData() });
+}
+
+function devicePage() {
+  const body = `<div class="stack"><p>${esc(isConfigured() ? t('wipeQSynced') : t('wipeQLocal'))}</p>
+      <button type="button" class="btn danger-text wide" data-action="wipe">${esc(t('wipeDevice'))}</button></div>`;
+  return page(t('thisDevice'), body, (view) => {
+    view.querySelector('[data-action=wipe]').addEventListener('click', async () => {
+      if (!(await askConfirm({ text: isConfigured() ? t('wipeQSynced') : t('wipeQLocal'), ok: t('wipe'), danger: true }))) return;
+      await resetLocal();
+      toast(t('wiped'));
+      if (isConfigured()) syncNow();
+    });
+  }, '', { ic: 'trash', back: toData() });
+}

@@ -3,7 +3,7 @@
 //   node ../docs/guide/screenshots.mjs it ../guide/it
 //   node ../docs/guide/screenshots.mjs en ../guide/en
 //   node ../docs/guide/screenshots.mjs it /tmp/desk/it desk      (then build.py turns them into guide/it/desk/*.webp)
-// Phone: 390×780 at 2×, PNG. Computer ("desk"): 1440×900 at 1×.
+// Phone: 390×780 at 2×. Computer ("desk"): 1440×900 at 1×. Dark theme. PNG here; docs/guide/webp.py turns them into WebP.
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -16,7 +16,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
 const [LANG = 'it', OUT = `../guide/${LANG}`, ...MODES] = process.argv.slice(2);
 const DESK = MODES.includes('desk');
-const DARK = MODES.includes('dark'); // only to check the dark theme by eye; the guide uses the light pictures
+const DARK = !MODES.includes('light'); // the guide's pictures are in the dark theme (handover); 'light' to check that one by eye
 const out = path.resolve(process.cwd(), OUT);
 fs.mkdirSync(out, { recursive: true });
 

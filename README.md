@@ -102,11 +102,12 @@ npm run e2e     # the whole app in Chromium with a fake GitHub and a controlled 
 
 ## User guide
 
-The guide is two standalone pages next to the app, `guide-it.html` and `guide-en.html`, opened from Settings → Guida in the
-same tab. They're built from `docs/guide/it.md` and `en.md` (same headings and pictures in both) by `docs/guide/build.py`,
-with a phone screenshot (`guide/<lang>/NN-name.png`, 390×780 at 2×) and a computer one (`guide/<lang>/desk/NN-name.webp`,
-1440×900) for each picture, and a Telefono / Computer switch remembered in `localStorage` (`guideMode`, shared with Ricette
-and Everyday). After a visible change, retake the pictures and rebuild:
+The guide is a standalone page per language, `guide-it.html` and `guide-en.html`, opened from Settings → Guida in the same
+tab. They're built from `docs/guide/it.md` and `en.md` (same headings and pictures in both) by `docs/guide/build.py`
+(Everyday's, set up for Palestra). Each picture has a phone version (`guide/<lang>/NN-name.webp`, 390×780 at 2×) and a
+computer one (`guide/<lang>/desk/NN-name.webp`, 1440×900), in the dark theme. At the top, two dropdowns: *Mostra la guida
+per* (Telefono / Computer, remembered in `localStorage` as `guideMode`, shared with Ricette and Everyday) and *Lingua*.
+The guide follows the app's light/dark choice (`palestra-theme`). After a visible change, retake the pictures and rebuild:
 
 ```
 cd tests
@@ -114,7 +115,15 @@ node ../docs/guide/screenshots.mjs it ../guide/it
 node ../docs/guide/screenshots.mjs en ../guide/en
 node ../docs/guide/screenshots.mjs it /tmp/desk/it desk
 node ../docs/guide/screenshots.mjs en /tmp/desk/en desk
-cd .. && python3 docs/guide/build.py --desk /tmp/desk     # needs markdown and Pillow
+cd .. && python3 docs/guide/webp.py --desk /tmp/desk && python3 docs/guide/build.py     # needs markdown and Pillow
 ```
 
 Then bump the version: the guide pages are in the offline cache.
+
+## Light, dark or automatic
+
+Impostazioni → Lingua e aspetto → Aspetto: *Automatico* (follows the device, the default), *Chiaro*, *Scuro*, kept on the
+device only in `localStorage` under `palestra-theme`. `index.html` sets the class `light` or `dark` on `<html>` before the
+first paint; `js/theme.js` (Everyday's) keeps it in step. Colours are CSS variables: light ("Pulito", shared with Everyday
+and Ricette) on `:root`, dark on `:root.dark`; there are no `prefers-color-scheme` media queries in the CSS. The workout
+screen is always dark.

@@ -15,7 +15,7 @@ import { plansView, planView } from './views/plans.js';
 import { importView } from './views/import.js';
 import { initWorkout, startView, workoutView, hasActive, activeWorkout, leaveWorkoutScreens } from './views/workout.js';
 import { refreshEstimates } from './data.js';
-import { applyTheme, watchSystemTheme } from './theme.js';
+import { applyTheme, setWorkoutMode } from './theme.js';
 import { esc } from './ui/format.js';
 import { icon } from './ui/icons.js';
 
@@ -33,7 +33,7 @@ function viewFor(r) {
     case 'gym': return gymView();
     case 'history': return historyView(r.query);
     case 'session': return sessionView(r.id);
-    case 'settings': return settingsView(r.id);
+    case 'settings': return settingsView(r.id, r.sub);
     case 'plans': return plansView();
     case 'plan': return planView(r.id);
     case 'import': return importView(r.query);
@@ -63,7 +63,7 @@ export function render() {
   current = viewFor(r);
   const dark = Boolean(current.dark);
   document.body.classList.toggle('mode-workout', dark);
-  applyTheme(dark);
+  setWorkoutMode(dark);
   setActiveTab(r.name);
   paint(view, resumeBanner(r) + current.html, (v) => { current.bind?.(v); placeTopActions(v); });
   paintNavSync(isSyncing());
@@ -76,7 +76,7 @@ function renderIfSafe() {
   const typing = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT') && $('#view').contains(ae);
   // the workout screen and an exercise card being edited only redraw on their own actions
   const rn = route();
-  if (current?.dark || rn.name === 'exercise' || rn.name === 'import' || (rn.name === 'settings' && rn.id && rn.id !== 'everyday')) return;
+  if (current?.dark || rn.name === 'exercise' || rn.name === 'import' || (rn.name === 'settings' && rn.id && rn.id !== 'everyday' && rn.id !== 'data')) return;
   if (isDragging() || $('#modal')?.open || typing) { pending = true; return; }
   pending = false;
   render();
@@ -133,8 +133,7 @@ async function registerSW() {
 
 async function init() {
   await load();
-  applyTheme(false);
-  watchSystemTheme();
+  applyTheme();
   await initWorkout();
   renderTabs();
   onChange((kind) => {
