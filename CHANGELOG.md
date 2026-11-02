@@ -5,6 +5,7 @@ Phones download the new version in the background and show the *Aggiorna* bar.
 
 | Version | What changed |
 |---|---|
+| v17 | App icon: a full-bleed version for Android's icon shapes (maskable 192 and 512), the SVG no longer offered to launchers |
 | v16 | Shared with Everyday and Ricette: the light palette Pulito and the same dark palette (light, dark or automatic now in Impostazioni → Lingua e aspetto, kept under palestra-theme), Settings as grouped lists with one topic per page, the guide's two dropdowns and WebP pictures in the dark theme. Fixed: the phone's status bar stayed light in dark mode; a tapped title kept the accent colour |
 | v15 | On a computer, the Palestra logo in the top bar goes back to Oggi |
 | v14 | Dark theme: Impostazioni → Aspetto (Automatico follows the device, Chiaro, Scuro), the same greys as the workout screen with yellow as the accent. The guide pages follow the same choice |
