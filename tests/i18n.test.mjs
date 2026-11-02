@@ -36,3 +36,10 @@ test('every text the app asks for exists in Italian and English', () => {
 test('the guide has the same chapters in both languages', () => {
   assert.equal(GUIDE.it.length, GUIDE.en.length);
 });
+
+test('the version shown in Settings matches the offline cache version', () => {
+  const sw = readFileSync('sw.js', 'utf8').match(/const VERSION = 'palestra-(v\d+)'/)[1];
+  const app = readFileSync('js/views/settings.js', 'utf8').match(/APP_VERSION = '(v\d+)'/)[1];
+  assert.equal(sw, app);
+  assert.match(readFileSync('CHANGELOG.md', 'utf8'), new RegExp(`\\| ${app} \\|`));
+});

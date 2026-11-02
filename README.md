@@ -84,7 +84,8 @@ carries that `everydayBlockId`.
 
 ## Updating
 
-Change `VERSION` in `sw.js` with every release: phones download it in the background and show an *Update* bar.
+Change `VERSION` in `sw.js` and `APP_VERSION` in `js/views/settings.js` with every release, and add a line to `CHANGELOG.md`.
+Phones only fetch new files when `sw.js` changes: they download the new version in the background and show the *Aggiorna* bar.
 
 ## Tests
 

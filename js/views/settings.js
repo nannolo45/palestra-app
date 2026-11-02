@@ -12,7 +12,9 @@ import { INCREASE_STEP, plannedAhead } from '../model.js';
 import { GUIDE } from '../guide.js';
 import { activeInfo } from '../plans.js';
 
-const VERSION = 'v1';
+// Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
+export const APP_VERSION = 'v7';
+const VERSION = APP_VERSION;
 
 function statusCard() {
   const st = syncStatus(isSyncing());
