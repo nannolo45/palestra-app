@@ -3,7 +3,7 @@ import { state, get, upsert, remove, restore, uid, pref, live } from '../store.j
 import { t } from '../i18n.js';
 import { esc, fmtNum, restText, minText, shortDate, timeOfDay, weekdayShort } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { backLink, stepper, bindSteppers, stepVal, toggle, empty, exTag, segmented } from '../ui/parts.js';
+import { backLink, stepper, bindSteppers, stepVal, toggle, empty, exTag, segmented, gearLink } from '../ui/parts.js';
 import { openSheet, askConfirm, toast, chooseHowToCreate } from '../ui/dialogs.js';
 import { isWide } from '../shell.js';
 import {
@@ -62,7 +62,7 @@ export function routinesView(query = {}) {
   const filters = [['all', t('filterAll')], ['active', t('filterActive')], ['none', t('filterNone')]];
   const head = `<header class="page-head">
       <div><h1>${esc(t('tab_routines'))}</h1><p class="sub">${esc(t('nRoutines', all.length))}</p></div>
-      <div class="head-actions"><a class="round-btn only-narrow" href="#/settings" aria-label="${esc(t('settings'))}">${icon('gear')}</a></div>
+      <div class="head-actions">${gearLink()}</div>
     </header>
     <div class="two-actions" data-top-actions><button type="button" class="btn primary" data-action="new-routine">${icon('plus', 18)}${esc(t('newRoutine'))}</button><a class="btn" href="#/import?for=routine">${icon('book', 18)}${esc(t('importShort'))}</a></div>`;
   const listHtml = all.length ? `<div class="lib-tools">
@@ -113,7 +113,7 @@ function lastText(it, ex) {
   if (ex.type === 'weights') { const w = Math.max(0, ...sets.map((y) => Number(y.weight) || 0)); return w ? `${fmtNum(w)} kg` : ''; }
   if (it.seconds) { const sec = Math.max(0, ...sets.map((y) => Number(y.seconds) || 0)); return sec ? `${sec} s` : ''; }
   const reps = Math.max(0, ...sets.map((y) => Number(y.reps) || 0));
-  return reps ? `${reps} rip` : '';
+  return reps ? `${reps} ${t('repsShort')}` : '';
 }
 
 export function routineView(id, { pane = false } = {}) {

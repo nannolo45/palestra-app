@@ -611,8 +611,6 @@ nav.tabs .nav-brand, nav.tabs .nav-actions, nav.tabs .nav-end { display: none; }
   nav.tabs .nav-sync.st-synced .dot { background: var(--green-ink); }
   nav.tabs .nav-sync.st-pending .dot, nav.tabs .nav-sync.st-syncing .dot { background: #C99A00; }
   nav.tabs .nav-sync.st-error .dot { background: #B3261E; }
-  nav.tabs .nav-gear { width: 42px; height: 42px; border-radius: 21px; display: flex; align-items: center; justify-content: center; color: #3B3D42; padding: 0; }
-  nav.tabs .nav-gear.active { background: var(--yellow-soft); }
   .page-head .sync-line { display: none; }
   .only-narrow { display: none !important; }
   #toast { bottom: 24px; }
@@ -651,3 +649,20 @@ nav.tabs .nav-brand, nav.tabs .nav-actions, nav.tabs .nav-end { display: none; }
 .guide-shot.desktop img { aspect-ratio: 1280 / 800; }
 .guide-shot figcaption { font-size: 13px; color: var(--muted); }
 @media (min-width: 960px) { .guide { max-width: 900px; } .guide-body { padding-left: 56px; padding-right: 24px; } }
+
+/* The settings gear, shared with Ricette and Everyday: an 8-tooth cog in a 40px rounded square, the label from 1100px.
+   Palestra's accent is yellow, which is too light for a hover line on white: hover uses the dark gold, the filled state yellow. */
+.gear { --g-accent: var(--gold); --g-fill: var(--yellow); --g-fill-ink: var(--ink); height: 40px; min-width: 40px; margin-left: 8px; padding: 0 9px; gap: 8px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--ink) 22%, var(--line)); background: var(--card); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-weight: 600; font-size: .9rem; flex: none; transition: border-color .15s, color .15s, background .15s; box-sizing: border-box; }
+.gear svg { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+.gear:hover { border-color: var(--g-accent); color: var(--g-accent); }
+.gear.active { color: var(--g-fill-ink); background: var(--g-fill); border-color: var(--g-fill); }
+.gear-label { display: none; }
+nav.tabs .gear { flex-direction: row; font-size: .9rem; color: var(--ink); }
+@media (min-width: 1100px) { nav.tabs .gear { padding: 0 14px 0 11px; } .gear-label { display: inline; } }
+.page-head .head-actions { align-self: flex-start; }
+/* the gear stays at the top right: the title side shrinks and wraps instead of pushing the actions to a new line */
+.page-head { flex-wrap: nowrap; }
+.page-head > div:first-child, .page-head > h1 { flex: 1 1 auto; min-width: 0; }
+.page-head .head-actions { flex-wrap: nowrap; justify-content: flex-end; }
+.lead-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 8px; }
+.lead-row .lead { flex: 1 1 200px; margin: 0; }

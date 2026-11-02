@@ -3,7 +3,7 @@ import { get, upsert, remove, restore, uid, live } from '../store.js';
 import { t } from '../i18n.js';
 import { esc, minText, shortDate } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { backLink, empty, toggle } from '../ui/parts.js';
+import { backLink, empty, toggle, gearLink } from '../ui/parts.js';
 import { openSheet, askConfirm, toast, chooseHowToCreate } from '../ui/dialogs.js';
 import { routines, routineMinutes, lastDone } from '../data.js';
 import {
@@ -51,7 +51,7 @@ export function plansView() {
   };
   const html = `<header class="page-head">
       <div><h1>${esc(t('plansTitle'))}</h1><p class="sub">${esc(a ? t('activeIs', a.plan.name) : t('noActivePlanShort'))}</p></div>
-      <div class="head-actions"><a class="round-btn only-narrow" href="#/settings" aria-label="${esc(t('settings'))}">${icon('gear')}</a></div>
+      <div class="head-actions">${gearLink()}</div>
     </header>
     <div class="two-actions" data-top-actions><button type="button" class="btn primary" data-action="new-plan">${icon('plus', 18)}${esc(t('newPlan'))}</button><a class="btn" href="#/import?for=plan">${icon('book', 18)}${esc(t('importShort'))}</a></div>
     <p class="lead">${esc(t('plansIntro'))}</p>

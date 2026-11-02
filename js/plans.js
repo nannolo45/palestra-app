@@ -181,31 +181,47 @@ const MEASURE_TXT = {
 export { state };
 
 // ---- moves: "Sposta a domani" ----
-// prefs "moves": [{ routineId, from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' }]. Only this week's are kept. Everyday reads
-// them to re-plan the block (see the README); Palestra uses them for the weekday it shows.
+// prefs "moves": [{ routineId, from: 'YYYY-MM-DD', to: 'YYYY-MM-DD', at: ms }], in the order they were made; only this
+// week's are kept. Everyday applies them in order on each sync (it moves the block still on `from` to `to`), and the
+// moved block comes back through "planned". Palestra uses them for the day it shows. A move is never rewritten once it
+// may have been synced: moving again adds an entry, and "Rimetti oggi" adds the reverse one. Only a move that hasn't
+// left this device yet is simply taken back.
 
 export function movesThisWeek(now = Date.now()) {
   const ws = isoDate(weekStart(now));
   return (pref('moves', []) || []).filter((m) => m && m.from >= ws);
 }
 
+const movesOf = (routineId, now) => movesThisWeek(now).filter((m) => m.routineId === routineId);
+
 /** The weekday (0 = Monday) a plan day falls on this week, after any move. */
 export function effectiveWeekday(day, now = Date.now()) {
-  const m = movesThisWeek(now).filter((x) => x.routineId === day.routineId).pop();
+  const m = movesOf(day.routineId, now).pop();
   if (m) return (new Date(dateOf(m.to)).getDay() + 6) % 7;
   return Number.isInteger(day.weekday) ? day.weekday : null;
+}
+
+/** Moved this week, and not back where it started. */
+export function isMoved(routineId, now = Date.now()) {
+  const ms = movesOf(routineId, now);
+  return ms.length > 0 && ms[ms.length - 1].to !== ms[0].from;
 }
 
 export function moveToTomorrow(routineId, now = Date.now()) {
   const from = isoDate(now);
   const to = isoDate(dateOf(from) + DAY + 3600000); // +1h guards against a DST day of 23 hours
-  const keep = movesThisWeek(now).filter((m) => !(m.routineId === routineId && m.to === from));
-  setPref('moves', [...keep, { routineId, from, to }]);
+  setPref('moves', [...movesThisWeek(now), { routineId, from, to, at: now }]);
   return to;
 }
 
+/** "Rimetti oggi": take back the last move if it hasn't been synced, otherwise add the move back. */
 export function undoMove(routineId, now = Date.now()) {
-  setPref('moves', movesThisWeek(now).filter((m) => m.routineId !== routineId));
+  const all = movesThisWeek(now);
+  const last = all.filter((m) => m.routineId === routineId).pop();
+  if (!last) return;
+  const synced = (state.meta.lastSync || 0) > (last.at || 0);
+  if (!synced) setPref('moves', all.filter((m) => m !== last));
+  else setPref('moves', [...all, { routineId, from: last.to, to: last.from, at: now }]);
 }
 
 /**

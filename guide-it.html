@@ -1,0 +1,295 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Palestra · Guida</title><script>(function(){var m;try{m=localStorage.getItem('guideMode')}catch(e){}var w=innerWidth,d=m?m==='desk':w>=1000||(w>=700&&matchMedia('(pointer:fine)').matches);if(d)document.documentElement.classList.add('desk')})()</script><style>
+:root{color-scheme:light dark;--bg:#F5F4F0;--ink:#17181B;--muted:#5E6066;--line:#E2E0DA;--acc:#7A5A00;--card:#FFFFFF}
+@media(prefers-color-scheme:dark){:root{--bg:#141518;--ink:#F2F1EC;--muted:#A3A5AB;--line:#2E3036;--acc:#FFD23F;--card:#1F2125}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:720px;margin:0 auto;padding:16px 18px 60px}
+h1{font-family:Georgia,serif;font-size:1.9rem;margin:.4em 0}h2{font-family:Georgia,serif;margin-top:2em;border-top:1px solid var(--line);padding-top:1em}
+h3{margin-top:1.6em}a{color:var(--acc)}code{background:var(--card);padding:1px 5px;border-radius:5px;font-size:.92em}
+img{display:block;max-width:300px;width:100%;margin:14px auto;border:1px solid var(--line);border-radius:18px;box-shadow:0 6px 20px rgba(0,0,0,.18);cursor:zoom-in}
+table{border-collapse:collapse;width:100%;font-size:.95em}th,td{text-align:left;vertical-align:top;padding:8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;font-size:.95em}.top a{text-decoration:none}
+nav.toc{background:var(--card);border-radius:14px;padding:10px 16px;margin:16px 0}nav.toc a{display:block;padding:3px 0;text-decoration:none}
+html:not(.desk) .dk,html:not(.desk) .desk-only,html.desk .ph,html.desk .phone-only{display:none}
+.mode{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;gap:2px}
+.mode button{border:0;background:none;color:var(--muted);font:inherit;font-size:.88em;padding:4px 12px;border-radius:999px;cursor:pointer}
+.mode button[aria-pressed=true]{background:var(--acc);color:var(--bg);font-weight:600}
+html.desk main{max-width:1080px;padding:24px 32px 80px}
+html.desk main>p,html.desk main>ul,html.desk main>ol,html.desk main>table,html.desk main>h2,html.desk main>h3,html.desk main>div,html.desk nav.toc{max-width:780px;margin-left:auto;margin-right:auto}
+html.desk nav.toc{columns:2;column-gap:24px}
+html.desk main>p:has(img.dk),html.desk main>p:has(img.wide){max-width:none}
+html.desk img.dk,html.desk img.wide{max-width:100%;border-radius:12px;margin:18px auto 26px}
+html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
+.zoom{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:2vw;cursor:zoom-out}
+.zoom img{max-width:100%;max-height:100%;width:auto;margin:0;border:0;box-shadow:none;cursor:zoom-out}
+</style></head><body><main><div class="top"><a href="./#/settings">← Torna all'app</a><span class="mode" role="group" aria-label="Mostra la guida per"><button type="button" data-mode="phone">📱 Telefono</button><button type="button" data-mode="desk">💻 Computer</button></span><a href="guide-en.html">English</a></div><h1 id="palestra-guida-per-lutente">Palestra: guida per l'utente</h1><nav class="toc"><a href="#cose-palestra">Cos'è Palestra</a><a href="#prima-configurazione">Prima configurazione</a><a href="#le-cinque-sezioni">Le cinque sezioni</a><a href="#oggi">Oggi</a><a href="#workout">Workout</a><a href="#schede">Schede</a><a href="#esercizi-e-palestra">Esercizi e palestra</a><a href="#durante-lallenamento">Durante l'allenamento</a><a href="#storico">Storico</a><a href="#importare-da-testo">Importare da testo</a><a href="#con-everyday">Con Everyday</a><a href="#una-settimana-tipo">Una settimana tipo</a><a href="#su-un-computer">Su un computer</a><a href="#consigli-e-problemi-comuni">Consigli e problemi comuni</a></nav>
+<p>Come preparare Palestra, allenarti con lei ogni settimana e farla lavorare insieme a Everyday.</p>
+<div class="desk-only">
+<p><strong>Stai leggendo la guida per il computer.</strong> Le immagini mostrano l'app su uno schermo largo. Dove la guida dice <em>tocca</em>, sul computer è un clic. In cima, <strong>📱 Telefono</strong> mostra la guida per il telefono (la scelta resta). Clicca un'immagine per ingrandirla.</p>
+</div>
+<div class="phone-only">
+<p><em>Questa è la guida per il telefono. In cima, </em><em>💻 Computer</em><em> mostra quella per il computer.</em></p>
+</div>
+<h2 id="cose-palestra">Cos'è Palestra</h2>
+<p>Palestra ti dice cosa fare in palestra, esercizio per esercizio, e si ricorda cosa hai fatto. Prepari una volta le tue <strong>schede</strong> (Petto e bicipiti, Gambe…), le metti in un <strong>workout</strong>, cioè la tua settimana, e in palestra segui lo schermo: serie, peso, recupero, dove andare dopo.</p>
+<p>I tuoi dati stanno in un tuo spazio privato su GitHub, che leggi solo tu (ed Everyday, se lo colleghi). L'app funziona anche senza rete: si sincronizza quando la ritrova.</p>
+<p>Palestra non è un programma di allenamento scritto da un coach e non conta le calorie. Decide <strong>cosa</strong> fai: nome, durata ed esercizi. <strong>Quando</strong> lo fai lo decide Everyday.</p>
+<p>Un <strong>allenamento</strong> è una scheda fatta davvero: lo trovi nello <a href="#storico">Storico</a>.</p>
+<h2 id="prima-configurazione">Prima configurazione</h2>
+<p>Una volta sola, circa venti minuti. Ti serve un account GitHub e la tua palestra in mente: le zone e le macchine che usi.</p>
+<h3 id="1-installare-lapp">1. Installare l'app</h3>
+<p>Apri l'indirizzo di Palestra in Chrome. Sul telefono scegli <em>Installa app</em> (o <em>Aggiungi a schermata Home</em>); sul computer, <em>Installa</em> nella barra dell'indirizzo. Da lì aprila dall'icona: si apre a schermo intero e funziona offline.</p>
+<h3 id="2-collegare-il-tuo-spazio-su-github">2. Collegare il tuo spazio su GitHub</h3>
+<p>Su GitHub crea un repository privato e vuoto chiamato <code>palestra-data</code>. Poi crea un token per questo dispositivo: <em>Settings → Developer settings → Fine-grained tokens</em>, accesso solo a <code>palestra-data</code>, permesso <em>Contents: Read and write</em>. Chiamalo come il dispositivo, per esempio «Telefono di Tommaso».</p>
+<p>In Palestra tocca l'ingranaggio, poi <em>Collegamento GitHub</em>. Scrivi il tuo utente, il repository e il token, poi <em>Salva e sincronizza</em>.</p>
+<p><img class="ph" loading="lazy" alt="Collegamento GitHub: utente, repository e token" src="guide/it/04-github.png" /><img class="dk" loading="lazy" alt="Collegamento GitHub: utente, repository e token" src="guide/it/desk/04-github.webp" /></p>
+<h3 id="3-disegnare-la-tua-palestra">3. Disegnare la tua palestra</h3>
+<p>In <em>Esercizi → Palestra</em> aggiungi le <strong>zone</strong> in cui ti sposti (Ingresso e cardio, Sala macchine, Pesi liberi…) e tocca <em>Riordina</em> per metterle nell'ordine in cui le attraversi. Le schede useranno questo percorso per farti camminare meno.</p>
+<p><img class="ph" loading="lazy" alt="La palestra: le zone nell'ordine del tuo giro" src="guide/it/05-gym.png" /><img class="dk" loading="lazy" alt="La palestra: le zone nell'ordine del tuo giro" src="guide/it/desk/05-gym.webp" /></p>
+<p>In ogni zona tocca <strong>+</strong> per aggiungere una <strong>macchina</strong>, con il numero che ha sopra (M14, C3) e le tue regolazioni (sedile, schienale). Più macchine uguali possono essere una sola voce, come i tapis roulant C1–6.</p>
+<p><img class="ph" loading="lazy" alt="Nuova macchina: nome, numero, zona e regolazioni" src="guide/it/06-new-machine.png" /><img class="dk" loading="lazy" alt="Nuova macchina: nome, numero, zona e regolazioni" src="guide/it/desk/06-new-machine.webp" /></p>
+<h3 id="4-aggiungere-gli-esercizi">4. Aggiungere gli esercizi</h3>
+<p>In <em>Esercizi</em> tocca <strong>+</strong>. Scegli il tipo (<em>Pesi</em>, <em>Corpo libero</em> o <em>Cardio</em>), la macchina e il recupero di solito. Le <strong>note</strong> sono facoltative: come eseguirlo, cosa ricordare. Le rivedi durante l'allenamento.</p>
+<p><img class="ph" loading="lazy" alt="Un esercizio: tipo, macchina, recupero e note" src="guide/it/08-exercise.png" /><img class="dk" loading="lazy" alt="Un esercizio: tipo, macchina, recupero e note" src="guide/it/desk/08-exercise.webp" /></p>
+<h3 id="5-creare-le-schede">5. Creare le schede</h3>
+<p>In <em>Schede</em> tocca <em>Nuova scheda</em>, dai un nome (per esempio «Petto e bicipiti») e aggiungi gli esercizi con <em>Aggiungi esercizio</em>. Tocca un esercizio per scegliere serie, ripetizioni, peso e recupero. <a href="#schede">Dentro una scheda</a> trovi tutto il resto.</p>
+<p><img class="ph" loading="lazy" alt="Modifica scheda: l'ordine degli esercizi e l'aumento automatico" src="guide/it/12-routine-edit.png" /><img class="dk" loading="lazy" alt="Modifica scheda: l'ordine degli esercizi e l'aumento automatico" src="guide/it/desk/12-routine-edit.webp" /></p>
+<h3 id="6-facoltativo-importare-un-workout-gia-scritto">6. Facoltativo: importare un workout già scritto</h3>
+<p>Se Marco, il tuo istruttore, ti ha scritto la settimana su un foglio o in un messaggio, non devi ricopiarla a mano. Tocca <em>Importa</em> accanto a <em>Nuovo workout</em> e incolla il testo: un esercizio per riga, come lo scriveresti tu. <a href="#importare-da-testo">Importare da testo</a> spiega come si scrive.</p>
+<p><img class="ph" loading="lazy" alt="Importa: incolla il testo, sotto c'è come scriverlo" src="guide/it/17-import.png" /><img class="dk" loading="lazy" alt="Importa: incolla il testo, sotto c'è come scriverlo" src="guide/it/desk/17-import.webp" /></p>
+<p>Tocca <em>Leggi il testo</em>. Prima di salvare vedi un'anteprima: <strong>già tuo</strong> riusa un tuo esercizio con la sua macchina, <strong>nuovo</strong> lo crea, <strong>da controllare</strong> segna un pezzo che l'app non ha capito.</p>
+<p><img class="ph" loading="lazy" alt="L'anteprima: cosa riusa, cosa crea, cosa controllare" src="guide/it/18-import-preview.png" /><img class="dk" loading="lazy" alt="L'anteprima: cosa riusa, cosa crea, cosa controllare" src="guide/it/desk/18-import-preview.webp" /></p>
+<h3 id="7-rendere-attivo-un-workout">7. Rendere attivo un workout</h3>
+<p>Un <strong>workout</strong> raccoglie le schede della settimana, ognuna nel suo giorno. In <em>Workout</em> aprine uno e tocca <em>Rendi attivo</em>: da quel momento lo vedi in <em>Oggi</em> ed Everyday lo pianifica. Se cambi a metà settimana, scegli se partire da lunedì o da oggi.</p>
+<p><img class="ph" loading="lazy" alt="Rendere attivo un workout: quello di prima resta salvato" src="guide/it/16-activate.png" /><img class="dk" loading="lazy" alt="Rendere attivo un workout: quello di prima resta salvato" src="guide/it/desk/16-activate.webp" /></p>
+<h2 id="le-cinque-sezioni">Le cinque sezioni</h2>
+<table>
+<thead>
+<tr>
+<th>Sezione</th>
+<th>A cosa serve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>Oggi</em></td>
+<td>La scheda di oggi, la settimana, l'ultimo allenamento e il mese</td>
+</tr>
+<tr>
+<td><em>Workout</em></td>
+<td>Le tue settimane: quali schede, in che giorni e a che ora</td>
+</tr>
+<tr>
+<td><em>Schede</em></td>
+<td>Tutte le tue schede, da cercare, aprire, modificare e iniziare</td>
+</tr>
+<tr>
+<td><em>Esercizi</em></td>
+<td>Gli esercizi e, in <em>Palestra</em>, le zone e le macchine</td>
+</tr>
+<tr>
+<td><em>Storico</em></td>
+<td>I tuoi progressi e ogni allenamento fatto</td>
+</tr>
+</tbody>
+</table>
+<p>In cima a ogni pagina ci sono le sue azioni, come <em>Nuova scheda</em> e <em>Importa</em>. L'<strong>ingranaggio</strong> in alto a destra apre le <em>Impostazioni</em>: collegamento, aumento automatico, recupero, Everyday, lingua, backup e questa guida.</p>
+<p><img class="ph" loading="lazy" alt="Impostazioni: ogni cosa nella sua sezione" src="guide/it/03-settings.png" /><img class="dk" loading="lazy" alt="Impostazioni: ogni cosa nella sua sezione" src="guide/it/desk/03-settings.webp" /></p>
+<h2 id="oggi">Oggi</h2>
+<p>La prima pagina ti dice cosa ti tocca oggi. In alto c'è la scheda del giorno, con l'ora se l'hai data, e <em>Inizia</em>. Se Everyday l'ha già messa in agenda, accanto c'è scritto <em>in Everyday</em>.</p>
+<p><img class="ph" loading="lazy" alt="Oggi: la scheda di oggi alle 18:00 e la settimana" src="guide/it/01-today.png" /><img class="dk" loading="lazy" alt="Oggi: la scheda di oggi alle 18:00 e la settimana" src="guide/it/desk/01-today.webp" /></p>
+<h3 id="iniziare-la-scheda-di-oggi">Iniziare la scheda di oggi</h3>
+<p>Tocca <em>Inizia</em>. Si apre l'allenamento a schermo intero: <a href="#durante-lallenamento">Durante l'allenamento</a> spiega cosa vedi.</p>
+<h3 id="sposta-a-domani">Sposta a domani</h3>
+<p>Oggi non ce la fai? Tocca <em>Sposta a domani</em>. La scheda passa a domani solo per questa settimana, e lo vedi nella lista dei giorni. <em>Rimetti oggi</em> annulla. Se usi Everyday, alla prossima sincronizzazione sposta anche il blocco: alla stessa ora se è libera, altrimenti nel primo spazio libero di domani.</p>
+<p><img class="ph" loading="lazy" alt="Dopo «Sposta a domani»: la scheda è spostata, puoi rimetterla" src="guide/it/02-moved.png" /><img class="dk" loading="lazy" alt="Dopo «Sposta a domani»: la scheda è spostata, puoi rimetterla" src="guide/it/desk/02-moved.webp" /></p>
+<h3 id="la-settimana-e-il-mese">La settimana e il mese</h3>
+<p>Sotto vedi le schede della settimana: quelle fatte, la prossima e quelle che restano. Poi il <strong>workout attivo</strong> con <em>Cambia</em>, l'ultimo allenamento e un quadretto per ogni giorno del mese, giallo quando ti sei allenato.</p>
+<h2 id="workout">Workout</h2>
+<p>Un workout è la tua settimana: le schede che fai, ognuna nel suo giorno. Quello <strong>attivo</strong> è in giallo in cima; gli altri restano salvati con il loro storico, per quando ti servono (per esempio una settimana di scarico).</p>
+<p><img class="ph" loading="lazy" alt="I tuoi workout: quello attivo in cima" src="guide/it/14-plans.png" /><img class="dk" loading="lazy" alt="I tuoi workout: quello attivo in cima" src="guide/it/desk/14-plans.webp" /></p>
+<h3 id="creare-un-workout">Creare un workout</h3>
+<p>Tocca <em>Nuovo workout</em>, poi <em>Aggiungi scheda</em> per ognuna. Trascina una scheda dalla maniglia per cambiare l'ordine. Con <em>Importa</em> accanto ad <em>Aggiungi scheda</em> aggiungi schede scritte come testo.</p>
+<p><img class="ph" loading="lazy" alt="Un workout: le schede, i giorni e le ore" src="guide/it/15-plan.png" /><img class="dk" loading="lazy" alt="Un workout: le schede, i giorni e le ore" src="guide/it/desk/15-plan.webp" /></p>
+<h3 id="giorni-e-ore">Giorni e ore</h3>
+<p>Per ogni scheda tocca il giorno della settimana (L M M G V S D) e, se vuoi, scegli un'<em>Ora</em>. Con l'ora Everyday la mette in agenda da solo; senza, la scegli tu ogni settimana in Everyday.</p>
+<h3 id="cambiare-il-workout-attivo">Cambiare il workout attivo</h3>
+<p>In <em>Workout</em> tocca <em>Rendi attivo</em> su un altro workout. Se è metà settimana, scegli <em>Da lunedì</em> per finire la settimana con quello di prima, o <em>Da oggi</em>. Il workout di prima resta salvato.</p>
+<h3 id="esportare-e-duplicare">Esportare e duplicare</h3>
+<p><em>Esporta .txt</em> salva il workout come testo, da mandare a qualcuno o da reimportare. <em>Duplica</em> ne fa una copia da cambiare senza toccare l'originale.</p>
+<h2 id="schede">Schede</h2>
+<p>Una scheda è una sequenza di esercizi che ripeti, come «Gambe». Palestra calcola la <strong>durata stimata</strong> dalle serie e dai recuperi, e la corregge con i tuoi tempi veri dopo qualche allenamento.</p>
+<p><img class="ph" loading="lazy" alt="Le tue schede, con il workout in cui è ognuna" src="guide/it/10-routines.png" /><img class="dk" loading="lazy" alt="Le tue schede, con il workout in cui è ognuna" src="guide/it/desk/10-routines.webp" /></p>
+<h3 id="trovare-una-scheda">Trovare una scheda</h3>
+<p>Scrivi nella ricerca, oppure scegli <em>Nel workout attivo</em> o <em>In nessun workout</em>. Sotto ogni scheda vedi in quale workout è.</p>
+<h3 id="dentro-una-scheda">Dentro una scheda</h3>
+<p>In alto la durata stimata, le serie e le zone. Poi gli esercizi nell'ordine in cui li fai, con le frecce quando cambi zona. A destra di ogni esercizio c'è <strong>l'ultima volta</strong>: il peso, i minuti o le ripetizioni del tuo ultimo allenamento.</p>
+<p><img class="ph" loading="lazy" alt="Una scheda: il piano di oggi e, sotto, l'ultima volta" src="guide/it/11-routine.png" /><img class="dk" loading="lazy" alt="Una scheda: il piano di oggi e, sotto, l'ultima volta" src="guide/it/desk/11-routine.webp" /></p>
+<h3 id="modificare-una-scheda">Modificare una scheda</h3>
+<p>Tocca <em>Modifica</em>.</p>
+<table>
+<thead>
+<tr>
+<th>Parte</th>
+<th>Cosa imposti</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nome</td>
+<td>Come la vedi qui e in Everyday</td>
+</tr>
+<tr>
+<td><em>Aumento automatico</em></td>
+<td>Se Palestra ti propone di salire di peso ogni settimana</td>
+</tr>
+<tr>
+<td>Ordine</td>
+<td>Trascina dalla maniglia; <em>Ordina per percorso</em> segue il giro della palestra</td>
+</tr>
+<tr>
+<td>Un esercizio</td>
+<td>Toccalo: serie, ripetizioni o secondi, peso, recupero, oppure <em>Togli dalla scheda</em></td>
+</tr>
+<tr>
+<td><em>Aggiungi esercizio</em></td>
+<td>Sceglilo dall'elenco, o creane uno nuovo</td>
+</tr>
+<tr>
+<td><em>Importa</em></td>
+<td>Aggiunge esercizi scritti come testo</td>
+</tr>
+</tbody>
+</table>
+<p><img class="ph" loading="lazy" alt="Aggiungi esercizio: l'elenco con la macchina di ognuno" src="guide/it/13-add-exercise.png" /><img class="dk" loading="lazy" alt="Aggiungi esercizio: l'elenco con la macchina di ognuno" src="guide/it/desk/13-add-exercise.webp" /></p>
+<h3 id="duplicare-in-un-altro-workout">Duplicare in un altro workout</h3>
+<p>In una scheda tocca <em>Duplica in un altro workout</em> e scegli dove. La copia è tua da cambiare: l'originale resta com'era.</p>
+<h2 id="esercizi-e-palestra">Esercizi e palestra</h2>
+<p>In <em>Esercizi</em> trovi tutti i tuoi esercizi, raggruppati <em>Per muscolo</em> o <em>Per posto</em>. Filtra per tipo, apri e chiudi i gruppi, o passa alla <em>Vista compatta</em> con il pulsante in alto per vederne di più.</p>
+<p><img class="ph" loading="lazy" alt="Esercizi: i gruppi, i filtri e la vista compatta" src="guide/it/07-exercises.png" /><img class="dk" loading="lazy" alt="Esercizi: i gruppi, i filtri e la vista compatta" src="guide/it/desk/07-exercises.webp" /></p>
+<h3 id="i-tre-tipi">I tre tipi</h3>
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Cosa imposti</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>Pesi</em></td>
+<td>Serie, ripetizioni, kg e recupero; l'etichetta scura porta il numero della macchina</td>
+</tr>
+<tr>
+<td><em>Corpo libero</em></td>
+<td>Serie, ripetizioni o secondi, recupero; l'etichetta ha il bordo tratteggiato</td>
+</tr>
+<tr>
+<td><em>Cardio</em></td>
+<td>La macchina (tapis roulant, ellittica, bike, vogatore…) e gli obiettivi: durata, velocità, pendenza, livello</td>
+</tr>
+</tbody>
+</table>
+<p><img class="ph" loading="lazy" alt="Un esercizio cardio: la macchina e i suoi obiettivi" src="guide/it/09-exercise-cardio.png" /><img class="dk" loading="lazy" alt="Un esercizio cardio: la macchina e i suoi obiettivi" src="guide/it/desk/09-exercise-cardio.webp" /></p>
+<h3 id="la-palestra-zone-e-macchine">La palestra: zone e macchine</h3>
+<p>In <em>Esercizi → Palestra</em> cambi le zone, il loro ordine e le macchine in ogni zona. Tocca una macchina per il numero, il nome e le regolazioni.</p>
+<h3 id="una-macchina-che-non-ce">Una macchina che non c'è</h3>
+<p>Dalla pagina di un esercizio tocca <em>Nuova macchina</em> (o <em>Altra macchina</em> per il cardio). Per il cardio scegli cosa misura oltre al tempo, fino a tre cose, o crea una misura tua con nome e unità.</p>
+<h2 id="durante-lallenamento">Durante l'allenamento</h2>
+<p>Lo schermo diventa scuro e grande, resta acceso e funziona senza rete. Se il telefono si blocca o l'app si ricarica, riaprila: riprende da dove eri.</p>
+<h3 id="gli-aumenti-della-settimana">Gli aumenti della settimana</h3>
+<p>Al primo allenamento della settimana, se l'aumento automatico è acceso, Palestra ti propone i nuovi obiettivi: un esercizio per riga, prima e dopo. Togli la spunta a quelli che non vuoi, poi tocca <em>Conferma … e inizia</em>, oppure <em>Inizia con i pesi di prima</em>.</p>
+<p><img class="ph" loading="lazy" alt="Si sale di peso? Togli la spunta a quelli che non vuoi" src="guide/it/19-increase.png" /><img class="dk" loading="lazy" alt="Si sale di peso? Togli la spunta a quelli che non vuoi" src="guide/it/desk/19-increase.webp" /></p>
+<h3 id="una-serie">Una serie</h3>
+<p>Vedi l'esercizio, la serie (2 di 4), ripetizioni e kg, la macchina con la zona e la tua nota. Se hai fatto diverso, correggi con − e +. Poi tocca <em>Fatto</em>.</p>
+<p><img class="ph" loading="lazy" alt="Una serie: ripetizioni, kg, dove andare e la tua nota" src="guide/it/20-set.png" /><img class="dk" loading="lazy" alt="Una serie: ripetizioni, kg, dove andare e la tua nota" src="guide/it/desk/20-set.webp" /></p>
+<h3 id="il-recupero">Il recupero</h3>
+<p>Parte il conto alla rovescia, e vedi quanto hai riposato davvero. <em>+30 s</em> allunga, <em>Salta</em> riparte subito. A zero il telefono vibra. Sotto c'è cosa viene dopo e dove andare.</p>
+<p><img class="ph" loading="lazy" alt="Il recupero: quanto manca e cosa viene dopo" src="guide/it/21-rest.png" /><img class="dk" loading="lazy" alt="Il recupero: quanto manca e cosa viene dopo" src="guide/it/desk/21-rest.webp" /></p>
+<h3 id="il-cardio">Il cardio</h3>
+<p>Per il cardio vedi il tempo che manca e gli obiettivi, da cambiare con − e +. Se vuoi, scrivi la distanza che legge il display. Tocca <em>Fine</em> quando hai finito.</p>
+<p><img class="ph" loading="lazy" alt="Il cardio: il tempo che manca e gli obiettivi" src="guide/it/22-cardio.png" /><img class="dk" loading="lazy" alt="Il cardio: il tempo che manca e gli obiettivi" src="guide/it/desk/22-cardio.webp" /></p>
+<h3 id="pausa-e-fine">Pausa e fine</h3>
+<p><em>Pausa</em>, in alto a destra, ferma il tempo: per una telefonata o una fila alla macchina. <strong>×</strong> chiude prima: le serie fatte si salvano come allenamento parziale. Alla fine vedi il riepilogo: tempo, serie, peso totale, recuperi e i nuovi massimi.</p>
+<p><img class="ph" loading="lazy" alt="Fine: il riepilogo dell'allenamento" src="guide/it/23-summary.png" /><img class="dk" loading="lazy" alt="Fine: il riepilogo dell'allenamento" src="guide/it/desk/23-summary.webp" /></p>
+<h3 id="laumento-automatico-nelle-impostazioni">L'aumento automatico, nelle impostazioni</h3>
+<p>In <em>Impostazioni → Aumento automatico</em> scegli quando (<em>Se completo</em>: solo se l'ultima volta hai fatto tutte le serie; <em>Sempre</em>) e di quanto per tipo: macchine +2,5 kg, manubri +1, corpo libero +1 ripetizione, cardio +1 minuto. Nella pagina di un esercizio puoi dargli un passo suo o escluderlo.</p>
+<p><img class="ph" loading="lazy" alt="Aumento automatico: quando e di quanto, per tipo" src="guide/it/27-increase-settings.png" /><img class="dk" loading="lazy" alt="Aumento automatico: quando e di quanto, per tipo" src="guide/it/desk/27-increase-settings.webp" /></p>
+<h2 id="storico">Storico</h2>
+<p>Scegli un esercizio in alto: vedi come è cresciuto il carico, di quanto e l'ultima volta. Sotto ci sono tutti gli allenamenti, completi o parziali.</p>
+<p><img class="ph" loading="lazy" alt="Storico: i progressi di un esercizio e gli allenamenti" src="guide/it/24-history.png" /><img class="dk" loading="lazy" alt="Storico: i progressi di un esercizio e gli allenamenti" src="guide/it/desk/24-history.webp" /></p>
+<h3 id="un-allenamento">Un allenamento</h3>
+<p>Toccane uno per vedere dove sono andati i minuti (lavoro, recuperi, spostamenti, pause) e ogni serie che hai fatto.</p>
+<p><img class="ph" loading="lazy" alt="Un allenamento: dove sono andati i minuti e ogni serie" src="guide/it/25-session.png" /><img class="dk" loading="lazy" alt="Un allenamento: dove sono andati i minuti e ogni serie" src="guide/it/desk/25-session.webp" /></p>
+<h2 id="importare-da-testo">Importare da testo</h2>
+<p>Accanto a <em>Nuovo workout</em>, <em>Nuova scheda</em> e <em>Aggiungi esercizio</em> c'è <em>Importa</em>. Incolla il testo o scegli un file .txt. Scrivi come scriveresti a mano, una cosa per riga:</p>
+<table>
+<thead>
+<tr>
+<th>Riga</th>
+<th>Cosa vuol dire</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WORKOUT: Upper Lower di Marco</code></td>
+<td>Il nome della settimana (facoltativo)</td>
+</tr>
+<tr>
+<td><code>SCHEDA: Upper @ lun 18:00</code></td>
+<td>Inizia una scheda; dopo <code>@</code> giorno e ora, facoltativi</td>
+</tr>
+<tr>
+<td><code>Panca piana 4x8 60 kg rec 2:30</code></td>
+<td>Un esercizio: serie x ripetizioni, peso e recupero facoltativi</td>
+</tr>
+<tr>
+<td><code>Plank 3x45s</code></td>
+<td>Un esercizio a tempo</td>
+</tr>
+<tr>
+<td><code>Ellittica 10 min livello 6</code></td>
+<td>Cardio, con i suoi obiettivi</td>
+</tr>
+<tr>
+<td><code>(manubri)</code></td>
+<td>L'attrezzo, se vuoi: (bilanciere), (manubri), (cavi), (macchina)</td>
+</tr>
+<tr>
+<td><code>- Gomiti appena piegati.</code></td>
+<td>Una nota per l'esercizio sopra</td>
+</tr>
+</tbody>
+</table>
+<p>I file scritti prima, con <code>SCHEDA:</code> per la settimana e <code>GIORNO:</code> per le schede, si leggono ancora.</p>
+<h2 id="con-everyday">Con Everyday</h2>
+<p>Palestra decide nome, durata ed esercizi; Everyday decide quando. Per collegarle, in Everyday apri <em>Impostazioni → Avanzate → Collegamenti → Palestra</em> e incolla un token per <code>palestra-data</code> con <em>Contents: Read and write</em>.</p>
+<p><img class="ph" loading="lazy" alt="Everyday, nelle impostazioni di Palestra: cosa vede e cosa scrive" src="guide/it/26-everyday.png" /><img class="dk" loading="lazy" alt="Everyday, nelle impostazioni di Palestra: cosa vede e cosa scrive" src="guide/it/desk/26-everyday.webp" /></p>
+<ul>
+<li>Ogni scheda appare in Everyday come <strong>routine</strong>, con la sua durata stimata.</li>
+<li>Le schede del workout attivo si ripetono da sole nei loro giorni, all'ora che hai scelto. Le altre le pianifichi a mano.</li>
+<li>Un blocco di allenamento in Everyday ha <em>Apri in Palestra</em>: apre quella scheda pronta a partire.</li>
+<li>Alla fine Everyday segna fatto il blocco con l'ora vera di inizio e fine, e la durata stimata si avvicina a quella reale.</li>
+<li><em>Sposta a domani</em> in Palestra sposta anche il blocco in Everyday, alla prossima sincronizzazione. <em>Rimetti oggi</em> lo riporta dov'era. Un blocco spostato in Everyday si vede nel suo nuovo giorno anche in Palestra.</li>
+</ul>
+<h2 id="una-settimana-tipo">Una settimana tipo</h2>
+<p><strong>Domenica sera.</strong> Apri <em>Oggi</em>: il workout attivo è Petto e bicipiti · Schiena e tricipiti · Gambe, lunedì, mercoledì e sabato. Everyday ha già messo i tre blocchi in agenda.</p>
+<p><strong>Lunedì, 18:00.</strong> In palestra tocchi <em>Inizia</em>. È la prima volta della settimana: Palestra ti propone la panca piana a 62,5 kg invece di 60. Confermi. Segui lo schermo serie per serie; dopo l'ellittica ti dice di andare ai pesi liberi, rack R1–2.</p>
+<p><strong>Mercoledì.</strong> Hai una cena di lavoro. A pranzo apri <em>Oggi</em> e tocchi <em>Sposta a domani</em>: Schiena e tricipiti passa a giovedì, e dopo la sincronizzazione anche il blocco in Everyday è giovedì alle 18:00.</p>
+<p><strong>Sabato mattina.</strong> Gambe alle 10:30. Leg press occupata: tocchi <em>Pausa</em>, aspetti, riprendi. Il tempo di attesa non allunga la stima della scheda.</p>
+<p><strong>Domenica.</strong> Nello <em>Storico</em> guardi la panca piana: +7,5 kg in quattro settimane.</p>
+<h2 id="su-un-computer">Su un computer</h2>
+<p>Su uno schermo largo le sezioni sono nella barra in alto, accanto al nome dell'app, come in Ricette ed Everyday. A destra ci sono le azioni della pagina (<em>Nuova scheda</em> · <em>Importa</em>), lo stato della sincronizzazione e l'ingranaggio.</p>
+<p>Le pagine usano la larghezza. <em>Oggi</em> e <em>Storico</em> hanno due colonne. In <em>Schede</em> l'elenco e la scheda scelta stanno affiancati. Quando modifichi una scheda, a destra c'è la libreria degli esercizi: cerca e clicca <strong>+</strong> per aggiungere. Gli esercizi sono in una griglia.</p>
+<p>Usa un token diverso per ogni dispositivo: telefono e computer restano allineati a ogni sincronizzazione.</p>
+<h2 id="consigli-e-problemi-comuni">Consigli e problemi comuni</h2>
+<p><strong>La sincronizzazione non parte.</strong> Tocca l'ingranaggio e guarda la riga in alto. Se dice errore 401 o 403, il token è scaduto o non vede <code>palestra-data</code>: creane uno nuovo e incollalo in <em>Collegamento GitHub</em>. Con 404, l'utente o il nome del repository sono sbagliati.</p>
+<p><strong>Lo schermo si spegne durante l'allenamento.</strong> Escludi Palestra dal risparmio batteria del telefono, e controlla che in <em>Recupero e allenamento</em> sia acceso lo schermo.</p>
+<p><strong>Il blocco non risulta fatto in Everyday.</strong> Sincronizza Palestra (ingranaggio → <em>Sync</em>), poi Everyday.</p>
+<p><strong>Compare la barra Aggiorna.</strong> È uscita una versione nuova: toccala quando non ti stai allenando.</p>
+<p><strong>Vuoi una copia di tutto.</strong> <em>Impostazioni → Backup</em> scarica tutti i tuoi dati in un file. Il repository su GitHub tiene comunque ogni versione passata.</p></main><script>
+document.addEventListener('click',function(e){var z=document.querySelector('.zoom');if(z){z.remove();return;}var i=e.target.closest('main img');if(!i)return;var d=document.createElement('div');d.className='zoom';var b=document.createElement('img');b.src=i.currentSrc||i.src;b.alt=i.alt;d.appendChild(b);document.body.appendChild(d);});
+function setMode(m,keep){document.documentElement.classList.toggle('desk',m==='desk');document.querySelectorAll('.mode button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.mode===m));});if(keep){try{localStorage.setItem('guideMode',m)}catch(e){}}}
+setMode(document.documentElement.classList.contains('desk')?'desk':'phone',false);
+document.querySelectorAll('.mode button').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();setMode(b.dataset.mode,true);});});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){var z=document.querySelector('.zoom');if(z)z.remove();}});
+</script></body></html>

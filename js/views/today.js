@@ -4,14 +4,14 @@ import { state, get, pref } from '../store.js';
 import { t } from '../i18n.js';
 import { esc, minText, shortDate, timeOfDay, weekdayShort, monthName } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { empty } from '../ui/parts.js';
+import { empty, gearLink } from '../ui/parts.js';
 import { toast } from '../ui/dialogs.js';
 import { syncStatus } from '../shell.js';
 import { isSyncing, syncNow } from '../sync.js';
 import { routines, exercises, routineMinutes, sessions, placeOf, lastDone } from '../data.js';
 import { plannedAhead } from '../model.js';
 import {
-  activeInfo, weekStatus, weekNumber, planMinutes, outsidePlan, plans, todayDay, effectiveWeekday, movesThisWeek, moveToTomorrow, undoMove, dateOf,
+  activeInfo, weekStatus, weekNumber, planMinutes, outsidePlan, plans, todayDay, effectiveWeekday, isMoved, moveToTomorrow, undoMove, dateOf,
 } from '../plans.js';
 
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
@@ -36,7 +36,7 @@ function dayBadge(x, i, status, planned) {
   const wdNames = t('weekdayShort');
   if (x.done) return `<span class="badge done">${esc(t('doneOn', weekdayShort(x.done.start)))}</span>`;
   const ewd = effectiveWeekday(x.day);
-  const moved = movesThisWeek().some((m) => m.routineId === x.routine.id);
+  const moved = isMoved(x.routine.id);
   const wd = Number.isInteger(ewd) ? `${wdNames[ewd]}${x.day.time ? ` ${x.day.time}` : ''}` : '';
   const p = planned.find((q) => q.routineId === x.routine.id);
   const when = p ? `${weekdayShort(p.at)} ${timeOfDay(p.at)}` : wd;
@@ -81,7 +81,7 @@ function todayHero(a, status, planned) {
   const firstPlace = first && placeOf(first);
   const when = block ? `${weekdayShort(block.at)} ${timeOfDay(block.at)}` : '';
   const eyebrow = td ? (td.day.time ? t('todayAt', td.day.time) : t('todayRoutine')) : t('nextOn', when || (Number.isInteger(effectiveWeekday(pick.day)) ? t('weekdayShort')[effectiveWeekday(pick.day)] : '')).replace(/ · $/, '');
-  const moved = movesThisWeek().some((m) => m.routineId === r.id);
+  const moved = isMoved(r.id);
   return `<section class="today-hero" aria-label="${esc(t('today'))}">
       <div class="hero-top"><span class="eyebrow">${esc(eyebrow)}</span>${block ? `<span>${esc(t('inEveryday'))}</span>` : ''}</div>
       <a class="hero-title" href="#/routine/${encodeURIComponent(r.id)}">${esc(r.name)}</a>
@@ -154,7 +154,7 @@ export function todayView() {
   const now = Date.now();
   const html = `<header class="page-head">
       <div><h1>${esc(t('today'))}</h1><p class="sub">${esc(new Date(now).toLocaleDateString(document.documentElement.lang || 'it', { weekday: 'long', day: 'numeric', month: 'long' }))}</p>${syncLine()}</div>
-      <div class="head-actions"><a class="round-btn only-narrow" href="#/settings" aria-label="${esc(t('settings'))}">${icon('gear')}</a></div>
+      <div class="head-actions">${gearLink()}</div>
     </header>
     <div class="cols"><div class="col-main">${main}</div><aside class="col-side">${side}</aside></div>`;
   return {

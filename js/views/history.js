@@ -3,7 +3,7 @@ import { state, get, remove, restore, live } from '../store.js';
 import { t } from '../i18n.js';
 import { esc, fmtNum, shortDate, dayMonth, weekdayShort, timeOfDay, minText, clock, monthName } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { backLink, empty } from '../ui/parts.js';
+import { backLink, empty, gearLink } from '../ui/parts.js';
 import { askConfirm, toast } from '../ui/dialogs.js';
 import { sessions, exercises, machineOf } from '../data.js';
 import { progressOf, totalWeight, measuresFor } from '../model.js';
@@ -75,7 +75,7 @@ export function historyView(query = {}) {
   }).join('');
 
   const html = `<header class="page-head"><div><h1>${esc(t('tab_history'))}</h1>
-      <p class="sub">${esc(t('monthSummary', monthName(now), thisMonth.length, minText(monthMin)))}</p></div></header>
+      <p class="sub">${esc(t('monthSummary', monthName(now), thisMonth.length, minText(monthMin)))}</p></div><div class="head-actions">${gearLink()}</div></header>
     ${ss.length ? `<div class="cols side-first">${progress ? `<aside class="col-side">${progress}</aside>` : ''}<div class="col-main"><h2 class="section-title">${esc(t('sessionsTitle'))}</h2><div class="card list">${rows}</div></div></div>` : empty(t('esHistoryTitle'), t('esHistoryText'))}`;
   return {
     html,

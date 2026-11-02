@@ -22,11 +22,15 @@ export const TAB_OF = {
 
 export function renderTabs() {
   for (const a of document.querySelectorAll('nav.tabs a[data-tab]')) a.querySelector('.label').textContent = a.dataset.tab === 'settings' ? t('settings') : t(`tab_${a.dataset.tab}`);
+  const gear = document.getElementById('gear');
+  if (gear) { gear.setAttribute('aria-label', t('settings')); gear.title = t('settings'); document.getElementById('gear-label').textContent = t('settings'); }
   const nav = document.querySelector('nav.tabs');
   if (nav) nav.setAttribute('aria-label', t('mainNav'));
 }
 
 export function setActiveTab(routeName) {
+  document.getElementById('gear')?.classList.toggle('active', routeName === 'settings');
+  document.querySelectorAll('#view .gear').forEach((g) => g.classList.toggle('active', routeName === 'settings'));
   for (const a of document.querySelectorAll('nav.tabs a[data-tab]')) {
     const on = a.dataset.tab === (TAB_OF[routeName] || 'today');
     a.classList.toggle('active', on);

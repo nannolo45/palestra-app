@@ -77,3 +77,10 @@ export function segTabs(which) {
   const tab = (key, href, label) => `<a href="${href}" class="${which === key ? 'on' : ''}"${which === key ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
   return `<nav class="seg-tabs" aria-label="${esc(t('tab_exercises'))}">${tab('exercises', '#/exercises', t('exercisesTab'))}${tab('gym', '#/gym', t('gymTab'))}</nav>`;
 }
+
+/** The settings gear, the same in Ricette, Palestra and Everyday (see the handover). On the phone it sits at the
+ *  right end of each tab page's header; on a computer the top bar has its own (#gear in index.html). */
+export const COG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.27 4.80 L10.72 2.49 L13.28 2.49 L13.73 4.80 L15.87 5.69 L17.82 4.37 L19.63 6.18 L18.31 8.13 L19.20 10.27 L21.51 10.72 L21.51 13.28 L19.20 13.73 L18.31 15.87 L19.63 17.82 L17.82 19.63 L15.87 18.31 L13.73 19.20 L13.28 21.51 L10.72 21.51 L10.27 19.20 L8.13 18.31 L6.18 19.63 L4.37 17.82 L5.69 15.87 L4.80 13.73 L2.49 13.28 L2.49 10.72 L4.80 10.27 L5.69 8.13 L4.37 6.18 L6.18 4.37 L8.13 5.69 Z"/><circle cx="12" cy="12" r="3.1"/></svg>';
+export function gearLink() {
+  return `<a class="gear only-narrow" href="#/settings" aria-label="${esc(t('settings'))}" title="${esc(t('settings'))}">${COG}</a>`;
+}

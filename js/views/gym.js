@@ -4,7 +4,7 @@ import { state, get, upsert, remove, restore, uid, pref } from '../store.js';
 import { t } from '../i18n.js';
 import { esc } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { empty, segmented, segTabs } from '../ui/parts.js';
+import { empty, segmented, segTabs, gearLink } from '../ui/parts.js';
 import { openSheet, askConfirm, toast } from '../ui/dialogs.js';
 import { places, machines } from '../data.js';
 import { CARDIO_KIND_KEYS, PICKABLE, MAX_EXTRA_MEASURES, MEASURES, customMeasureKey } from '../model.js';
@@ -35,10 +35,10 @@ export function gymView() {
   };
   const html = `<header class="page-head">
       <div><h1>${esc(t('tab_exercises'))}</h1><p class="sub">${esc([gymName || t('yourGym'), t('nZones', ps.length), t('nStations', count)].join(' · '))}</p></div>
-      <div class="head-actions">${ps.length > 1 ? `<button type="button" class="pill-btn${sorting ? ' on' : ''}" data-action="sort" aria-pressed="${sorting}">${icon('sort', 18)}${esc(sorting ? t('done') : t('reorder'))}</button>` : ''}</div>
+      <div class="head-actions">${gearLink()}</div>
     </header>
     ${segTabs('gym')}
-    ${ps.length ? `<p class="lead">${esc(t('walkOrderHint'))}</p>
+    ${ps.length ? `<div class="lead-row"><p class="lead">${esc(t('walkOrderHint'))}</p>${ps.length > 1 ? `<button type="button" class="pill-btn${sorting ? ' on' : ''}" data-action="sort" aria-pressed="${sorting}">${icon('sort', 18)}${esc(sorting ? t('done') : t('reorder'))}</button>` : ''}</div>
       <div class="route" data-sortable="places">${ps.map((p, i) => zone(p, i, i === ps.length - 1)).join('')}</div>` : empty(t('esGymTitle'), t('esGymText'))}
     ${loose.length ? `<section class="group"><h2 class="section-title">${esc(t('noPlace'))}</h2><div class="chips">${loose.map((m) => `<button type="button" class="machine-chip" data-machine="${esc(m.id)}"><span class="mnum">${esc(m.number || '·')}</span>${esc(m.name)}</button>`).join('')}</div></section>` : ''}
     <button type="button" class="btn dashed wide" data-action="add-place">${icon('plus', 18)}${esc(t('addZone'))}</button>`;

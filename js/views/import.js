@@ -1,7 +1,7 @@
 // Importa: a plan or single routines from plain text (typed, pasted or a .txt file) or a Palestra .json file.
 // First a preview (what's already yours, what's new, what couldn't be read), then the import.
 import { get, live, upsert, remove } from '../store.js';
-import { t } from '../i18n.js';
+import { t, getLang } from '../i18n.js';
 import { esc, fmtNum } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { backLink, segmented, toggle } from '../ui/parts.js';
@@ -16,17 +16,14 @@ const st = { src: 'paste', text: '', result: null, error: '', asPlan: true, make
 
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
 
-const HELP = [
-  ['WORKOUT: Push Pull Legs', 'helpPlan'],
-  ['SCHEDA: Spinta @ lun 18:00', 'helpDay'],
-  ['Panca piana 4x8', 'helpSets'],
-  ['… 60 kg', 'helpWeight'],
-  ['… rec 2:30  /  rec 90s', 'helpRest'],
-  ['Plank 3x45s', 'helpTimed'],
-  ['Ellittica 15 min livello 6', 'helpCardio'],
-  ['(bilanciere) (manubri) (cavi) (macchina)', 'helpEquipment'],
-  ['- testo', 'helpNote'],
-];
+// examples in the help, in the language the person writes in
+const HELP = () => (getLang() === 'en' ? [
+  ['WORKOUT: Push Pull Legs', 'helpPlan'], ['ROUTINE: Push @ mon 18:00', 'helpDay'], ['Bench press 4x8', 'helpSets'], ['… 60 kg', 'helpWeight'],
+  ['… rest 2:30  /  rest 90s', 'helpRest'], ['Plank 3x45s', 'helpTimed'], ['Elliptical 15 min level 6', 'helpCardio'], ['(barbell) (dumbbells) (cables) (machine)', 'helpEquipment'], ['- text', 'helpNote'],
+] : [
+  ['WORKOUT: Push Pull Legs', 'helpPlan'], ['SCHEDA: Spinta @ lun 18:00', 'helpDay'], ['Panca piana 4x8', 'helpSets'], ['… 60 kg', 'helpWeight'],
+  ['… rec 2:30  /  rec 90s', 'helpRest'], ['Plank 3x45s', 'helpTimed'], ['Ellittica 15 min livello 6', 'helpCardio'], ['(bilanciere) (manubri) (cavi) (macchina)', 'helpEquipment'], ['- testo', 'helpNote'],
+]);
 
 function itemText(it, ex) {
   if (ex.type === 'cardio') return [`${fmtNum(it.targets?.duration)} min`, it.targets?.speed != null ? `${fmtNum(it.targets.speed)} km/h` : '', it.targets?.level != null ? `${t('m_level').toLowerCase()} ${it.targets.level}` : ''].filter(Boolean).join(' · ');
@@ -120,7 +117,7 @@ export function importView(query = {}) {
     : `<label class="drop">${icon('book', 32)}<b>${esc(t('importPickFile'))}</b><span class="muted small">${esc(t('importFileHint'))}</span><span class="btn">${esc(t('browse'))}</span><input type="file" accept=".txt,.json,text/plain,application/json" data-file class="sr"></label>`}
       ${st.error ? `<p class="warn" role="alert">${esc(st.error)}</p>` : ''}
       <details class="card help"><summary>${esc(t('howToWrite'))}${icon('down', 18, 'class="chev"')}</summary>
-        <div class="help-rows">${HELP.map(([code, key]) => `<div><code>${esc(code)}</code><span>${esc(t(key))}</span></div>`).join('')}</div></details>
+        <div class="help-rows">${HELP().map(([code, key]) => `<div><code>${esc(code)}</code><span>${esc(t(key))}</span></div>`).join('')}</div></details>
       ${st.src === 'paste' ? `<button type="button" class="btn primary big wide" data-action="read">${esc(t('readText'))}</button>` : ''}
     </div>`;
   return {

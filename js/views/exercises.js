@@ -3,7 +3,7 @@ import { state, get, upsert, remove, restore, uid, live, saveSettings } from '..
 import { t } from '../i18n.js';
 import { esc, fmtNum, shortDate, num } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { backLink, stepper, bindSteppers, stepVal, segmented, empty, exTag, segTabs } from '../ui/parts.js';
+import { backLink, stepper, bindSteppers, stepVal, segmented, empty, exTag, segTabs, gearLink } from '../ui/parts.js';
 import { askConfirm, toast } from '../ui/dialogs.js';
 import {
   exercises, places, machines, machineOf, placeOf, whereText, typeLabel, cardioKindLabel, measureLabel, training, increaseSettings, refreshEstimates,
@@ -82,6 +82,7 @@ export function exercisesView() {
       <div class="head-actions">
         <button type="button" class="round-btn${compact ? ' on' : ''}" data-action="density" aria-pressed="${compact}" aria-label="${esc(t('compactView'))}" title="${esc(t('compactView'))}">${icon('rowsCompact')}</button>
         <a class="round-btn" href="#/exercise/new" aria-label="${esc(t('newExercise'))}">${icon('plus')}</a>
+        ${gearLink()}
       </div>
     </header>
     ${segTabs('exercises')}

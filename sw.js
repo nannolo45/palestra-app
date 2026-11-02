@@ -1,11 +1,11 @@
 // Offline support, as in Ricette. Each app version is cached as a whole; a new version is downloaded in the
 // background and takes over when the user taps "Aggiorna" (or the next time the app starts with no workout open).
-const VERSION = 'palestra-v10'; // keep in step with APP_VERSION in js/views/settings.js
+const VERSION = 'palestra-v13'; // keep in step with APP_VERSION in js/views/settings.js
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
-  'js/app.js', 'js/store.js', 'js/sync.js', 'js/i18n.js', 'js/shell.js', 'js/sortable.js', 'js/model.js', 'js/workout.js', 'js/data.js', 'js/guide.js', 'js/importer.js', 'js/plans.js',
+  'js/app.js', 'js/store.js', 'js/sync.js', 'js/i18n.js', 'js/shell.js', 'js/sortable.js', 'js/model.js', 'js/workout.js', 'js/data.js', 'js/importer.js', 'js/plans.js',
   'js/ui/format.js', 'js/ui/dialogs.js', 'js/ui/icons.js', 'js/ui/parts.js',
-  'js/views/routines.js', 'js/views/exercises.js', 'js/views/gym.js', 'js/views/history.js', 'js/views/settings.js', 'js/views/workout.js', 'js/views/plans.js', 'js/views/import.js', 'js/views/today.js',
+  'js/views/routines.js', 'js/views/exercises.js', 'js/views/gym.js', 'js/views/history.js', 'js/views/settings.js', 'js/views/workout.js', 'js/views/plans.js', 'js/views/import.js', 'js/views/today.js', 'guide-it.html', 'guide-en.html',
   'fonts/Barlow-Regular.woff', 'fonts/Barlow-Medium.woff', 'fonts/Barlow-SemiBold.woff', 'fonts/Barlow-Bold.woff', 'fonts/BarlowCondensed-SemiBold.woff', 'fonts/BarlowCondensed-Bold.woff',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
@@ -36,7 +36,9 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || url.origin !== self.location.origin) return; // GitHub API goes straight to the network
   event.respondWith((async () => {
     const cache = await caches.open(VERSION);
-    const key = req.mode === 'navigate' ? 'index.html' : req;
+    // opening the app (any address) serves index.html; the guide pages are pages of their own
+    const guide = /\/guide-(it|en)\.html$/.test(url.pathname);
+    const key = req.mode === 'navigate' ? (guide ? url.pathname.split('/').pop() : 'index.html') : req;
     const cached = await cache.match(key, { ignoreSearch: req.mode === 'navigate' });
     if (cached) return cached;
     try {

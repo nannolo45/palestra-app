@@ -72,7 +72,7 @@ knows makes it keep reading but stop writing until it's updated. Changing a list
 
 **Names (v9).** In the app a routine is a **scheda** (EN: routine) and a plan is a **workout** (EN: workout); a session done is an **allenamento**. The data keeps the old keys (`routines`, `plans`, `sessions`), so the contract doesn't change.
 
-**Moves** (prefs record `moves`, proposed for Everyday): `[{routineId, from: "YYYY-MM-DD", to: "YYYY-MM-DD"}]`, written by *Sposta a domani* on Oggi. Only the current week's moves are kept. For that week the routine's day is `to` instead of its weekday in `activePlan`.
+**Moves** (prefs record `moves`, written by *Sposta a domani* on Oggi, read by Everyday since its v60): `[{routineId, from: "YYYY-MM-DD", to: "YYYY-MM-DD", at}]`, in the order they were made (`at` in ms); only the current week's are kept. Everyday applies them in order on each sync: the block still on `from` goes to `to` (same time if free, else the first free slot), blocks done or started stay, and the result comes back through `planned`. Entries are never rewritten once they may have been synced: moving again adds one, *Rimetti oggi* adds the reverse move (a move not yet synced is just removed).
 
 **Text import.** `WORKOUT:` names the plan, `SCHEDA:` (or `ROUTINE:`) starts a routine, optionally `@ lun 18:00`. A file with `GIORNO:`/`DAY:` lines and no `WORKOUT:` is read the old way (`SCHEDA:` = plan name).
 
@@ -100,8 +100,21 @@ npm test        # model, workout timing, translations (Node 20+)
 npm run e2e     # the whole app in Chromium with a fake GitHub and a controlled clock (needs Playwright)
 ```
 
-## Guide screenshots
+## User guide
 
-The guide (Settings → Guida) has a phone version and a desktop version, chosen by the screen it's opened on, each with
-screenshots of that layout in `guide/phone/` and `guide/desktop/`. They're taken from the real app with a sample gym:
-`node tests/guide-shots.cjs`. Run it again after a visible change; a unit test checks every screenshot the guide names exists.
+The guide is two standalone pages next to the app, `guide-it.html` and `guide-en.html`, opened from Settings → Guida in the
+same tab. They're built from `docs/guide/it.md` and `en.md` (same headings and pictures in both) by `docs/guide/build.py`,
+with a phone screenshot (`guide/<lang>/NN-name.png`, 390×780 at 2×) and a computer one (`guide/<lang>/desk/NN-name.webp`,
+1440×900) for each picture, and a Telefono / Computer switch remembered in `localStorage` (`guideMode`, shared with Ricette
+and Everyday). After a visible change, retake the pictures and rebuild:
+
+```
+cd tests
+node ../docs/guide/screenshots.mjs it ../guide/it
+node ../docs/guide/screenshots.mjs en ../guide/en
+node ../docs/guide/screenshots.mjs it /tmp/desk/it desk
+node ../docs/guide/screenshots.mjs en /tmp/desk/en desk
+cd .. && python3 docs/guide/build.py --desk /tmp/desk     # needs markdown and Pillow
+```
+
+Then bump the version: the guide pages are in the offline cache.

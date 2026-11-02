@@ -9,12 +9,10 @@ import { syncStatus } from '../shell.js';
 import { syncNow, isSyncing, isConfigured, testConnection, clearFileCache, CONTRACT } from '../sync.js';
 import { training, increaseSettings, refreshEstimates } from '../data.js';
 import { INCREASE_STEP, plannedAhead } from '../model.js';
-import { GUIDE, chapterFor } from '../guide.js';
-import { isWide } from '../shell.js';
 import { activeInfo } from '../plans.js';
 
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
-export const APP_VERSION = 'v10';
+export const APP_VERSION = 'v13';
 const VERSION = APP_VERSION;
 
 function statusCard() {
@@ -31,7 +29,11 @@ function statusCard() {
   ${state.meta.contractNewer ? `<p class="warn">${esc(t('contractNewer'))}</p>` : ''}`;
 }
 
+/** The user guide is its own page next to the app (guide-it.html, guide-en.html), opened in the same tab. */
+export const guideHref = () => `guide-${getLang() === 'en' ? 'en' : 'it'}.html`;
+
 export function settingsView(sub) {
+  if (sub === 'guide') { location.replace(guideHref()); return { html: '' }; }
   if (sub && SUB[sub]) return SUB[sub]();
   const inc = increaseSettings();
   const tr = training();
@@ -52,7 +54,7 @@ export function settingsView(sub) {
     <h1 class="title">${esc(t('settings'))}</h1>
     ${statusCard()}
     <nav class="card list settings-list" aria-label="${esc(t('settings'))}">
-      ${rows.map(([k, ic, title, sub2]) => `<a class="row list-row" href="${k === 'plans' ? '#/plans' : k === 'import' ? '#/import' : `#/settings/${k}`}">
+      ${rows.map(([k, ic, title, sub2]) => `<a class="row list-row" href="${k === 'plans' ? '#/plans' : k === 'import' ? '#/import' : k === 'guide' ? guideHref() : `#/settings/${k}`}">
         <span class="icon-tile" aria-hidden="true">${icon(ic)}</span>
         <span class="row-text"><span class="row-title">${esc(title)}</span><span class="row-sub">${esc(sub2)}</span></span>${icon('chevron', 18, 'class="chev"')}</a>`).join('')}
     </nav>
@@ -213,22 +215,5 @@ const SUB = {
         if (isConfigured()) syncNow();
       });
     });
-  },
-
-  guide() {
-    const chapters = GUIDE[getLang()] || GUIDE.it;
-    // the version for the screen it's opened on: phone (bottom tabs) or desktop (top bar)
-    const device = isWide() ? 'desktop' : 'phone';
-    const shot = ([name, caption]) => `<figure class="guide-shot ${device}"><img src="guide/${device}/${name}.jpg" alt="${esc(caption)}" loading="lazy" decoding="async"><figcaption>${esc(caption)}</figcaption></figure>`;
-    const body = `<p class="guide-device">${icon(device === 'desktop' ? 'rows' : 'list', 16)}${esc(t(device === 'desktop' ? 'guideDesktop' : 'guidePhone'))}</p>
-      <div class="stack tight guide">${chapters.map((raw, i) => {
-    const ch = chapterFor(raw, device);
-    return `<details class="card guide-ch" ${i === 0 ? 'open' : ''}>
-        <summary><span class="num-dot ink">${i + 1}</span><span class="row-title">${esc(ch.title)}</span>${icon('down', 18, 'class="chev"')}</summary>
-        <div class="guide-body"><p>${bold(ch.intro)}</p>${ch.steps.length ? `<ol>${ch.steps.map((x) => `<li>${bold(x)}</li>`).join('')}</ol>` : ''}
-          ${ch.shots.length ? `<div class="guide-shots">${ch.shots.map(shot).join('')}</div>` : ''}</div>
-      </details>`;
-  }).join('')}</div>`;
-    return page(t('set_guide'), body, () => {}, t('guideIntro'));
   },
 };
