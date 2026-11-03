@@ -192,6 +192,8 @@ Each exercise can have a drawing of the movement, in two positions (*Start* and 
 - **All at once.** In *Exercises*, the *Match pictures* card takes you through the exercises without a picture one after another: tap the right drawing and *Use this one*, or *None*.
 - **Your photo of the machine.** Tap *Photograph the machine*: on a phone the camera opens. The photo is shrunk and kept on the phone and, if GitHub is connected, in palestra-data in the *photos* folder, so your other devices see it too. *Retake* and *Remove* change it.
 
+Don't need them? *Settings → Language and appearance → Pictures* turns them all off: they stay saved but aren't shown until you turn them back on.
+
 The drawings come from free-exercise-db, in the public domain; they download the first time you see them and then stay available offline.
 
 ![Choose a picture: the drawings closest to the name](guide/en/28-picker.webp)

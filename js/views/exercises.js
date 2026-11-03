@@ -5,7 +5,7 @@ import { esc, fmtNum, shortDate, num } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { backLink, stepper, bindSteppers, stepVal, segmented, empty, exTag, segTabs, gearLink } from '../ui/parts.js';
 import { hasPicture, frameUrl } from '../pictures.js';
-import { pickPicture, machinePhotoBlock, bindPhotoInputs, missingPictures } from './pictures.js';
+import { pickPicture, machinePhotoBlock, bindPhotoInputs, missingPictures, picturesOn } from './pictures.js';
 import { askConfirm, toast } from '../ui/dialogs.js';
 import {
   exercises, places, machines, machineOf, placeOf, whereText, typeLabel, cardioKindLabel, measureLabel, training, increaseSettings, refreshEstimates,
@@ -331,6 +331,7 @@ export function resetExerciseDraft() { draft = null; }
 let picFrame = 0;
 
 function pictureBlock(ex) {
+  if (!picturesOn()) return '';
   if (!hasPicture(ex)) {
     return `<button type="button" class="btn dashed wide" data-action="pick-picture">${icon('image', 18)}${esc(ex.picture?.none ? t('picChooseAgain') : t('picChoose'))}</button>`;
   }

@@ -267,6 +267,13 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await shot('p4-viewer');
   await page.click('.viewer-close');
   check(!(await page.$('.viewer')), 'the viewer closes');
+  // Impostazioni → Lingua e aspetto → Immagini off hides the small picture
+  await page.evaluate(async () => (await import('/js/store.js')).setPref('pictures', false));
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('palestra:render'))); await page.waitForTimeout(150);
+  check(!(await page.$('.w-thumb')), 'pictures off: no small picture');
+  await page.evaluate(async () => (await import('/js/store.js')).setPref('pictures', true));
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('palestra:render'))); await page.waitForTimeout(150);
+  check(Boolean(await page.$('.w-thumb')), 'pictures on again');
   await page.clock.runFor(35 * 1000);
   await page.click('[data-action=done]');
   await page.clock.runFor(60 * 1000);
@@ -639,6 +646,12 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check((await page.textContent('.set-row[href="#/settings/look"] small')).includes('Automatico'), 'the Lingua e aspetto row says Automatico');
   await go('#/settings/look');
   check(await page.isChecked('[name=theme][value=auto]'), 'Aspetto starts on Automatico');
+  check(await page.isChecked('[name=pictures]'), 'Immagini: shown by default');
+  await page.click('.toggle-row:has([name=pictures])');
+  await go('#/settings');
+  check((await page.textContent('.set-row[href="#/settings/look"] small')).includes('immagini nascoste'), 'the row says pictures are hidden');
+  await go('#/settings/look');
+  await page.click('.toggle-row:has([name=pictures])');
   check((await theme()) === 'light' && (await bar()) === '#ffffff,#ffffff', 'a light device: light theme, white status bar');
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.waitForTimeout(150);

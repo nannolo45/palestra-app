@@ -1,15 +1,12 @@
-Palestra v18: le immagini degli esercizi e le foto delle macchine
+Palestra v19: interruttore per le immagini
 
 COME CARICARE
-1. Apri il repository palestra-app su GitHub → Add file → Upload files.
-2. Trascina TUTTO il contenuto di questa cartella (non la cartella stessa): le sottocartelle
-   (js, css, guide, lib, docs, tests) vanno trascinate così come sono, GitHub le rimette al loro posto.
-3. Commit. Sono 72 file, sotto il limite di 100 di GitHub: basta un caricamento.
+1. Repository palestra-app su GitHub → Add file → Upload files.
+2. Trascina TUTTO il contenuto di questa cartella (non la cartella stessa), sottocartelle comprese.
+3. Commit. Sono 11 file: un solo caricamento.
 
-NUOVI: js/pictures.js, js/photos.js, js/views/pictures.js, lib/exercise-pictures.json,
-       docs/pictures/build-index.py, tests/pictures.test.mjs, guide/*/28-30 (e desk).
 DA CANCELLARE: niente.
-Non servono per far funzionare l'app (ma tienili aggiornati se vuoi): docs/, tests/, README.md, CHANGELOG.md.
+Non servono per far funzionare l'app: docs/, tests/, CHANGELOG.md (ma tienili aggiornati).
 
-Dopo il caricamento, sul telefono compare la barra "Aggiorna".
-Le foto delle macchine finiscono in palestra-data, nella cartella photos/ (creata da sola alla prima foto).
+Dove: Impostazioni → Lingua e aspetto → Immagini → "Mostra immagini e foto".
+Spento: niente disegni, foto delle macchine né piccole immagini. Restano salvati; riaccendi e tornano.

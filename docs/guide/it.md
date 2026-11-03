@@ -192,6 +192,8 @@ Ogni esercizio può avere un disegno che mostra il movimento, in due posizioni (
 - **Tutti insieme.** In *Esercizi*, la scheda *Abbina le immagini* ti passa gli esercizi senza immagine uno dopo l'altro: tocca il disegno giusto e *Usa questa*, o *Nessuna*.
 - **La tua foto della macchina.** Tocca *Fotografa la macchina*: sul telefono si apre la fotocamera. La foto viene rimpicciolita e salvata sul telefono e, se GitHub è collegato, in palestra-data nella cartella *photos*, così la vedi anche sugli altri dispositivi. *Rifai* e *Togli* la cambiano.
 
+Non ti servono? In *Impostazioni → Lingua e aspetto → Immagini* le spegni tutte: restano salvate, ma non si vedono più finché non le riaccendi.
+
 I disegni vengono da free-exercise-db, di pubblico dominio; si scaricano la prima volta che li vedi e poi restano anche senza rete.
 
 ![Scegli un'immagine: i disegni più simili al nome](guide/it/28-picker.webp)

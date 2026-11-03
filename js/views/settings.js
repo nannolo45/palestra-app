@@ -14,7 +14,7 @@ import { activeInfo } from '../plans.js';
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
 import { themeChoice, applyTheme } from '../theme.js';
 
-export const APP_VERSION = 'v18';
+export const APP_VERSION = 'v19';
 const VERSION = APP_VERSION;
 
 function statusCard() {
@@ -56,7 +56,7 @@ export function settingsView(sub, sub2) {
       ['gym', 'pin', t('set_gym'), [pref('gymName', '') || t('yourGym'), 'kg, km/h'].join(' · ')],
     ]],
     [t('grpApp'), [
-      ['look', 'globe', t('set_langLook'), `${lang} · ${theme}`],
+      ['look', 'globe', t('set_langLook'), `${lang} · ${theme}${pref('pictures', true) === false ? ` · ${t('picHidden')}` : ''}`],
       ['#/import', 'arrowDown', t('importShort'), t('importSub')],
       ['data', 'download', t('set_data'), t('dataSub')],
       [guideHref(), 'book', t('set_guide'), t('guideSub')],
@@ -211,6 +211,8 @@ const SUB = {
       <div class="seg theme-seg" role="radiogroup" aria-label="${esc(t('appearance'))}">${opts.map(([v, l]) => `<label class="${cur === v ? 'on' : ''}"><input type="radio" name="theme" value="${v}" ${cur === v ? 'checked' : ''}><span>${esc(l)}</span></label>`).join('')}</div>
       <p class="muted small">${esc(t('themeHint'))}</p>
       <p class="muted small">${esc(t('workoutAlwaysDark'))}</p>
+      <div class="field-head">${esc(t('picSetting'))}</div>
+      <div class="card">${toggle({ name: 'pictures', checked: pref('pictures', true) !== false, label: t('picSettingLabel'), hint: t('picSettingHint') })}</div>
     </form>`;
     return page(t('set_langLook'), body, (view) => {
       view.querySelectorAll('[name=lang]').forEach((x) => x.addEventListener('change', () => saveSettings({ lang: x.value })));
@@ -218,6 +220,7 @@ const SUB = {
         applyTheme(x.value);
         view.querySelectorAll('.theme-seg label').forEach((l) => l.classList.toggle('on', l.querySelector('input').checked));
       }));
+      view.querySelector('[name=pictures]').addEventListener('change', (e) => setPref('pictures', e.target.checked));
     }, '', { ic: 'globe' });
   },
 

@@ -1,6 +1,6 @@
 // Pictures: choosing one for an exercise (a sheet, or one exercise after another), the machine photo, and the
 // full-screen viewer used during a workout. See js/pictures.js (the library) and js/photos.js (your own photos).
-import { get, upsert, live } from '../store.js';
+import { get, upsert, live, pref } from '../store.js';
 import { t } from '../i18n.js';
 import { esc } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
@@ -8,6 +8,9 @@ import { openSheet, toast } from '../ui/dialogs.js';
 import { suggest, frameUrl, toPicture, hasPicture } from '../pictures.js';
 import { photoOf, setPhoto, removePhoto, shrink } from '../photos.js';
 import { machineOf } from '../data.js';
+
+/** Impostazioni → Lingua e aspetto → Immagini: off hides every drawing, photo and small picture (nothing is deleted). */
+export const picturesOn = () => pref('pictures', true) !== false;
 
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
 
@@ -56,7 +59,7 @@ export function pickPicture(ex) {
 
 const run = { ids: null, i: 0, items: null, sel: null, chosen: {} };
 
-export const missingPictures = () => live('exercises').filter((e) => !e.picture).sort((a, b) => String(a.name).localeCompare(b.name));
+export const missingPictures = () => (picturesOn() ? live('exercises') : []).filter((e) => !e.picture).sort((a, b) => String(a.name).localeCompare(b.name));
 
 export function picturesView() {
   if (!run.ids) Object.assign(run, { ids: missingPictures().map((e) => e.id), i: 0, items: null, sel: null, chosen: {} });
@@ -127,7 +130,7 @@ export function bindPhotoInputs(root) {
 
 /** The machine's photo with Rifai / Togli, or the button to take one. */
 export function machinePhotoBlock(m) {
-  if (!m) return '';
+  if (!m || !picturesOn()) return '';
   const url = photoOf(m);
   if (!url) return photoInput(m.id, t('photoTake'));
   return `<figure class="machine-photo"><img src="${esc(url)}" alt="${esc(t('photoOf', m.number || m.name))}"><figcaption>${esc(t('photoYours'))}</figcaption></figure>
@@ -138,6 +141,7 @@ export function machinePhotoBlock(m) {
 
 /** What to show small for an exercise: the machine photo if there is one, otherwise the exercise's picture. */
 export function thumbOf(ex) {
+  if (!picturesOn()) return '';
   const m = machineOf(ex);
   return photoOf(m) || (hasPicture(ex) ? frameUrl(ex.picture, 0) : '');
 }
