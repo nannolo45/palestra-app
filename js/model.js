@@ -232,8 +232,32 @@ export function progressOf(exercise, sessions) {
 }
 
 /** Total weight moved in a session (reps × kg), for the summary. */
-export function totalWeight(session) {
-  return (session.sets || []).reduce((a, x) => a + (Number(x.reps) || 0) * (Number(x.weight) || 0), 0);
+// ---- what the weight means (v23): exercise.weightAs and exercise.dumbbells ----
+export const BAR_KG = 20;
+
+/**
+ * How an exercise's weight is read. Dumbbells: per dumbbell (the default; 1 or 2 of them) or in all. Barbell: in all,
+ * bar included (the default), or plates per side. Anything else: plain kg.
+ */
+export function weightMode(ex) {
+  if (!ex) return 'plain';
+  if (ex.equipment === 'dumbbell') return ex.weightAs === 'total' ? 'dbTotal' : Number(ex.dumbbells) === 1 ? 'dbOne' : 'dbEach';
+  if (ex.equipment === 'barbell') return ex.weightAs === 'side' ? 'barSide' : 'barTotal';
+  return 'plain';
+}
+
+/** The kilos actually lifted for one rep at weight w, for the totals. */
+export function liftedKg(ex, w) {
+  const n = Number(w) || 0;
+  const m = weightMode(ex);
+  if (m === 'dbEach') return n * 2;
+  if (m === 'barSide') return n > 0 ? n * 2 + BAR_KG : 0;
+  return n;
+}
+
+export function totalWeight(session, exercises = []) {
+  const byId = new Map(exercises.map((e) => [e.id, e]));
+  return (session.sets || []).reduce((a, x) => a + (Number(x.reps) || 0) * liftedKg(byId.get(x.exerciseId), x.weight), 0);
 }
 
 /** The next workouts Everyday has planned (prefs record "planned"), soonest first, from now on. */

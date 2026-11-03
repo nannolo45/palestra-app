@@ -261,6 +261,7 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
       if (!setShot && (await page.$('.w-note'))) {
         await shot('20-set'); setShot = true;
         if (await page.$('.w-thumb')) { await page.click('.w-thumb'); await page.waitForSelector('.viewer'); await shot('30-viewer'); await page.click('.viewer-close'); }
+        await page.click('.w-edge.r'); await page.waitForSelector('.pv-banner'); await shot('31-preview'); await page.click('[data-action=peek-home]'); await page.waitForSelector('[data-action=done]');
       }
       await (await page.$('[data-action=done]')).click();
     }

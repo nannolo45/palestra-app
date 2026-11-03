@@ -780,3 +780,29 @@ nav.tabs { background: var(--bar); -webkit-backdrop-filter: blur(12px); backdrop
 .viewer-cap { margin: 0; text-align: center; color: #94a09f; font-size: 14px; overflow-wrap: anywhere; }
 .card-row .thumb { align-self: center; }
 .btn:disabled { opacity: .45; cursor: not-allowed; }
+.w-minor { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
+.w-minor .btn { flex: 1 1 0; min-width: 0; }
+.w-main > .btn.ghost-dark[data-action=back] { margin-top: 4px; }
+
+/* ---- v23: looking at the exercises before and after (Anteprima) ---- */
+.w-screen { position: relative; }
+.w-edge { position: absolute; top: 120px; bottom: 170px; width: 30px; z-index: 3; border: 0; background: transparent; color: var(--d-muted); opacity: .5; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer; }
+.w-edge.l { left: -12px; } .w-edge.r { right: -12px; }
+.w-edge:hover, .w-edge:focus-visible { opacity: 1; }
+.w-edge[hidden] { display: none; }
+.w-progress .view { outline: 2px solid var(--d-text); outline-offset: 2px; }
+.pv-banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; border: 1.5px dashed var(--yellow); color: var(--yellow); border-radius: 12px; padding: 8px 12px; font-size: 13px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.pv-banner span:last-child { text-transform: none; letter-spacing: 0; color: var(--d-soft); font-weight: 500; }
+.pv-dim { opacity: .55; filter: grayscale(1); }
+.pv-plan { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; background: repeating-linear-gradient(135deg, var(--d-card) 0 10px, #1b2122 10px 20px); }
+.pv-plan b { font-family: var(--cond); font-size: 36px; line-height: 1.1; overflow-wrap: anywhere; }
+.pv-plan small { color: var(--d-muted); font-size: 14px; }
+.pv-sets { padding: 4px 16px; }
+.pv-sets div { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--d-line); }
+.pv-sets div:last-child { border-bottom: 0; }
+.pv-sets b { font-family: var(--cond); font-size: 20px; text-align: right; }
+.pv-sets .ok { color: var(--yellow); }
+.btn.pv-home { background: transparent; border: 2px solid var(--yellow); color: var(--yellow); height: 64px; border-radius: 20px; font-family: var(--cond); font-size: 22px; }
+.w-wthint { margin-top: -6px; }
+.fix-row { display: flex; flex-direction: column; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.fix-row .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }

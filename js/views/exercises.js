@@ -10,7 +10,7 @@ import { askConfirm, toast } from '../ui/dialogs.js';
 import {
   exercises, places, machines, machineOf, placeOf, whereText, typeLabel, cardioKindLabel, measureLabel, training, increaseSettings, refreshEstimates,
 } from '../data.js';
-import { CARDIO_KIND_KEYS, EQUIPMENT, measuresFor, defaultTargets, increaseCategory, progressOf } from '../model.js';
+import { CARDIO_KIND_KEYS, EQUIPMENT, measuresFor, defaultTargets, increaseCategory, progressOf, weightMode } from '../model.js';
 import { newMachineSheet } from './gym.js';
 import { addExerciseToRoutine } from './routines.js';
 
@@ -178,6 +178,7 @@ export function exerciseView(id, query = {}) {
     const ms = machines().filter((m) => m.kind !== 'cardio');
     const m = machineOf(ex);
     specific = `${isWeights ? `<label class="field"><span>${esc(t('equipment'))}</span><select name="equipment">${EQUIPMENT.map((q) => `<option value="${q}" ${ex.equipment === q ? 'selected' : ''}>${esc(t(`eq_${q}`))}</option>`).join('')}</select></label>` : ''}
+      ${isWeights ? weightAsBlock(ex) : ''}
       <section class="card machine-card">
         ${m ? `<span class="extag tag-weights">${esc(m.number || '·')}</span><div class="row-text"><span class="row-title">${esc(placeOf(ex)?.name || m.name)}</span><span class="row-sub">${esc(m.settings || m.name)}</span></div>`
     : `<div class="row-text"><span class="row-title">${esc(t('noMachine'))}</span><span class="row-sub">${esc(placeOf(ex)?.name || t('noPlace'))}</span></div>`}
@@ -232,6 +233,8 @@ export function exerciseView(id, query = {}) {
         draft.notes = form.notes.value;
         if (form.timed) draft.timed = form.timed.checked;
         if (form.equipment) draft.equipment = form.equipment.value;
+        if (form.weightAs) draft.weightAs = form.weightAs.value;
+        if (form.dumbbells) draft.dumbbells = Number(form.dumbbells.value);
         if (form.machineId) draft.machineId = form.machineId.value || undefined;
         if (form.placeId) draft.placeId = form.placeId.value || undefined;
         if (form.defaultRest) draft.defaultRest = stepVal(form, 'defaultRest');
@@ -266,6 +269,8 @@ export function exerciseView(id, query = {}) {
         rerender();
       }));
       form.machineId?.addEventListener('change', () => { read(); rerender(); });
+      form.equipment?.addEventListener('change', () => { read(); delete draft.weightAs; rerender(); });
+      form.querySelectorAll('[name=weightAs],[name=dumbbells]').forEach((x) => x.addEventListener('change', () => { read(); rerender(); }));
       form.incMode.addEventListener('change', () => { form.querySelector('[data-inc-custom]').hidden = form.incMode.value !== 'custom'; });
       const newMachine = async (cardio) => {
         read();
@@ -329,6 +334,18 @@ export function resetExerciseDraft() { draft = null; }
 // ---- the exercise's picture (free-exercise-db), at the top of its page ----
 
 let picFrame = 0;
+
+/** Dumbbells and barbell: what the number in the workout means (per dumbbell or in all; bar included or per side). */
+function weightAsBlock(ex) {
+  const m = weightMode(ex);
+  if (m === 'plain') return '';
+  const db = ex.equipment === 'dumbbell';
+  const opts = db ? [['each', t('wAsEach')], ['total', t('wAsTotal')]] : [['total', t('wAsBar')], ['side', t('wAsSide')]];
+  const val = db ? (m === 'dbTotal' ? 'total' : 'each') : (m === 'barSide' ? 'side' : 'total');
+  return `<div class="field"><span class="field-label">${esc(t('weightAs'))}</span>${segmented({ name: 'weightAs', value: val, options: opts, label: t('weightAs') })}</div>
+    ${db && m !== 'dbTotal' ? `<div class="field"><span class="field-label">${esc(t('dumbbellsN'))}</span>${segmented({ name: 'dumbbells', value: m === 'dbOne' ? 1 : 2, options: [[1, '1'], [2, '2']], label: t('dumbbellsN') })}</div>` : ''}
+    <p class="muted small">${esc(t(db ? 'weightAsHintDb' : 'weightAsHintBar'))}</p>`;
+}
 
 function pictureBlock(ex) {
   if (!picturesOn()) return '';

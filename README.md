@@ -53,12 +53,12 @@ Unknown fields are kept on every write.
 |---|---|---|
 | `data/places.json` | a zone of the gym | `name`, `order` (walking order), `note` |
 | `data/machines.json` | a machine or station | `name`, `number`, `placeId`, `kind` (`weights`/`cardio`), `settings`, `cardioKind` (`treadmill`, `elliptical`, `bike`, `rower`, `stepper`, `custom`), `measures` (for `custom`: up to 3 of `speed`, `incline`, `level`, `resistance`, `cadence`, `distance`, `calories`, `watt`, or `{key, label, unit}`), `photo: {file, at}` (since v18) |
-| `data/exercises.json` | an exercise | `name`, `type` (`weights`/`bodyweight`/`cardio`), `equipment` (`machine`/`barbell`/`dumbbell`/`cable`), `machineId`, `placeId`, `muscles`, `defaultRest`, `notes`, `timed`, `cardio: {kind, targets}`, `increase: {mode: type/custom/off, step}`, `picture` (since v18: `{lib: 'fedb', id, name, n}` or `{none: true}`) |
+| `data/exercises.json` | an exercise | `name`, `type` (`weights`/`bodyweight`/`cardio`), `equipment` (`machine`/`barbell`/`dumbbell`/`cable`), `machineId`, `placeId`, `muscles`, `defaultRest`, `notes`, `timed`, `cardio: {kind, targets}`, `increase: {mode: type/custom/off, step}`, `weightAs` (since v23: dumbbells `each`/`total`, barbell `total`/`side`), `dumbbells` (1 or 2), `picture` (since v18: `{lib: 'fedb', id, name, n}` or `{none: true}`) |
 | `photos/<machine id>.jpg` | your photo of a machine (JPEG, longest side 1000 px) | named by the machine's `photo.file` |
 | `data/routines.json` | a routine | `name`, `items: [{exerciseId, sets, reps` or `seconds, weight, rest, targets}]`, `restBetween`, `estMinutes`, `autoIncrease`, `increaseWeek` |
 | `data/sessions/YYYY-MM.json` | a workout done | `routineId`, `start`, `end` (ms), `minutes` (without pauses), `sets: [{exerciseId, n, reps, weight, seconds, targets, distance, dur, restTaken, restPlanned}]`, `breakdown: {work, rest, walk, pause}` (s), `outcome` (`done`/`partial`), `everydayBlockId` |
 | `data/plans.json` | a weekly plan (a **workout** in the app since v9) | `name`, `note`, `days: [{routineId, weekday, time?}]` (0 = Monday … 6 = Sunday, or `null`; `time` "HH:MM") |
-| `data/prefs.json` | a setting, `{id, value}` | `contract` (the contract version, `1`), `activePlan` and `moves` (read by Everyday, below), `increase`, `training`, `gymName`; and `planned`, written by Everyday |
+| `data/prefs.json` | a setting, `{id, value}` | `contract` (the contract version, `1`), `activePlan`, `moves` and `live` (read by Everyday, below; `live` = the workout in progress `{sessionId, routineId, start, pausedAt, pausedMs, blockId?, at}` or `null`, written on start, pause, resume and end), `increase`, `training`, `gymName`; and `planned`, written by Everyday |
 
 ### Data contract with Everyday (v1)
 

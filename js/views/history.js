@@ -63,7 +63,7 @@ export function historyView(query = {}) {
 
   const rows = ss.slice(0, 60).map((s) => {
     const r = get('routines', s.routineId) || state.routines.find((x) => x.id === s.routineId);
-    const w = totalWeight(s);
+    const w = totalWeight(s, state.exercises);
     const meta = s.outcome === 'partial'
       ? [minText(s.minutes), t('nOfMSets', s.sets.length, plannedSets(s))].join(' · ')
       : [minText(s.minutes), t('nSets', s.sets.length), w ? `${fmtNum(w)} kg` : ''].filter(Boolean).join(' · ');

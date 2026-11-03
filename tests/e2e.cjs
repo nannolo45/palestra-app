@@ -162,6 +162,17 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.click('.seg-opt:has(input[value=bodyweight])');
   await page.fill('#ex-muscles', 'Core');
   await page.click('[data-action=save]');
+  // what the weight means, for dumbbells
+  await go('#/exercise/new');
+  await page.selectOption('[name=equipment]', 'dumbbell');
+  await page.waitForSelector('[name=weightAs]');
+  check(await page.isChecked('[name=weightAs][value=each]') && await page.isChecked('[name=dumbbells][value="2"]'), 'dumbbells: per dumbbell, two of them, by default');
+  await page.click('.seg-opt:has(input[name=weightAs][value=total])');
+  check(!(await page.$('[name=dumbbells]')), 'in all: no count');
+  await page.selectOption('[name=equipment]', 'barbell');
+  check(await page.isChecked('[name=weightAs][value=total]'), 'barbell: with the bar by default');
+  await page.selectOption('[name=equipment]', 'machine');
+  check(!(await page.$('[name=weightAs]')), 'a machine: plain kg');
   await go('#/exercises');
   await shot('06-exercises', { fullPage: true });
   check((await page.$$('.list-row')).length === 3, 'three exercises listed');
@@ -245,6 +256,9 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.evaluate(() => { location.hash = location.hash.replace('#/routine/', '#/start/') + '?block=blk-1'; });
   await page.waitForSelector('.w-ex', { timeout: 4000 }).catch(async () => { await shot('debug-start'); console.log(page.url(), errors); });
   check((await page.textContent('.w-ex')) === 'Tapis roulant', 'starts with cardio');
+  const livePref = () => page.evaluate(async () => (await import('/js/store.js')).pref('live', 'unset'));
+  const lv = await livePref();
+  check(lv && lv.blockId === 'blk-1' && lv.pausedAt === null && lv.pausedMs === 0 && lv.sessionId && lv.at, `live record for Everyday on start (${JSON.stringify(lv)})`);
   await shot('09-cardio');
   await page.clock.runFor(10 * 60 * 1000);
   await page.fill('[name=distance]', '1,6');
@@ -253,6 +267,10 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check((await page.textContent('.eyebrow')).includes('spostamento'), 'rest between exercises');
   await page.clock.runFor(30 * 1000);
   await shot('10-rest');
+  check((await page.textContent('[data-action=end-rest]')).trim() === 'Salta', 'resting: Salta');
+  await page.clock.runFor(4 * 60 * 1000);
+  await page.waitForTimeout(100);
+  check((await page.textContent('[data-action=end-rest]')).trim() === 'Fine', `time's up: Salta becomes Fine`);
   await page.click('[data-action=end-rest]');
   await page.waitForSelector('.w-note');
   check((await page.textContent('.w-note')).includes('metà pedana'), 'note shown during the set');
@@ -275,12 +293,37 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.evaluate(() => window.dispatchEvent(new CustomEvent('palestra:render'))); await page.waitForTimeout(150);
   check(Boolean(await page.$('.w-thumb')), 'pictures on again');
   await page.clock.runFor(35 * 1000);
+  // done too soon: Rifai la serie from the rest
+  await page.click('[data-action=done]');
+  await page.waitForSelector('.ring');
+  check((await page.textContent('[data-action=back]')).includes('Rifai la serie'), 'the rest offers Rifai la serie');
+  await page.click('[data-action=back]');
+  await page.waitForSelector('.w-note');
+  check((await page.textContent('.w-head-mid')).includes('esercizio 2'), 'back on the same set');
+  check((await page.textContent('[data-action=back]')).includes('Indietro'), 'a set offers Indietro');
+  // Anteprima: the edges show the exercise after and before, the way back is always there
+  await page.click('.w-edge.r');
+  await page.waitForSelector('.pv-banner');
+  check((await page.textContent('.w-ex')) === 'Plank' && (await page.textContent('.pv-banner')).includes('Sei all\'esercizio 2'), 'right edge: Plank in preview, you are at 2');
+  check(!(await page.$('[data-action=done]')) && Boolean(await page.$('[data-action=do-now]')), 'no Fatto in preview; Fallo adesso instead');
+  check(Boolean(await page.$('.w-progress .view')), 'the progress bar marks what you look at');
+  await shot('p5-preview');
+  await page.click('[data-action=peek-home]');
+  await page.waitForSelector('[data-action=done]');
+  await page.click('.w-edge.l');
+  await page.waitForSelector('.pv-banner');
+  check((await page.textContent('.pv-banner')).includes('Già fatto') && (await page.textContent('.w-ex')) === 'Tapis roulant', 'left edge: the treadmill, already done');
+  await page.click('.w-edge.r');
+  await page.waitForSelector('[data-action=done]');
+  check((await page.textContent('.w-ex')) === 'Leg press', 'and back to the live set');
   await page.click('[data-action=done]');
   await page.clock.runFor(60 * 1000);
   await page.click('[data-action=pause]');
   await page.clock.runFor(120 * 1000);
   await shot('12-paused');
+  check((await livePref()).pausedAt > 0, 'live: paused');
   await page.click('[data-action=resume]');
+  { const v = await livePref(); check(v.pausedAt === null && Math.abs(v.pausedMs - 120000) < 1000, `live: resumed, pause counted (${v.pausedMs})`); }
   await page.click('[data-action=end-rest]');
   await page.click('[data-action=done]');
   await page.click('[data-action=end-rest]');
@@ -303,6 +346,8 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await go('#/settings');
   await page.click('[data-action=sync]');
   await page.waitForTimeout(500);
+  const liveRemote = JSON.parse(repo.get('data/prefs.json').text).find((p) => p.id === 'live');
+  check(liveRemote && liveRemote.value === null, `after the workout, live is null (${JSON.stringify(liveRemote)})`);
   const sessFile = [...repo.keys()].find((k) => k.startsWith('data/sessions/'));
   check(sessFile === 'data/sessions/2026-10.json', 'session file sharded by month');
   const sess = JSON.parse(repo.get(sessFile).text)[0];

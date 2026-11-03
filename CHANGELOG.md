@@ -5,6 +5,10 @@ Phones download the new version in the background and show the *Aggiorna* bar.
 
 | Version | What changed |
 |---|---|
+| v23 | What the weight means: dumbbells per dumbbell (with the sum underneath), barbell with the bar (with the plates per side); changeable per exercise (*Il peso è*, *Manubri*), and History's kilos lifted count it. Anteprima: tap the edges (or swipe) to look at the exercises before and after, with *Torna all'esercizio …*, *Fallo adesso* and *Correggi i numeri* |
+| v22 | Everyday sees the workout in progress: prefs → `live` is written on start, pause, resume and end (after the session is up), so the block shows as running there |
+| v21 | Going back during a workout: *Rifai la serie* in the rest reopens the set just done with what you entered; *Indietro* on a set or cardio goes to the previous step (a logged set is taken off and can be redone) |
+| v20 | Rest: when the time is up, *Salta* becomes a yellow *Fine*. The next set no longer shows “× 0” when the weight is still to be chosen |
 | v19 | Impostazioni → Lingua e aspetto → Immagini: turns the exercise drawings, machine photos and small pictures off or on (nothing is deleted) |
 | v18 | Pictures: each exercise can have a drawing (two positions, from free-exercise-db, public domain), chosen from suggestions in the exercise or one exercise after another from Esercizi → Abbina le immagini. Each machine can have your own photo, synced to palestra-data/photos/. A small picture on the workout screen and in each scheda opens full screen |
 | v17 | App icon: a full-bleed version for Android's icon shapes (maskable 192 and 512), the SVG no longer offered to launchers |

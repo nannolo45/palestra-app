@@ -220,9 +220,20 @@ At the first session of the week, if the automatic increase is on, Palestra offe
 
 ### A set
 
-You see the exercise, the set (2 of 4), reps and kg, the machine and its zone, and your note. If you did something different, adjust with − and +. Then tap *Done*.
+You see the exercise, the set (2 of 4), reps and kg, the machine and its zone, and your note. If you did something different, adjust with − and +. Then tap *Done*. *Back* returns to the step before (the previous set or the cardio): what you had logged is taken off and you do it again.
 
 ![A set: reps, kg, where to go and your note](guide/en/20-set.webp)
+
+**What the weight means.** With dumbbells the number is *per dumbbell* (what's written on it), with the sum underneath: "Take 2 dumbbells of 15 kg · 30 kg in all". With a barbell it's the total with the 20 kg bar, with the plates per side underneath. For an exercise that's different (one dumbbell, or a barbell counted per side) change it on the exercise's page, under *Equipment*: *The weight is* and *Dumbbells*.
+
+### Looking at the exercises before and after
+
+Tap the left or right edge of the screen (or swipe) to see the exercise before or after. It's clear you're only looking: *Preview* at the top, a dashed box saying where you really are, the rest in grey, and *Back to exercise …* instead of *Done*. In the bar at the top, the segment you're looking at has an outline; the yellow one stays where you are.
+
+- **Do it now**, on an exercise further on (or one skipped): it comes next, for example when its machine is free and the one you're due on isn't.
+- **Correct the numbers**, on one already done: change the reps and kg of each set.
+
+![Preview: the exercise after, and the way back](guide/en/31-preview.webp)
 
 Next to the machine there's a small picture: your photo, or the exercise's drawing. Tap it to see it full screen; *Machine* and *Exercise* switch between them, and tapping the drawing shows the other position.
 
@@ -230,7 +241,7 @@ Next to the machine there's a small picture: your photo, or the exercise's drawi
 
 ### Rest
 
-A countdown starts, and you see how long you actually rested. *+30 s* adds time, *Skip* moves straight on. At zero the phone vibrates. Underneath is what's next and where to go.
+A countdown starts, and you see how long you actually rested. *+30 s* adds time, *Skip* moves straight on. At zero the phone vibrates and *Skip* turns into a yellow *Done*. Tapped *Done* too early, or got a number wrong? *Redo the set* reopens it with the values you had entered. Underneath is what's next and where to go.
 
 ![Rest: the time left and what comes next](guide/en/21-rest.webp)
 

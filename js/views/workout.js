@@ -1,13 +1,13 @@
 // Start workout mode: the weekly increase, the set, the rest timer, cardio, pause, and the summary.
 // Dark, big, screen kept on, works offline. All timing comes from timestamps (see workout.js).
-import { state, get, upsert, live } from '../store.js';
+import { state, get, upsert, live, pref, setPref } from '../store.js';
 import { t } from '../i18n.js';
 import { esc, fmtNum, clock, num, timeOfDay, minText } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { stepper, bindSteppers, stepVal } from '../ui/parts.js';
-import { askConfirm, toast } from '../ui/dialogs.js';
+import { askConfirm, toast, openSheet } from '../ui/dialogs.js';
 import { machineOf, placeOf, whereText, measureLabel, training, increaseSettings, refreshEstimates, routineMinutes } from '../data.js';
-import { increaseProposals, applyIncrease, measuresFor, totalWeight, lastResult } from '../model.js';
+import { increaseProposals, applyIncrease, measuresFor, totalWeight, lastResult, weightMode, BAR_KG } from '../model.js';
 import * as W from '../workout.js';
 import { breakdownBar, setText } from './history.js';
 import { syncNow } from '../sync.js';
@@ -19,6 +19,13 @@ let pendingStart = null; // { routineId, blockId, proposals }
 let unchecked = new Set();
 let wakeLock = null;
 let vibratedFor = null;
+let peek = null;
+let peekMove = null; // the arrow keys, on a computer
+document.addEventListener('keydown', (e) => {
+  if (!peekMove || !document.querySelector('.w-screen') || e.target.closest?.('input, textarea, select, dialog')) return;
+  if (e.key === 'ArrowLeft') peekMove(-1);
+  if (e.key === 'ArrowRight') peekMove(1);
+}); // the exercise being looked at (its place in the workout), when it isn't the one you're at
 
 export async function initWorkout() {
   active = await W.loadActive();
@@ -27,8 +34,20 @@ export async function initWorkout() {
 export const hasActive = () => Boolean(active && active.phase !== 'done');
 export const activeWorkout = () => active;
 
+/** Tell Everyday (prefs → live) when the workout starts, pauses, resumes or ends; nothing for sets and rests. */
+function publishLive(w) {
+  if (w && w.phase === 'done') return; // finish() clears it after the session is up
+  const rec = W.liveRecord(w);
+  const cur = pref('live', null);
+  const same = (a, b) => (a == null && b == null) || (a && b && ['sessionId', 'routineId', 'start', 'pausedAt', 'pausedMs', 'blockId'].every((k) => (a[k] ?? null) === (b[k] ?? null)));
+  if (same(rec, cur)) return;
+  setPref('live', rec ? { ...rec, at: Date.now() } : null);
+}
+
 async function commit(next) {
   active = next;
+  peek = null;
+  publishLive(active);
   await W.saveActive(active);
   window.dispatchEvent(new CustomEvent('palestra:render'));
 }
@@ -154,22 +173,26 @@ export function workoutView() {
   const exIndexes = [...new Set(active.steps.map((s) => s.itemIndex))];
   const pos = exIndexes.indexOf(step.itemIndex);
   const paused = W.isPaused(active);
+  if (peek != null && (peek === pos || peek < 0 || peek >= exIndexes.length || paused)) peek = null;
+  const looking = peek != null;
   const head = `<header class="w-head">
       <button type="button" class="w-icon" data-action="end" aria-label="${esc(t('endWorkout'))}">${icon('close')}</button>
-      <div class="w-head-mid"><span class="w-small">${esc(t('exNofM', r?.name || '', pos + 1, exIndexes.length))}</span><span class="w-clock" data-live="elapsed">${clock(W.elapsedSec(active))}</span></div>
+      <div class="w-head-mid"><span class="w-small">${looking ? esc(t('pvPrefix')) : ''}${esc(t('exNofM', r?.name || '', (looking ? peek : pos) + 1, exIndexes.length))}</span><span class="w-clock" data-live="elapsed">${clock(W.elapsedSec(active))}</span></div>
       <button type="button" class="w-icon filled" data-action="pause" aria-label="${esc(paused ? t('resume') : t('pauseWorkout'))}">${icon(paused ? 'play' : 'pause', 18)}</button>
     </header>
-    <div class="w-progress" aria-hidden="true">${exIndexes.map((ix, i) => `<span class="${i < pos ? 'done' : i === pos ? 'now' : ''}"></span>`).join('')}</div>`;
+    <div class="w-progress" aria-hidden="true">${exIndexes.map((ix, i) => `<span class="${i < pos ? 'done' : i === pos ? 'now' : ''}${looking && i === peek ? ' view' : ''}"></span>`).join('')}</div>`;
   let body;
   if (paused) body = pausedBody();
+  else if (looking) body = previewBody(exIndexes[peek], pos);
   else if (active.phase === 'rest') body = restBody();
   else if (step.kind === 'cardio') body = cardioBody(step, ex);
   else body = setBody(step, ex);
   return {
     dark: true,
-    html: `<div class="w-screen">${head}${body}</div>`,
+    html: `<div class="w-screen${looking ? ' peeking' : ''}">${head}${body}${paused ? '' : edges(exIndexes.length, looking ? peek : pos)}</div>`,
     bind(view) {
-      bindSteppers(view);
+      bindSteppers(view, (name, v) => { if (name === 'weight') { const h = view.querySelector('[data-wt-hint]'); if (h) h.textContent = weightTexts(ex, v).hint; } });
+      bindPeek(view, exIndexes, pos);
       view.querySelectorAll('[data-action=pause]').forEach((b) => b.addEventListener('click', () => commit(paused ? W.resume(active) : W.pause(active))));
       view.querySelector('[data-action=end]').addEventListener('click', endEarly);
       view.querySelector('[data-action=resume]')?.addEventListener('click', () => commit(W.resume(active)));
@@ -191,6 +214,7 @@ export function workoutView() {
         vibratedFor = null;
         commit(W.completeStep(active, values));
       });
+      view.querySelector('[data-action=back]')?.addEventListener('click', () => { vibratedFor = null; commit(W.back(active)); });
       view.querySelector('[data-action=skip-set]')?.addEventListener('click', () => commit(W.skipStep(active)));
       view.querySelector('[data-action=viewer]')?.addEventListener('click', () => openViewer(ex));
       view.querySelector('[data-action=add30]')?.addEventListener('click', () => commit(W.addRest(active, 30)));
@@ -216,8 +240,9 @@ function setBody(step, ex) {
         ${step.plan.seconds != null
     ? `<div class="w-card stepcard">${stepper({ name: 'seconds', value: step.plan.seconds, step: 5, min: 0, label: t('seconds'), big: true })}</div>`
     : `<div class="w-card stepcard">${stepper({ name: 'reps', value: step.plan.reps, step: 1, min: 0, label: t('reps'), big: true })}</div>`}
-        ${step.plan.weight != null ? `<div class="w-card stepcard">${stepper({ name: 'weight', value: step.plan.weight, step: ex.equipment === 'dumbbell' ? 1 : 2.5, min: 0, label: 'kg', big: true })}</div>` : ''}
+        ${step.plan.weight != null ? `<div class="w-card stepcard">${stepper({ name: 'weight', value: step.plan.weight, step: ex.equipment === 'dumbbell' ? 1 : 2.5, min: 0, label: weightTexts(ex).label, big: true })}</div>` : ''}
       </div>
+      ${step.plan.weight != null && weightMode(ex) !== 'plain' ? `<p class="w-small w-wthint" data-wt-hint>${esc(weightTexts(ex, step.plan.weight).hint)}</p>` : ''}
       ${step.plan.weight === 0 ? `<p class="w-small">${esc(t('weightFirstTime'))}</p>` : ''}
       ${machineCard(ex)}
       ${ex.notes ? `<section class="w-note" aria-label="${esc(t('notes'))}">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
@@ -225,7 +250,7 @@ function setBody(step, ex) {
     </main>
     <div class="w-foot">
       <button type="button" class="btn yellow huge done-btn" data-action="done">${icon('check', 30)}${esc(t('doneSet'))}</button>
-      <button type="button" class="btn ghost-dark" data-action="skip-set">${esc(t('skipSet'))}</button>
+      <div class="w-minor">${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(active.phase === 'rest' && W.current(active)?.kind === 'set' ? 'backToSet' : 'prevStep'))}</button>` : ''}<button type="button" class="btn ghost-dark" data-action="skip-set">${esc(t('skipSet'))}</button></div>
     </div>`;
 }
 
@@ -247,6 +272,114 @@ function prevSummary(ex, s) {
   return ex.type === 'weights' ? `${sets.length} × ${reps} · ${fmtNum(Math.max(...sets.map((x) => x.weight || 0)))} kg` : `${sets.length} × ${reps}`;
 }
 
+/** What the kg means for this exercise: the stepper's label and a line that does the sums (empty for plain kg). */
+function weightTexts(ex, w) {
+  const n = Number(w) || 0;
+  const k = (x) => fmtNum(Math.round(x * 100) / 100);
+  switch (weightMode(ex)) {
+    case 'dbEach': return { label: t('wKgEach'), hint: n ? t('wHintEach', k(n), k(n * 2)) : '' };
+    case 'dbOne': return { label: t('wKgOne'), hint: n ? t('wHintOne', k(n)) : '' };
+    case 'dbTotal': return { label: t('wKgTotal'), hint: n ? t('wHintDbTotal', k(n / 2)) : '' };
+    case 'barTotal': return { label: t('wKgBar'), hint: n > BAR_KG ? t('wHintBar', k((n - BAR_KG) / 2)) : '' };
+    case 'barSide': return { label: t('wKgSide'), hint: n ? t('wHintSide', k(n * 2 + BAR_KG)) : '' };
+    default: return { label: 'kg', hint: '' };
+  }
+}
+
+// ---- looking at the exercises before and after (Anteprima) ----
+
+/** The strips at the left and right edges: tap (or swipe, or the arrow keys) for the exercise before or after. */
+function edges(n, at) {
+  return `<button type="button" class="w-edge l" data-peek="-1" aria-label="${esc(t('peekPrev'))}" ${at <= 0 ? 'hidden' : ''}>${icon('back', 22)}</button>
+    <button type="button" class="w-edge r" data-peek="1" aria-label="${esc(t('peekNext'))}" ${at >= n - 1 ? 'hidden' : ''}>${icon('chevron', 22)}</button>`;
+}
+
+function bindPeek(view, exIndexes, pos) {
+  const move = (d) => {
+    const from = peek ?? pos;
+    const to = Math.max(0, Math.min(exIndexes.length - 1, from + d));
+    if (to === from || W.isPaused(active)) return;
+    peek = to === pos ? null : to;
+    window.dispatchEvent(new CustomEvent('palestra:render'));
+  };
+  view.querySelectorAll('[data-peek]').forEach((b) => b.addEventListener('click', () => move(Number(b.dataset.peek))));
+  const screen = view.querySelector('.w-screen');
+  let sx = null; let sy = null;
+  screen.addEventListener('pointerdown', (e) => { if (e.target.closest('input')) return; sx = e.clientX; sy = e.clientY; });
+  screen.addEventListener('pointerup', (e) => {
+    if (sx == null) return;
+    const dx = e.clientX - sx; const dy = e.clientY - sy; sx = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1);
+  });
+  peekMove = move;
+  view.querySelector('[data-action=peek-home]')?.addEventListener('click', () => { peek = null; window.dispatchEvent(new CustomEvent('palestra:render')); });
+  view.querySelector('[data-action=do-now]')?.addEventListener('click', () => {
+    const ix = exIndexes[peek];
+    const ex = state.exercises.find((e) => e.id === active.steps.find((s) => s.itemIndex === ix)?.exerciseId);
+    vibratedFor = null;
+    commit(W.doNow(active, ix));
+    if (ex) toast(t('nowDone', ex.name));
+  });
+  view.querySelector('[data-action=fix]')?.addEventListener('click', () => fixSets(exIndexes[peek]));
+}
+
+/** An exercise you're not at: dimmed, read-only, with the way back. */
+function previewBody(ix, pos) {
+  const steps = active.steps.filter((s) => s.itemIndex === ix);
+  const ex = state.exercises.find((e) => e.id === steps[0]?.exerciseId);
+  if (!ex) return '';
+  const logged = active.log.map((x, i) => ({ ...x, i })).filter((x) => steps.some((s) => s.exerciseId === x.exerciseId && s.n === x.n));
+  const firstAt = active.steps.findIndex((s) => s.itemIndex === ix);
+  const behind = firstAt < active.idx || (firstAt === active.idx && active.phase === 'rest');
+  const left = steps.filter((s) => !W.isLogged(active, s)).length;
+  const p = steps[0].plan;
+  const plan = steps[0].kind === 'cardio'
+    ? [t('minutesN', fmtNum(Number(p.targets.duration) || 10))].join('')
+    : `${steps.length} × ${p.seconds != null ? `${p.seconds} s` : p.reps}${p.weight ? ` · ${fmtNum(p.weight)} kg` : ''}`;
+  const status = logged.length && !left ? t('pvDone') : logged.length ? t('pvPart', logged.length, steps.length) : behind ? t('pvSkipped') : t('pvAhead');
+  const rows = logged.map((x) => `<div><span>${esc(steps[0].kind === 'cardio' ? t('pvDone') : t('setN', x.n))}</span><b>${esc(setText(ex, x))} <span class="ok">✓</span></b></div>`).join('');
+  const wt = p.weight ? weightTexts(ex, p.weight).hint : '';
+  return `<main class="w-main pv">
+      <div class="pv-banner"><span>${esc(status)}</span><span>${esc(t('pvYouAre', pos + 1))}</span></div>
+      <div class="pv-dim"><h1 class="w-ex">${esc(ex.name)}</h1>
+        <p class="w-sub">${esc(whereText(ex) || '')}</p></div>
+      ${rows ? `<div class="w-card pv-sets pv-dim">${rows}</div>` : ''}
+      ${left ? `<div class="w-card pv-plan pv-dim"><span class="eyebrow">${esc(t('pvToDo'))}</span><b>${esc(left < steps.length ? `${t('pvLeft', left)} · ${plan}` : plan)}</b>${wt ? `<small>${esc(wt)}</small>` : ''}</div>` : ''}
+      <div class="pv-dim">${machineCard(ex)}</div>
+      ${ex.notes ? `<section class="w-note pv-dim">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
+    </main>
+    <div class="w-foot">
+      <button type="button" class="btn big pv-home" data-action="peek-home">${icon('back', 22)}${esc(t('pvBack', pos + 1))}</button>
+      ${left ? `<button type="button" class="btn ghost-dark" data-action="do-now">${esc(t('pvNow'))}</button>` : ''}
+      ${logged.length && steps[0].kind !== 'cardio' ? `<button type="button" class="btn ghost-dark" data-action="fix">${esc(t('pvFix'))}</button>` : ''}
+    </div>`;
+}
+
+/** Correggi i numeri: the sets of an exercise already in the log, with − and +. */
+async function fixSets(ix) {
+  const steps = active.steps.filter((s) => s.itemIndex === ix);
+  const ex = state.exercises.find((e) => e.id === steps[0]?.exerciseId);
+  const logged = active.log.map((x, i) => ({ ...x, i })).filter((x) => steps.some((s) => s.exerciseId === x.exerciseId && s.n === x.n));
+  if (!ex || !logged.length) return;
+  const html = `<h2>${esc(t('pvFix'))}</h2><p class="muted">${esc(ex.name)}</p>
+    ${logged.map((x) => `<div class="fix-row"><b>${esc(t('setN', x.n))}</b><div class="two">
+      ${x.seconds != null ? stepper({ name: `s${x.i}`, value: x.seconds, step: 5, label: t('seconds') }) : stepper({ name: `r${x.i}`, value: x.reps, step: 1, label: t('reps') })}
+      ${x.weight != null ? stepper({ name: `w${x.i}`, value: x.weight, step: ex.equipment === 'dumbbell' ? 1 : 2.5, label: weightTexts(ex).label }) : ''}</div></div>`).join('')}
+    <div class="button-row"><button class="btn primary" value="ok">${esc(t('save'))}</button><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+  const edits = await openSheet(html, (form, close) => {
+    bindSteppers(form);
+    form.querySelector('[value=ok]').addEventListener('click', () => close(logged.map((x) => ({
+      i: x.i, reps: x.reps != null ? stepVal(form, `r${x.i}`) : null, seconds: x.seconds != null ? stepVal(form, `s${x.i}`) : null, weight: x.weight != null ? stepVal(form, `w${x.i}`) : null,
+    }))));
+  });
+  if (!edits) return;
+  const keep = peek;
+  await commit(W.editLog(active, edits));
+  peek = keep;
+  window.dispatchEvent(new CustomEvent('palestra:render'));
+  toast(t('fixSaved'));
+}
+
 function cardioBody(step, ex) {
   const ms = measuresFor(ex, machineOf(ex));
   const dur = Number(step.plan.targets.duration) || 10;
@@ -264,7 +397,8 @@ function cardioBody(step, ex) {
       <label class="w-card w-field"><span>${esc(t('distanceFromDisplay'))} <small>${esc(t('optionalOne'))}</small></span><input name="distance" inputmode="decimal" placeholder="— km" autocomplete="off"></label>
       ${ex.notes ? `<section class="w-note">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
     </main>
-    <div class="w-foot row2"><button type="button" class="btn ghost-dark fill" data-action="pause">${esc(t('pause'))}</button><button type="button" class="btn yellow huge" data-action="done">${esc(t('finishCardio'))}</button></div>`;
+    <div class="w-foot row2"><button type="button" class="btn ghost-dark fill" data-action="pause">${esc(t('pause'))}</button><button type="button" class="btn yellow huge" data-action="done">${esc(t('finishCardio'))}</button></div>
+    ${W.canGoBack(active) ? `<div class="w-minor">${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(active.phase === 'rest' && W.current(active)?.kind === 'set' ? 'backToSet' : 'prevStep'))}</button>` : ''}</div>` : ''}`;
 }
 
 function restBody() {
@@ -276,7 +410,7 @@ function restBody() {
   const C = 691.15;
   const frac = left > 0 ? left / active.restPlanned : 0;
   const nextText = nxt && nex ? (nxt.kind === 'cardio' ? nex.name : `${nex.name} · ${t('setNofM', nxt.n, nxt.of)}`) : '';
-  const nextAmount = nxt && nxt.kind === 'set' ? `${nxt.plan.reps ?? `${nxt.plan.seconds} s`}${nxt.plan.weight != null ? ` × ${fmtNum(nxt.plan.weight)}` : ''}` : '';
+  const nextAmount = nxt && nxt.kind === 'set' ? `${nxt.plan.reps ?? `${nxt.plan.seconds} s`}${nxt.plan.weight ? ` × ${fmtNum(nxt.plan.weight)}` : ''}` : '';
   const sameMachine = nxt && active.restKind === 'set';
   return `<main class="w-main center">
       <span class="eyebrow">${esc(active.restKind === 'between' ? t('restAndMove') : t('rest'))}</span>
@@ -285,7 +419,8 @@ function restBody() {
         <div class="ring-text" role="timer"><span class="w-bigclock" data-live="rest-left">${left >= 0 ? clock(left) : `+${clock(-left)}`}</span><small>${esc(t('ofPlanned', clock(active.restPlanned)))}</small></div>
       </div>
       <p class="w-text">${esc(t('youRested'))} <b data-live="rested">${clock(W.phaseSec(active))}</b></p>
-      <div class="w-grid2 wide"><button type="button" class="btn dark-btn big" data-action="add30">+30 s</button><button type="button" class="btn light big" data-action="end-rest">${esc(t('skip'))}</button></div>
+      <div class="w-grid2 wide"><button type="button" class="btn dark-btn big" data-action="add30">+30 s</button><button type="button" class="btn ${left <= 0 ? 'yellow' : 'light'} big" data-action="end-rest" data-live="end-rest">${esc(left <= 0 ? t('restEnd') : t('skip'))}</button></div>
+      ${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(active.phase === 'rest' && W.current(active)?.kind === 'set' ? 'backToSet' : 'prevStep'))}</button>` : ''}
     </main>
     ${nxt && nex ? `<section class="w-card next" aria-label="${esc(t('next'))}">
       <span class="eyebrow">${esc(t('next'))}</span>
@@ -314,6 +449,12 @@ function liveTick(view) {
     if (ring) {
       ring.setAttribute('stroke-dasharray', `${(691.15 * (left > 0 ? left / active.restPlanned : 0)).toFixed(1)} 700`);
       ring.classList.toggle('over', left <= 0);
+    }
+    // time's up: Salta becomes Fine (yellow)
+    const endBtn = view.querySelector('[data-live=end-rest]');
+    if (endBtn && left <= 0 && !endBtn.classList.contains('yellow')) {
+      endBtn.classList.replace('light', 'yellow');
+      endBtn.textContent = t('restEnd');
     }
     if (left <= 0 && vibratedFor !== `${active.idx}`) {
       vibratedFor = `${active.idx}`;
@@ -367,6 +508,7 @@ async function endEarly() {
     await W.saveActive(null);
     const rid = active.routineId;
     active = null;
+    publishLive(null);
     releaseWake();
     location.hash = `#/routine/${encodeURIComponent(rid)}`;
     return;
@@ -403,7 +545,8 @@ async function finish(early) {
   releaseWake();
   summaryId = session.sets.length ? session.id : null;
   refreshEstimates();
-  syncNow();
+  // the session goes up first, then live → null, so Everyday never sees neither
+  if (session.sets.length) syncNow().finally(() => publishLive(null)); else publishLive(null);
   if (!summaryId) location.hash = '#/routines';
   else window.dispatchEvent(new CustomEvent('palestra:render'));
 }
@@ -422,7 +565,7 @@ function summaryView() {
     g.sets.push(set);
   }
   const best = new Set(groups.filter((g) => isNewBest(g, s)).map((g) => g.exerciseId));
-  const total = totalWeight(s);
+  const total = totalWeight(s, state.exercises);
   const html = `<div class="w-screen summary">
     <header class="w-intro"><span class="eyebrow yellow">${esc(t('workoutFinished'))}</span><h1 class="w-title">${esc(r?.name || t('workout'))}</h1>
       <p class="w-text">${esc(`${timeOfDay(s.start)} – ${timeOfDay(s.end)} · ${s.outcome === 'done' ? t('allSets') : t('partial')}`)}</p></header>

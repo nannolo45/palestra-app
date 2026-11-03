@@ -119,6 +119,64 @@ export function skipStep(w, now = Date.now()) {
   return { ...w, idx: w.idx + 1, phase: 'work', phaseStart: now };
 }
 
+/**
+ * One step back. During a rest: reopen the set just done. During a set: go to the previous one. A set that was
+ * logged is taken off the log and its values become the starting point, so it can be done again or corrected.
+ */
+export function back(w, now = Date.now()) {
+  if (isPaused(w) || w.phase === 'done') return w;
+  const idx = w.phase === 'rest' ? w.idx : w.idx - 1;
+  if (idx < 0) return w;
+  const step = w.steps[idx];
+  let li = -1;
+  for (let i = w.log.length - 1; i >= 0; i--) if (w.log[i].exerciseId === step.exerciseId && w.log[i].n === step.n) { li = i; break; }
+  let { steps, log, breakdown } = w;
+  if (li >= 0) {
+    const e = log[li];
+    log = log.filter((_, i) => i !== li);
+    breakdown = { ...breakdown, work: Math.max(0, breakdown.work - (e.dur || 0)) };
+    const plan = step.kind === 'cardio'
+      ? { ...step.plan, targets: { ...step.plan.targets, ...(e.targets || {}) } }
+      : { ...step.plan, ...(e.reps != null ? { reps: e.reps } : {}), ...(e.seconds != null ? { seconds: e.seconds } : {}), ...(e.weight != null ? { weight: e.weight } : {}) };
+    steps = steps.map((s, i) => (i === idx ? { ...s, plan } : s));
+  }
+  return { ...w, steps, log, breakdown, idx, phase: 'work', phaseStart: now, restPlanned: 0, restKind: null };
+}
+
+/** Is this step in the log already (done, not skipped)? */
+export function isLogged(w, s) { return w.log.some((x) => x.exerciseId === s.exerciseId && x.n === s.n); }
+
+/**
+ * "Fallo adesso": an exercise further on (or one skipped) comes next. Its steps not yet done move to where you are:
+ * now during a set, right after the rest during a rest. The order of everything else stays.
+ */
+export function doNow(w, itemIndex, now = Date.now()) {
+  if (isPaused(w) || w.phase === 'done') return w;
+  const at = w.phase === 'rest' ? w.idx + 1 : w.idx;
+  const moves = (s, i) => s.itemIndex === itemIndex && (i >= at || !isLogged(w, s));
+  const moving = w.steps.filter(moves);
+  if (!moving.length) return w;
+  const before = w.steps.filter((s, i) => i < at && !moves(s, i));
+  const after = w.steps.filter((s, i) => i >= at && !moves(s, i));
+  const steps = [...before, ...moving, ...after];
+  if (w.phase === 'rest') return { ...w, steps, idx: before.length - 1, restKind: 'between', restPlanned: Math.max(w.restPlanned, w.between) };
+  return { ...w, steps, idx: before.length, phaseStart: now };
+}
+
+/** "Correggi i numeri": new values for sets already in the log, by their place in the log. */
+export function editLog(w, edits) {
+  const log = w.log.map((x, i) => {
+    const e = edits.find((d) => d.i === i);
+    if (!e) return x;
+    const y = { ...x };
+    for (const k of ['reps', 'seconds', 'weight']) if (e[k] != null && x[k] != null) y[k] = Number(e[k]);
+    return y;
+  });
+  return { ...w, log };
+}
+
+export const canGoBack = (w) => !isPaused(w) && (w.phase === 'rest' || (w.phase === 'work' && w.idx > 0));
+
 export function pause(w, now = Date.now()) {
   return w.pausedAt != null ? w : { ...w, pausedAt: now };
 }
@@ -147,6 +205,18 @@ export function toSession(w, now = Date.now()) {
     breakdown: { ...ww.breakdown, pause: pauseSec },
     outcome: done ? 'done' : 'partial',
     ...(ww.blockId ? { everydayBlockId: ww.blockId } : {}),
+  };
+}
+
+/**
+ * The workout in progress as Everyday sees it: prefs → { id: 'live', value }. Only start, pause, resume and the
+ * end change it; sets and rests don't. `at` is added when it's written.
+ */
+export function liveRecord(w) {
+  if (!w || w.phase === 'done') return null;
+  return {
+    sessionId: w.id, routineId: w.routineId, start: w.start, pausedAt: w.pausedAt ?? null,
+    pausedMs: w.pauses.reduce((a, p) => a + (p.to - p.from), 0), ...(w.blockId ? { blockId: w.blockId } : {}),
   };
 }
 

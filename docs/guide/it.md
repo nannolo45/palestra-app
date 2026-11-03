@@ -220,9 +220,20 @@ Al primo allenamento della settimana, se l'aumento automatico è acceso, Palestr
 
 ### Una serie
 
-Vedi l'esercizio, la serie (2 di 4), ripetizioni e kg, la macchina con la zona e la tua nota. Se hai fatto diverso, correggi con − e +. Poi tocca *Fatto*.
+Vedi l'esercizio, la serie (2 di 4), ripetizioni e kg, la macchina con la zona e la tua nota. Se hai fatto diverso, correggi con − e +. Poi tocca *Fatto*. *Indietro* torna al passo prima (la serie precedente o il cardio): quello che avevi segnato si toglie e lo rifai.
 
 ![Una serie: ripetizioni, kg, dove andare e la tua nota](guide/it/20-set.webp)
+
+**Cosa vuol dire il peso.** Con i manubri il numero è *per manubrio* (lo leggi sul manubrio) e sotto c'è il conto: «Prendi 2 manubri da 15 kg · 30 kg in tutto». Con il bilanciere è il totale con la sbarra da 20 kg, e sotto i dischi per lato. Per un esercizio diverso (un manubrio solo, o il bilanciere contato per lato) cambialo nella pagina dell'esercizio, sotto *Attrezzo*: *Il peso è* e *Manubri*.
+
+### Guardare gli esercizi prima e dopo
+
+Tocca il bordo sinistro o destro dello schermo (o scorri col dito) per vedere l'esercizio prima o dopo. Si capisce che stai solo guardando: in alto c'è *Anteprima*, il riquadro tratteggiato dice dove sei davvero, il resto è in grigio e al posto di *Fatto* c'è *Torna all'esercizio …*. Nella barra in alto, il segmento che guardi ha un contorno; quello giallo resta dove sei.
+
+- **Fallo adesso**, su un esercizio dopo (o saltato): diventa il prossimo, per esempio se la sua macchina è libera e quella che tocca no.
+- **Correggi i numeri**, su uno già fatto: cambi ripetizioni e kg di ogni serie.
+
+![Anteprima: l'esercizio dopo, e come tornare](guide/it/31-preview.webp)
 
 Accanto alla macchina c'è una piccola immagine: la tua foto, o il disegno dell'esercizio. Toccala per vederla a tutto schermo; *Macchina* ed *Esercizio* passano dall'una all'altro, e toccando il disegno vedi l'altra posizione.
 
@@ -230,7 +241,7 @@ Accanto alla macchina c'è una piccola immagine: la tua foto, o il disegno dell'
 
 ### Il recupero
 
-Parte il conto alla rovescia, e vedi quanto hai riposato davvero. *+30 s* allunga, *Salta* riparte subito. A zero il telefono vibra. Sotto c'è cosa viene dopo e dove andare.
+Parte il conto alla rovescia, e vedi quanto hai riposato davvero. *+30 s* allunga, *Salta* riparte subito. A zero il telefono vibra e *Salta* diventa *Fine*, in giallo. Hai toccato *Fatto* troppo presto o sbagliato un numero? *Rifai la serie* la riapre con i valori che avevi messo. Sotto c'è cosa viene dopo e dove andare.
 
 ![Il recupero: quanto manca e cosa viene dopo](guide/it/21-rest.webp)
 

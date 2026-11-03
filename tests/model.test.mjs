@@ -136,3 +136,16 @@ test('progress and planned', () => {
   const plan = plannedAhead([{ blockId: 'a', routineId: 'r1', date: '2026-11-05', start: '18:00' }, { blockId: 'b', routineId: 'r1', date: '2026-10-01', start: '18:00' }], new Date(2026, 10, 1).getTime());
   assert.deepEqual(plan.map((p) => p.blockId), ['a']);
 });
+
+test('what the weight means: per dumbbell, in all, bar and plates', async () => {
+  const { weightMode, liftedKg, totalWeight } = await import('../js/model.js');
+  assert.equal(weightMode({ equipment: 'dumbbell' }), 'dbEach');
+  assert.equal(weightMode({ equipment: 'dumbbell', dumbbells: 1 }), 'dbOne');
+  assert.equal(weightMode({ equipment: 'dumbbell', weightAs: 'total' }), 'dbTotal');
+  assert.equal(weightMode({ equipment: 'barbell' }), 'barTotal');
+  assert.equal(weightMode({ equipment: 'machine' }), 'plain');
+  assert.equal(liftedKg({ equipment: 'dumbbell' }, 15), 30);
+  assert.equal(liftedKg({ equipment: 'barbell', weightAs: 'side' }, 20), 60);
+  const s = { sets: [{ exerciseId: 'a', reps: 10, weight: 15 }, { exerciseId: 'b', reps: 5, weight: 100 }] };
+  assert.equal(totalWeight(s, [{ id: 'a', equipment: 'dumbbell' }, { id: 'b', equipment: 'machine' }]), 800);
+});
