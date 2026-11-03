@@ -184,6 +184,20 @@ In a routine tap *Duplicate into another workout* and choose where. The copy is 
 
 ![A cardio exercise: the machine and its targets](guide/en/09-exercise-cardio.webp)
 
+### Pictures
+
+Each exercise can have a drawing of the movement, in two positions (*Start* and *End*), and each machine a photo of your own.
+
+- **The drawing.** On the exercise's page tap *Choose a picture*: Palestra suggests the drawings closest to the name. If none fits, search with other words, in English or Italian. *None* leaves the exercise without one.
+- **All at once.** In *Exercises*, the *Match pictures* card takes you through the exercises without a picture one after another: tap the right drawing and *Use this one*, or *None*.
+- **Your photo of the machine.** Tap *Photograph the machine*: on a phone the camera opens. The photo is shrunk and kept on the phone and, if GitHub is connected, in palestra-data in the *photos* folder, so your other devices see it too. *Retake* and *Remove* change it.
+
+The drawings come from free-exercise-db, in the public domain; they download the first time you see them and then stay available offline.
+
+![Choose a picture: the drawings closest to the name](guide/en/28-picker.webp)
+
+![Match pictures: one exercise after another](guide/en/29-match.webp)
+
 ### The gym: zones and machines
 
 In *Exercises → Gym* you change the zones, their order and the machines in each zone. Tap a machine for its number, name and settings.
@@ -207,6 +221,10 @@ At the first session of the week, if the automatic increase is on, Palestra offe
 You see the exercise, the set (2 of 4), reps and kg, the machine and its zone, and your note. If you did something different, adjust with − and +. Then tap *Done*.
 
 ![A set: reps, kg, where to go and your note](guide/en/20-set.webp)
+
+Next to the machine there's a small picture: your photo, or the exercise's drawing. Tap it to see it full screen; *Machine* and *Exercise* switch between them, and tapping the drawing shows the other position.
+
+![Full screen: your photo of the machine or the drawing](guide/en/30-viewer.webp)
 
 ### Rest
 

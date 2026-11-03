@@ -16,6 +16,8 @@ import { importView } from './views/import.js';
 import { initWorkout, startView, workoutView, hasActive, activeWorkout, leaveWorkoutScreens } from './views/workout.js';
 import { refreshEstimates } from './data.js';
 import { applyTheme, setWorkoutMode } from './theme.js';
+import { loadPhotos } from './photos.js';
+import { picturesView } from './views/pictures.js';
 import { esc } from './ui/format.js';
 import { icon } from './ui/icons.js';
 
@@ -29,6 +31,7 @@ function viewFor(r) {
     case 'routines': return routinesView(r.query);
     case 'routine': return r.sub === 'edit' ? routineEditView(r.id) : routineView(r.id);
     case 'exercises': return exercisesView();
+    case 'pictures': return picturesView();
     case 'exercise': return exerciseView(r.id, r.query);
     case 'gym': return gymView();
     case 'history': return historyView(r.query);
@@ -134,6 +137,7 @@ async function registerSW() {
 async function init() {
   await load();
   applyTheme();
+  await loadPhotos();
   await initWorkout();
   renderTabs();
   onChange((kind) => {

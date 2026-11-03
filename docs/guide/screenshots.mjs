@@ -139,6 +139,18 @@ async function seed({ T, PLAN, lang }) {
   });
   // what Everyday planned: today at 18:00, Wednesday, Saturday
   setPref('planned', [{ blockId: 'blk-mon', routineId: rs[0].id, date: '2026-11-02', start: '18:00' }, { blockId: 'blk-wed', routineId: rs[1].id, date: '2026-11-04', start: '18:00' }, { blockId: 'blk-sat', routineId: rs[2].id, date: '2026-11-07', start: '10:30' }]);
+  // pictures: the best suggestion for every exercise but the last two (so Esercizi offers to match them),
+  // and one machine "photo" (a drawing standing in for it) on the Monday scheda's first machine
+  const pics = await import('/js/pictures.js');
+  const photos = await import('/js/photos.js');
+  await pics.loadIndex();
+  const exs = live('exercises').sort((x, y) => String(x.name).localeCompare(y.name));
+  for (const ex of exs.slice(0, -2)) { const [best] = await pics.suggest(ex); if (best) upsert('exercises', { ...ex, picture: pics.toPicture(best) }); }
+  const withMachine = rs[0].items.map((it) => live('exercises').find((e) => e.id === it.exerciseId)).find((e) => e && e.type === 'weights' && e.machineId && e.picture && e.picture.id);
+  if (withMachine) {
+    const blob = await (await fetch(pics.frameUrl(withMachine.picture, 1))).blob();
+    try { await photos.setPhoto(withMachine.machineId, await photos.shrink(new File([blob], 'm.jpg', { type: 'image/jpeg' }))); } catch { /* no local copy of that drawing */ }
+  }
   refreshEstimates();
   await new Promise((r) => setTimeout(r, 300));
   const { syncNow } = await import('/js/sync.js');
@@ -155,6 +167,13 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
     locale: LANG === 'it' ? 'it-IT' : 'en-GB', timezoneId: 'Europe/Rome', serviceWorkers: 'block', colorScheme: DARK ? 'dark' : 'light',
   });
   await ctx.route('https://api.github.com/**', fakeGithub);
+  // exercise drawings: served from a local copy of free-exercise-db (git sparse checkout in /tmp/fedb), grey square otherwise
+  await ctx.route('https://raw.githubusercontent.com/yuhonas/free-exercise-db/**', (route) => {
+    const rel = decodeURIComponent(new URL(route.request().url()).pathname.replace(/^\/yuhonas\/free-exercise-db\/main\//, ''));
+    const f = path.join(process.env.FEDB || '/tmp/fedb', rel);
+    if (fs.existsSync(f)) return route.fulfill({ status: 200, contentType: 'image/jpeg', body: fs.readFileSync(f) });
+    return route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="#ccc"/></svg>' });
+  });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -199,6 +218,9 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   await go('#/exercises'); await shot('07-exercises');
   await go(`#/exercise/${ids.ex}`); await shot('08-exercise');
+  await page.click('[data-action=pick-picture]'); await page.waitForSelector('#modal .pic-cand'); await page.waitForTimeout(500); await shot('28-picker');
+  await page.click('#modal [data-close]'); await page.waitForTimeout(200);
+  await go('#/pictures'); await page.waitForSelector('.pic-progress'); await page.waitForFunction(() => document.querySelectorAll('.pic-grid, .pic-wait').length > (document.querySelector('#modal .pic-grid') ? 1 : 0), null, { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(500); await shot('29-match');
   await go(`#/exercise/${ids.cardio}`); await shot('09-exercise-cardio');
   // Schede
   await go(DESK ? `#/routines?sel=${ids.wed}` : '#/routines'); await shot('10-routines');
@@ -236,7 +258,10 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
       await page.click('[data-action=end-rest]');
     } else {
       await tick(40);
-      if (!setShot && (await page.$('.w-note'))) { await shot('20-set'); setShot = true; }
+      if (!setShot && (await page.$('.w-note'))) {
+        await shot('20-set'); setShot = true;
+        if (await page.$('.w-thumb')) { await page.click('.w-thumb'); await page.waitForSelector('.viewer'); await shot('30-viewer'); await page.click('.viewer-close'); }
+      }
       await (await page.$('[data-action=done]')).click();
     }
     await page.waitForTimeout(120);

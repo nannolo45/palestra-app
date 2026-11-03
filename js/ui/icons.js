@@ -22,6 +22,8 @@ const P = {
   calendar: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
   arrowDown: '<path d="M12 5v14M6 13l6 6 6-6"/>',
   arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  camera: '<path d="M4 8a2 2 0 0 1 2-2h2l1.5-2h5L16 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.5"/>',
+  image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-9 8.5"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   trend: '<path d="M4 18l6-6 4 4 6-8"/><path d="M15 8h5v5"/>',

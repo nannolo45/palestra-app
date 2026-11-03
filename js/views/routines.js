@@ -10,6 +10,7 @@ import {
   routines, exercises, routineMinutes, refreshEstimates, lastDone, whereText, placeOf, machineOf, training, measureLabel, typeLabel, places, sessions,
 } from '../data.js';
 import { plannedAhead, measuresFor, defaultTargets } from '../model.js';
+import { thumbOf, openViewer } from './pictures.js';
 import { activeInfo, planDays, plans, plansWith, savePlan } from '../plans.js';
 
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
@@ -134,6 +135,7 @@ export function routineView(id, { pane = false } = {}) {
     const lt = lastText(it, ex);
     return `${walk}<div class="row card-row static">
       <span class="num-dot">${i + 1}</span>
+      ${thumbOf(ex) ? `<button type="button" class="thumb" data-viewer="${esc(ex.id)}" aria-label="${esc(t('viewPicture'))}"><img src="${esc(thumbOf(ex))}" alt="" loading="lazy"></button>` : ''}
       <span class="row-text"><span class="row-title">${esc(ex.name)}</span><span class="row-sub">${esc(whereText(ex) || typeLabel(ex))}</span>
       ${ex.notes ? `<span class="row-note">${icon('pencil', 12)}<span>${esc(ex.notes)}</span></span>` : ''}</span>
       <span class="row-end"><b>${esc(itemPlan(it, ex))}</b>${ex.type !== 'cardio' ? `<small>${esc(t('restShort', restText(it.rest ?? training().rest)))}</small>` : ''}${lt ? `<small class="last-w">${esc(`${t('lastWeight')} ${lt}`)}</small>` : ''}</span>
@@ -162,6 +164,7 @@ export function routineView(id, { pane = false } = {}) {
 
 /** Buttons a routine's page has, also when it's shown in the library's side pane. */
 function bindRoutineActions(view) {
+  view.querySelectorAll('[data-viewer]').forEach((b) => b.addEventListener('click', () => { const ex = get('exercises', b.dataset.viewer); if (ex) openViewer(ex); }));
   view.querySelectorAll('[data-action=duplicate-to]').forEach((b) => b.addEventListener('click', () => duplicateTo(b.dataset.id)));
 }
 

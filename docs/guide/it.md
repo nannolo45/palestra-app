@@ -184,6 +184,20 @@ In *Esercizi* trovi tutti i tuoi esercizi, raggruppati *Per muscolo* o *Per post
 
 ![Un esercizio cardio: la macchina e i suoi obiettivi](guide/it/09-exercise-cardio.webp)
 
+### Le immagini
+
+Ogni esercizio può avere un disegno che mostra il movimento, in due posizioni (*Inizio* e *Fine*), e ogni macchina una tua foto.
+
+- **Il disegno.** Nella pagina dell'esercizio tocca *Scegli un'immagine*: Palestra propone i disegni più simili al nome. Se nessuno va bene, cerca con altre parole, in italiano o in inglese. *Nessuna* lascia l'esercizio senza.
+- **Tutti insieme.** In *Esercizi*, la scheda *Abbina le immagini* ti passa gli esercizi senza immagine uno dopo l'altro: tocca il disegno giusto e *Usa questa*, o *Nessuna*.
+- **La tua foto della macchina.** Tocca *Fotografa la macchina*: sul telefono si apre la fotocamera. La foto viene rimpicciolita e salvata sul telefono e, se GitHub è collegato, in palestra-data nella cartella *photos*, così la vedi anche sugli altri dispositivi. *Rifai* e *Togli* la cambiano.
+
+I disegni vengono da free-exercise-db, di pubblico dominio; si scaricano la prima volta che li vedi e poi restano anche senza rete.
+
+![Scegli un'immagine: i disegni più simili al nome](guide/it/28-picker.webp)
+
+![Abbina le immagini: un esercizio dopo l'altro](guide/it/29-match.webp)
+
 ### La palestra: zone e macchine
 
 In *Esercizi → Palestra* cambi le zone, il loro ordine e le macchine in ogni zona. Tocca una macchina per il numero, il nome e le regolazioni.
@@ -207,6 +221,10 @@ Al primo allenamento della settimana, se l'aumento automatico è acceso, Palestr
 Vedi l'esercizio, la serie (2 di 4), ripetizioni e kg, la macchina con la zona e la tua nota. Se hai fatto diverso, correggi con − e +. Poi tocca *Fatto*.
 
 ![Una serie: ripetizioni, kg, dove andare e la tua nota](guide/it/20-set.webp)
+
+Accanto alla macchina c'è una piccola immagine: la tua foto, o il disegno dell'esercizio. Toccala per vederla a tutto schermo; *Macchina* ed *Esercizio* passano dall'una all'altro, e toccando il disegno vedi l'altra posizione.
+
+![A tutto schermo: la tua foto della macchina o il disegno](guide/it/30-viewer.webp)
 
 ### Il recupero
 

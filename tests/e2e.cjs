@@ -72,6 +72,13 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: 'it-IT', serviceWorkers: 'block' });
   await ctx.route('https://api.github.com/**', fakeGithub);
+  // exercise drawings: served from a local copy of free-exercise-db (git sparse checkout in /tmp/fedb), grey square otherwise
+  await ctx.route('https://raw.githubusercontent.com/yuhonas/free-exercise-db/**', (route) => {
+    const rel = decodeURIComponent(new URL(route.request().url()).pathname.replace(/^\/yuhonas\/free-exercise-db\/main\//, ''));
+    const f = path.join(process.env.FEDB || '/tmp/fedb', rel);
+    if (fs.existsSync(f)) return route.fulfill({ status: 200, contentType: 'image/jpeg', body: fs.readFileSync(f) });
+    return route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="#ccc"/></svg>' });
+  });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -162,6 +169,47 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check((await page.$$('.list-row')).length === 1, 'type filter');
   await page.click('[data-type=all]');
 
+  console.log('Pictures');
+  check(Boolean(await page.$('.pic-prompt')), 'Esercizi offers to match pictures');
+  await page.click('.list-row:has-text("Leg press")');
+  await page.waitForSelector('[data-action=pick-picture]');
+  await page.click('[data-action=pick-picture]');
+  await page.waitForSelector('#modal .pic-cand');
+  check((await page.textContent('#modal .pic-cand span')).includes('Leg Press'), `first suggestion for Leg press (${await page.textContent('#modal .pic-cand span')})`);
+  await page.fill('#pic-q', 'panca');
+  await page.waitForTimeout(400);
+  check((await page.textContent('#modal .pic-grid')).includes('Bench'), 'the search takes Italian');
+  await page.fill('#pic-q', '');
+  await page.waitForTimeout(400);
+  await page.click('#modal .pic-cand >> nth=0');
+  await shot('p1-picker', { fullPage: true });
+  await page.click('#modal [value=ok]');
+  await page.waitForSelector('.pic-card');
+  check((await page.$$('.pic-frames button')).length === 2, 'start and end positions');
+  await page.click('.pic-frames [data-frame="1"]');
+  check((await page.getAttribute('.pic-frame img', 'src')).endsWith('/1.jpg'), 'the end position shows the second drawing');
+  // your own photo of the machine
+  const jpg = fs.readdirSync('/tmp/fedb/exercises').map((d) => path.join('/tmp/fedb/exercises', d, '0.jpg')).find((f) => fs.existsSync(f));
+  if (jpg) {
+    await page.setInputFiles('[data-photo-for]', jpg);
+    await page.waitForSelector('.machine-photo img', { timeout: 4000 });
+    check((await page.getAttribute('.machine-photo img', 'src')).startsWith('data:image/jpeg'), 'the machine photo is kept, shrunk to a JPEG');
+  } else check(false, 'no local picture to use as a photo: run the sparse checkout of free-exercise-db into /tmp/fedb');
+  await shot('p2-exercise-picture', { fullPage: true });
+  // the rest one after another
+  await go('#/pictures');
+  await page.waitForSelector('.pic-cand');
+  check((await page.textContent('.pic-progress small')).includes('1 di 2'), 'two exercises still without a picture');
+  await shot('p3-match');
+  await page.click('[data-action=use]');
+  await page.waitForSelector('.pic-cand');
+  await page.click('[data-action=none]');
+  await page.waitForSelector('.lead');
+  check((await page.textContent('.lead')).includes('1 esercizi su 2'), `summary (${await page.textContent('.lead')})`);
+  await page.click('[data-action=finish]');
+  await page.waitForSelector('.list-row');
+  check(!(await page.$('.pic-prompt')), 'nothing left to match');
+
   console.log('Routine');
   await go('#/routines');
   await page.click('.two-actions [data-action=new-routine]');
@@ -189,6 +237,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await go('#/routines');
   await page.click('.card-row');
   await shot('08-routine', { fullPage: true });
+  check((await page.$$('.card-row .thumb')).length === 2, `small pictures in the scheda (${(await page.$$('.card-row .thumb')).length})`);
   const firstEx = await page.textContent('.stack .card-row .row-title');
   check(firstEx === 'Tapis roulant', 'reordered: treadmill first');
 
@@ -208,6 +257,16 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('.w-note');
   check((await page.textContent('.w-note')).includes('metà pedana'), 'note shown during the set');
   await shot('11-set');
+  check(Boolean(await page.$('.w-card.machine .w-thumb')), 'a small picture next to the machine');
+  await page.click('.w-thumb');
+  await page.waitForSelector('.viewer');
+  check((await page.$$('.viewer-seg button')).length === 2, 'the viewer offers Macchina and Esercizio');
+  check((await page.getAttribute('.viewer img', 'src')).startsWith('data:'), 'your photo first');
+  await page.click('.viewer-seg button >> nth=1');
+  check((await page.getAttribute('.viewer img', 'src')).includes('free-exercise-db'), 'then the drawing');
+  await shot('p4-viewer');
+  await page.click('.viewer-close');
+  check(!(await page.$('.viewer')), 'the viewer closes');
   await page.clock.runFor(35 * 1000);
   await page.click('[data-action=done]');
   await page.clock.runFor(60 * 1000);
@@ -244,6 +303,10 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(sess.breakdown && sess.breakdown.pause === 120, 'pause counted apart');
   const routines = JSON.parse(repo.get('data/routines.json').text);
   check(routines[0].estMinutes > 10, `routine estMinutes written (${routines[0].estMinutes})`);
+  const photoFile = [...repo.keys()].find((k) => /photos\/[^/]+\.jpg$/.test(k));
+  check(Boolean(photoFile), `the machine photo is uploaded (${photoFile})`);
+  const machines = JSON.parse(repo.get('data/machines.json').text);
+  check(machines.some((m) => m.photo && photoFile.endsWith(m.photo.file)), 'the machine says where its photo is');
 
   console.log('Everyday plans the next one, a week later the increase is proposed');
   // Everyday writes the planned workouts into prefs
@@ -450,7 +513,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
     return { r: live(await get('routines'))[0].id, p: live(await get('plans'))[0].id, e: live(await get('exercises')).find((x) => x.type === 'weights').id,
       c: live(await get('exercises')).find((x) => x.type === 'cardio').id, s: live(await get('sessions'))[0].id };
   });
-  const routes = ['#/today', '#/routines', '#/plans', `#/plan/${ids.p}`, '#/import', '#/import?for=routine', '#/exercises', `#/exercise/${ids.e}`, `#/exercise/${ids.c}`, '#/exercise/new',
+  const routes = ['#/today', '#/routines', '#/plans', `#/plan/${ids.p}`, '#/import', '#/import?for=routine', '#/exercises', '#/pictures', `#/exercise/${ids.e}`, `#/exercise/${ids.c}`, '#/exercise/new',
     '#/gym', '#/history', `#/session/${ids.s}`, `#/routine/${ids.r}`, `#/routine/${ids.r}/edit`, '#/settings',
     ...['github', 'increase', 'training', 'gym', 'everyday', 'look', 'data', 'data/backup', 'data/device'].map((x) => `#/settings/${x}`)];
   for (const r of routes) { await go(r); await page.waitForTimeout(120); await overflowAt(r); if (['#/exercises', '#/settings/increase', '#/routines'].includes(r)) await shot(`narrow-${r.replace(/\W+/g, '-')}`); }

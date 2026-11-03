@@ -4,6 +4,7 @@
 import {
   state, upsert, mergeLists, purgeTombstones, serialize, replaceCollection, saveMeta, kvGet, kvSet, kvDel, kvKeys,
 } from './store.js';
+import { syncPhotos } from './photos.js';
 
 // prefs first: it holds the contract version, which decides whether this app may write.
 export const PATHS = {
@@ -162,6 +163,24 @@ async function syncFile(path, local, listing, readOnly) {
   throw new SyncError('conflict');
 }
 
+const photoIO = {
+  async list(dir) { const l = await listDir(dir); return l.files; },
+  async put(path, base64, sha) {
+    const body = { message: `palestra: photo ${path}`, content: base64, branch: branch(), ...(sha ? { sha } : {}) };
+    const res = await api(`contents/${path}`, { method: 'PUT', body: JSON.stringify(body), headers: { 'Content-Type': 'application/json' } });
+    if (!res.ok) throw fail(res);
+  },
+  async del(path, sha) {
+    const res = await api(`contents/${path}`, { method: 'DELETE', body: JSON.stringify({ message: `palestra: remove ${path}`, sha, branch: branch() }), headers: { 'Content-Type': 'application/json' } });
+    if (!res.ok && res.status !== 404) throw fail(res);
+  },
+  async raw(path) {
+    const res = await api(`contents/${path}?ref=${encodeURIComponent(branch())}`, { headers: { Accept: 'application/vnd.github.raw' } });
+    if (!res.ok) throw fail(res);
+    return new Blob([await res.arrayBuffer()], { type: 'image/jpeg' });
+  },
+};
+
 let running = null;
 let again = false;
 
@@ -195,6 +214,8 @@ export function syncNow() {
           all = all.concat(await syncFile(`${SESSIONS_DIR}/${m}.json`, local, sessListing, newer));
         }
         await replaceCollection('sessions', mergeLists(all, state.sessions));
+        // machine photos: files of their own (photos/<id>.jpg); a failure here doesn't stop the rest
+        try { await syncPhotos(photoIO, newer); } catch (e) { if (e.code === 'auth' || e.code === 'forbidden') throw e; }
         await saveMeta({ dirty: again, lastSync: Date.now(), lastError: null, contractNewer: newer });
       } while (again);
       return { ok: true };

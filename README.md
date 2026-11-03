@@ -39,7 +39,8 @@ The full guide for using the app is in the app (Settings → Guide) and in the d
 | `js/workout.js` | the workout in progress, all from timestamps (survives a locked phone or a reload) |
 | `js/plans.js`, `js/importer.js` | weekly plans and the active plan; import from text or JSON |
 | `js/views/` | the screens: routines (with the active plan), plans, import, exercises, gym, history, settings, workout mode |
-| `js/guide.js` | the in-app guide, Italian and English |
+| `js/pictures.js`, `js/photos.js`, `lib/exercise-pictures.json` | exercise drawings (index of free-exercise-db, public domain; the images load from its GitHub address and are cached) and your own machine photos |
+| `guide-it.html`, `guide-en.html`, `guide/`, `docs/guide/` | the user guide, its pictures, and how they're made |
 | `js/i18n.js` | texts, Italian (first) and English |
 | `tests/` | unit tests (`npm test`) and a browser test with a fake GitHub (`npm run e2e`); not needed to use the app |
 
@@ -51,8 +52,9 @@ Unknown fields are kept on every write.
 | File | One record is | Main fields |
 |---|---|---|
 | `data/places.json` | a zone of the gym | `name`, `order` (walking order), `note` |
-| `data/machines.json` | a machine or station | `name`, `number`, `placeId`, `kind` (`weights`/`cardio`), `settings`, `cardioKind` (`treadmill`, `elliptical`, `bike`, `rower`, `stepper`, `custom`), `measures` (for `custom`: up to 3 of `speed`, `incline`, `level`, `resistance`, `cadence`, `distance`, `calories`, `watt`, or `{key, label, unit}`) |
-| `data/exercises.json` | an exercise | `name`, `type` (`weights`/`bodyweight`/`cardio`), `equipment` (`machine`/`barbell`/`dumbbell`/`cable`), `machineId`, `placeId`, `muscles`, `defaultRest`, `notes`, `timed`, `cardio: {kind, targets}`, `increase: {mode: type/custom/off, step}` |
+| `data/machines.json` | a machine or station | `name`, `number`, `placeId`, `kind` (`weights`/`cardio`), `settings`, `cardioKind` (`treadmill`, `elliptical`, `bike`, `rower`, `stepper`, `custom`), `measures` (for `custom`: up to 3 of `speed`, `incline`, `level`, `resistance`, `cadence`, `distance`, `calories`, `watt`, or `{key, label, unit}`), `photo: {file, at}` (since v18) |
+| `data/exercises.json` | an exercise | `name`, `type` (`weights`/`bodyweight`/`cardio`), `equipment` (`machine`/`barbell`/`dumbbell`/`cable`), `machineId`, `placeId`, `muscles`, `defaultRest`, `notes`, `timed`, `cardio: {kind, targets}`, `increase: {mode: type/custom/off, step}`, `picture` (since v18: `{lib: 'fedb', id, name, n}` or `{none: true}`) |
+| `photos/<machine id>.jpg` | your photo of a machine (JPEG, longest side 1000 px) | named by the machine's `photo.file` |
 | `data/routines.json` | a routine | `name`, `items: [{exerciseId, sets, reps` or `seconds, weight, rest, targets}]`, `restBetween`, `estMinutes`, `autoIncrease`, `increaseWeek` |
 | `data/sessions/YYYY-MM.json` | a workout done | `routineId`, `start`, `end` (ms), `minutes` (without pauses), `sets: [{exerciseId, n, reps, weight, seconds, targets, distance, dur, restTaken, restPlanned}]`, `breakdown: {work, rest, walk, pause}` (s), `outcome` (`done`/`partial`), `everydayBlockId` |
 | `data/plans.json` | a weekly plan (a **workout** in the app since v9) | `name`, `note`, `days: [{routineId, weekday, time?}]` (0 = Monday … 6 = Sunday, or `null`; `time` "HH:MM") |

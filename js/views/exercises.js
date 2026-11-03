@@ -4,6 +4,8 @@ import { t } from '../i18n.js';
 import { esc, fmtNum, shortDate, num } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { backLink, stepper, bindSteppers, stepVal, segmented, empty, exTag, segTabs, gearLink } from '../ui/parts.js';
+import { hasPicture, frameUrl } from '../pictures.js';
+import { pickPicture, machinePhotoBlock, bindPhotoInputs, missingPictures } from './pictures.js';
 import { askConfirm, toast } from '../ui/dialogs.js';
 import {
   exercises, places, machines, machineOf, placeOf, whereText, typeLabel, cardioKindLabel, measureLabel, training, increaseSettings, refreshEstimates,
@@ -92,6 +94,7 @@ export function exercisesView() {
       <span class="divider" aria-hidden="true"></span>
       ${filters.map(([v, l]) => `<button type="button" class="chip-btn${listState.type === v ? ' on' : ''}" aria-pressed="${listState.type === v}" data-type="${v}">${v !== 'all' ? `<span class="swatch sw-${v}" aria-hidden="true"></span>` : ''}${esc(l)}</button>`).join('')}
     </div>
+    ${missingPictures().length ? `<a class="card pic-prompt" href="#/pictures">${icon('image', 20)}<span><b>${esc(t('picMatchTitle'))}</b><small>${esc(t('picMatchText', missingPictures().length))}</small></span>${icon('chevron', 18, 'class="chev"')}</a>` : ''}
     ${groups.length > 1 && !q ? `<div class="list-tools"><span class="muted small">${esc(t('nExercisesShort', list.length))}</span><button type="button" class="link-btn" data-action="toggle-all">${esc(allClosed ? t('openAll') : t('closeAll'))}</button></div>` : ''}
     ${groups.length ? `<div class="groups">${groups.map((g) => {
     const closed = isClosed(g);
@@ -164,6 +167,7 @@ export function exerciseView(id, query = {}) {
       </div>
       ${kind !== 'custom' && sameKind.length ? `<label class="field"><span>${esc(t('whichOnes'))}</span><select name="machineId"><option value="">${esc(t('anyOfThem'))}</option>${sameKind.map((x) => `<option value="${esc(x.id)}" ${x.id === ex.machineId ? 'selected' : ''}>${esc([x.number, x.name].filter(Boolean).join(' · '))}</option>`).join('')}</select></label>` : ''}
       ${m && placeOf(ex) ? `<p class="muted small">${esc(whereText(ex))}</p>` : ''}
+      ${m ? machinePhotoBlock(m) : ''}
     </section>
     <section class="block"><h2 class="section-title">${esc(t('target'))}</h2>
       <div class="card stack-rows">${ms.map((mm) => stepper({ name: `t_${mm.key}`, value: tg[mm.key] ?? 0, step: mm.step, min: mm.min ?? 0, unit: mm.unit, label: measureLabel(mm) })).join('')}</div>
@@ -178,6 +182,7 @@ export function exerciseView(id, query = {}) {
         ${m ? `<span class="extag tag-weights">${esc(m.number || '·')}</span><div class="row-text"><span class="row-title">${esc(placeOf(ex)?.name || m.name)}</span><span class="row-sub">${esc(m.settings || m.name)}</span></div>`
     : `<div class="row-text"><span class="row-title">${esc(t('noMachine'))}</span><span class="row-sub">${esc(placeOf(ex)?.name || t('noPlace'))}</span></div>`}
       </section>
+      ${m ? machinePhotoBlock(m) : ''}
       <div class="two">
         <label class="field"><span>${esc(t('machine'))}</span><select name="machineId"><option value="">${esc(t('none'))}</option>${ms.map((x) => `<option value="${esc(x.id)}" ${x.id === ex.machineId ? 'selected' : ''}>${esc([x.number, x.name].filter(Boolean).join(' · '))}</option>`).join('')}</select></label>
         ${!ex.machineId ? `<label class="field"><span>${esc(t('place'))}</span><select name="placeId"><option value="">${esc(t('none'))}</option>${places().map((p) => `<option value="${esc(p.id)}" ${p.id === ex.placeId ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>` : ''}
@@ -196,6 +201,7 @@ export function exerciseView(id, query = {}) {
   const html = `<header class="bar">${backLink(back, query.then ? t('back') : t('tab_exercises'))}<button type="button" class="bar-action strong" data-action="save">${esc(t('save'))}</button></header>
     <form class="stack form" data-form="exercise" autocomplete="off">
       <label class="field big"><span class="sr">${esc(t('name'))}</span><input id="ex-name" name="name" value="${esc(ex.name)}" placeholder="${esc(t('exerciseNamePh'))}" ${isNew ? 'autofocus' : ''}></label>
+      ${pictureBlock(ex)}
       ${typeSeg}
       ${specific}
       <label class="field"><span>${esc(t('muscles'))}</span><input id="ex-muscles" name="muscles" value="${esc((ex.muscles || []).join(', '))}" placeholder="${esc(t('musclesPh'))}"></label>
@@ -269,6 +275,17 @@ export function exerciseView(id, query = {}) {
         if (cardio) draft.cardio = { kind: m.cardioKind, targets: defaultTargets(m.cardioKind, m) };
         rerender();
       };
+      bindPhotoInputs(view);
+      view.querySelectorAll('[data-frame]').forEach((b) => b.addEventListener('click', () => { picFrame = Number(b.dataset.frame); rerender(); }));
+      view.querySelector('[data-action=pick-picture]')?.addEventListener('click', async () => {
+        read();
+        const pic = await pickPicture(draft);
+        if (!pic) return;
+        draft.picture = pic; picFrame = 0;
+        // pictures are saved at once for an existing exercise, like the machine photo
+        if (!isNew) { const cur = get('exercises', id); if (cur) upsert('exercises', { ...cur, picture: pic }); }
+        rerender();
+      });
       view.querySelector('[data-action=new-machine]')?.addEventListener('click', () => newMachine(false));
       view.querySelector('[data-action=new-cardio]')?.addEventListener('click', () => newMachine(true));
       view.querySelector('[data-action=save]').addEventListener('click', () => {
@@ -308,3 +325,19 @@ function lastText(ex, p) {
 }
 
 export function resetExerciseDraft() { draft = null; }
+
+// ---- the exercise's picture (free-exercise-db), at the top of its page ----
+
+let picFrame = 0;
+
+function pictureBlock(ex) {
+  if (!hasPicture(ex)) {
+    return `<button type="button" class="btn dashed wide" data-action="pick-picture">${icon('image', 18)}${esc(ex.picture?.none ? t('picChooseAgain') : t('picChoose'))}</button>`;
+  }
+  const two = (ex.picture.n || 1) > 1;
+  return `<section class="card pic-card">
+      <div class="pic-frame"><img src="${esc(frameUrl(ex.picture, picFrame))}" alt="${esc(`${ex.picture.name} · ${picFrame ? t('picEnd') : t('picStart')}`)}">
+        ${two ? `<span class="pic-frames" role="group" aria-label="${esc(t('picMovement'))}"><button type="button" data-frame="0" class="${picFrame ? '' : 'on'}" aria-pressed="${!picFrame}">${esc(t('picStart'))}</button><button type="button" data-frame="1" class="${picFrame ? 'on' : ''}" aria-pressed="${Boolean(picFrame)}">${esc(t('picEnd'))}</button></span>` : ''}</div>
+      <div class="pic-foot"><small>${esc(`${ex.picture.name} · ${t('picSource')}`)}</small><button type="button" class="btn small" data-action="pick-picture">${esc(t('change'))}</button></div>
+    </section>`;
+}

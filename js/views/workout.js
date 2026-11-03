@@ -11,6 +11,7 @@ import { increaseProposals, applyIncrease, measuresFor, totalWeight, lastResult 
 import * as W from '../workout.js';
 import { breakdownBar, setText } from './history.js';
 import { syncNow } from '../sync.js';
+import { thumbOf, openViewer } from './pictures.js';
 
 let active = null; // the workout in progress
 let summaryId = null; // the session just finished, shown until closed
@@ -191,6 +192,7 @@ export function workoutView() {
         commit(W.completeStep(active, values));
       });
       view.querySelector('[data-action=skip-set]')?.addEventListener('click', () => commit(W.skipStep(active)));
+      view.querySelector('[data-action=viewer]')?.addEventListener('click', () => openViewer(ex));
       view.querySelector('[data-action=add30]')?.addEventListener('click', () => commit(W.addRest(active, 30)));
       view.querySelector('[data-action=end-rest]')?.addEventListener('click', () => commit(W.endRest(active)));
       keepAwake();
@@ -217,7 +219,7 @@ function setBody(step, ex) {
         ${step.plan.weight != null ? `<div class="w-card stepcard">${stepper({ name: 'weight', value: step.plan.weight, step: ex.equipment === 'dumbbell' ? 1 : 2.5, min: 0, label: 'kg', big: true })}</div>` : ''}
       </div>
       ${step.plan.weight === 0 ? `<p class="w-small">${esc(t('weightFirstTime'))}</p>` : ''}
-      ${m || p ? `<div class="w-card machine"><span class="w-mnum">${esc(m?.number || '·')}</span><div><b>${esc(p?.name || m?.name || '')}</b><small>${esc(m?.settings || (m && p ? m.name : ''))}</small></div></div>` : ''}
+      ${machineCard(ex)}
       ${ex.notes ? `<section class="w-note" aria-label="${esc(t('notes'))}">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
       <p class="w-small">${esc([lastSet ? t('setDone', lastSet.n, setText(ex, lastSet)) : '', prevText].filter(Boolean).join(' · '))}</p>
     </main>
@@ -225,6 +227,16 @@ function setBody(step, ex) {
       <button type="button" class="btn yellow huge done-btn" data-action="done">${icon('check', 30)}${esc(t('doneSet'))}</button>
       <button type="button" class="btn ghost-dark" data-action="skip-set">${esc(t('skipSet'))}</button>
     </div>`;
+}
+
+/** Machine number, zone and settings, with a small picture (your photo, or the exercise's) that opens full screen. */
+function machineCard(ex) {
+  const m = machineOf(ex);
+  const p = placeOf(ex);
+  const th = thumbOf(ex);
+  if (!m && !p && !th) return '';
+  return `<div class="w-card machine">${m || p ? `<span class="w-mnum">${esc(m?.number || '·')}</span><div><b>${esc(p?.name || m?.name || '')}</b><small>${esc(m?.settings || (m && p ? m.name : ''))}</small></div>` : '<div></div>'}
+    ${th ? `<button type="button" class="w-thumb" data-action="viewer" aria-label="${esc(t('viewPicture'))}"><img src="${esc(th)}" alt=""></button>` : ''}</div>`;
 }
 
 function prevSummary(ex, s) {
@@ -248,6 +260,7 @@ function cardioBody(step, ex) {
         <div class="w-bar" aria-hidden="true"><span data-live="cardio-bar" style="width:${Math.min(100, (sec / (dur * 60)) * 100).toFixed(1)}%"></span></div>
       </div>
       <div class="w-grid2">${ms.filter((m) => m.key !== 'duration').map((m) => `<div class="w-card stepcard">${stepper({ name: `t_${m.key}`, value: step.plan.targets[m.key] ?? 0, step: m.step, min: 0, unit: m.unit, label: measureLabel(m), big: true })}</div>`).join('')}</div>
+      ${thumbOf(ex) ? machineCard(ex) : ''}
       <label class="w-card w-field"><span>${esc(t('distanceFromDisplay'))} <small>${esc(t('optionalOne'))}</small></span><input name="distance" inputmode="decimal" placeholder="— km" autocomplete="off"></label>
       ${ex.notes ? `<section class="w-note">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
     </main>
