@@ -61,3 +61,9 @@ export function lastDone(routineId) {
   const s = sessions().find((x) => x.routineId === routineId && x.end);
   return s ? s.start : null;
 }
+
+/** Impostazioni → Il tuo corpo ({kg, cm, sex, level}), if filled in. */
+export function bodyPrefs() {
+  const b = pref('body', null);
+  return b && Number(b.kg) > 0 ? b : null;
+}

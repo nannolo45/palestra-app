@@ -13,7 +13,7 @@ import { historyView, sessionView } from './views/history.js';
 import { settingsView } from './views/settings.js';
 import { plansView, planView } from './views/plans.js';
 import { importView } from './views/import.js';
-import { initWorkout, startView, workoutView, hasActive, activeWorkout, leaveWorkoutScreens } from './views/workout.js';
+import { initWorkout, startView, workoutView, hasActive, activeWorkout, leaveWorkoutScreens, tryView } from './views/workout.js';
 import { refreshEstimates } from './data.js';
 import { applyTheme, setWorkoutMode } from './theme.js';
 import { loadPhotos } from './photos.js';
@@ -41,6 +41,7 @@ function viewFor(r) {
     case 'plan': return planView(r.id);
     case 'import': return importView(r.query);
     case 'start': return startView(r.id, r.query);
+    case 'try': return tryView(r.id);
     case 'workout': return workoutView();
     default: return todayView();
   }

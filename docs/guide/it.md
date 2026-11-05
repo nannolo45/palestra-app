@@ -97,7 +97,11 @@ La prima pagina ti dice cosa ti tocca oggi. In alto c'è la scheda del giorno, c
 
 ### Iniziare la scheda di oggi
 
-Tocca *Inizia*. Si apre l'allenamento a schermo intero: [Durante l'allenamento](#durante-lallenamento) spiega cosa vedi.
+Tocca *Inizia*. Prima dell'allenamento vero c'è **Pronto?**: quanto dura, quante serie, quante zone, il primo esercizio in grande con la sua immagine, e tutta la scheda in ordine con i cambi di zona. L'orologio parte solo quando tocchi *Inizia*. Poi l'allenamento si apre a schermo intero: [Durante l'allenamento](#durante-lallenamento) spiega cosa vedi.
+
+Preferisci che parta da solo? In *Impostazioni → Allenamento → Prima di iniziare* scegli **Conto alla rovescia**: 15 secondi (o quanti vuoi) per arrivare alla prima macchina, con *+15 s* e *Inizia ora*.
+
+![Pronto?: la scheda intera prima di iniziare](guide/it/32-ready.webp)
 
 ### Sposta a domani
 
@@ -159,10 +163,21 @@ Tocca *Modifica*.
 | *Aumento automatico* | Se Palestra ti propone di salire di peso ogni settimana |
 | Ordine | Trascina dalla maniglia; *Ordina per percorso* segue il giro della palestra |
 | Un esercizio | Toccalo: serie, ripetizioni o secondi, peso, recupero, oppure *Togli dalla scheda* |
+| *Serie uguali / Serie diverse* | Con *diverse* ogni serie ha le sue ripetizioni e il suo peso (piramidi, serie a scendere, un riscaldamento); *Un'altra serie* ne aggiunge una |
+| *Fascia di ripetizioni* | Es. 8–12 invece di un numero fisso: il peso sale quando arrivi a 12 in tutte le serie |
+| *A cedimento* | Tutte le serie o solo l'ultima, fino a quando non ne esce un'altra pulita |
 | *Aggiungi esercizio* | Sceglilo dall'elenco, o creane uno nuovo |
 | *Importa* | Aggiunge esercizi scritti come testo |
 
 ![Aggiungi esercizio: l'elenco con la macchina di ognuno](guide/it/13-add-exercise.webp)
+
+![Serie diverse: ogni serie con le sue ripetizioni e il suo peso](guide/it/34-sets-editor.webp)
+
+### Prova com'è
+
+Nella pagina di una scheda, **Prova com'è** apre le stesse schermate dell'allenamento vero, ferme: una striscia gialla dice *Prova · non si salva niente*, l'orologio mostra «—:—», il recupero non scorre (*Avanti* per andare oltre). *Fatto* passa alla serie dopo, i bordi saltano da un esercizio all'altro. Niente sessione, niente aumenti, niente avviso a Everyday. *Esci* ti riporta alla scheda.
+
+![Prova com'è: l'allenamento vero, fermo](guide/it/33-try.webp)
 
 ### Duplicare in un altro workout
 
@@ -226,6 +241,25 @@ Vedi l'esercizio, la serie (2 di 4), ripetizioni e kg, la macchina con la zona e
 
 **Cosa vuol dire il peso.** Con i manubri il numero è *per manubrio* (lo leggi sul manubrio) e sotto c'è il conto: «Prendi 2 manubri da 15 kg · 30 kg in tutto». Con il bilanciere è il totale con la sbarra da 20 kg, e sotto i dischi per lato. Per un esercizio diverso (un manubrio solo, o il bilanciere contato per lato) cambialo nella pagina dell'esercizio, sotto *Attrezzo*: *Il peso è* e *Manubri*.
 
+**Le serie diverse.** Se la scheda ha serie diverse (es. 8 × 10, 6 × 12, 4 × 14 kg), sotto il titolo c'è una riga con tutte: quelle fatte, quella di adesso e quelle dopo. Ogni serie parte dai suoi numeri.
+
+**A cedimento.** Un'etichetta gialla *Fino a cedimento* sopra le ripetizioni, e sotto l'obiettivo (es. *Obiettivo 8–12*) con le ripetizioni della volta scorsa. Le ripetizioni partono da quante ne hai fatte la volta scorsa in quella serie: a fine serie le aggiusti con − e +.
+
+**Il peso per iniziare.** Se un esercizio non ha ancora un peso e hai compilato *Impostazioni → Il tuo corpo*, la serie propone *Per iniziare: … kg* con **Usa**. È solo un'indicazione, prudente: se le ripetizioni escono facili, alza.
+
+**Una ripetizione in più.** Premi + oltre la scheda: accanto al numero compare «una in più della scheda». Si salva quello che hai fatto; alla fine decidi se tenerlo nella scheda.
+
+### Una serie o un esercizio in più
+
+Nel recupero dopo l'**ultima** serie di un esercizio, Palestra chiede: *Finite le serie di … Ne fai un'altra?*
+
+- **+ Un'altra serie**: arriva subito, segnata *in più*, con i numeri della serie appena fatta. *Togli* se ci ripensi.
+- **+ Un esercizio**: scegli tra i tuoi esercizi; arriva subito, segnato *aggiunto*, con una serie dai numeri della volta scorsa. Finita quella, la stessa domanda.
+
+Dopo l'ultima serie dell'allenamento la domanda resta, con **Termina l'allenamento** sotto.
+
+![Un'altra serie: arriva subito, segnata in più](guide/it/35-more.webp)
+
 ### Guardare gli esercizi prima e dopo
 
 Tocca il bordo sinistro o destro dello schermo (o scorri col dito) per vedere l'esercizio prima o dopo. Si capisce che stai solo guardando: in alto c'è *Anteprima*, il riquadro tratteggiato dice dove sei davvero, il resto è in grigio e al posto di *Fatto* c'è *Torna all'esercizio …*. Nella barra in alto, il segmento che guardi ha un contorno; quello giallo resta dove sei.
@@ -257,11 +291,32 @@ Per il cardio vedi il tempo che manca e gli obiettivi, da cambiare con − e +. 
 
 ![Fine: il riepilogo dell'allenamento](guide/it/23-summary.webp)
 
+### Diverso dalla scheda
+
+Se hai fatto qualcosa di diverso dalla scheda, il riepilogo lo mostra esercizio per esercizio, serie per serie: cosa diceva la scheda, cosa hai fatto, e un'etichetta per ogni differenza (*+1 rip.*, *−2,5 kg*, *in più*, *saltata*, *nuova*). Per ognuno scegli:
+
+| Scelta | La scheda |
+|---|---|
+| *Solo oggi* | Non cambia |
+| *Come l'ho fatto* | Prende i numeri di oggi, serie per serie |
+| *Tutte …* | Tutte le serie come la migliore (se una è andata meglio) o come l'ultima (se sei sceso) |
+| *Aggiungi alla scheda* | Un esercizio aggiunto entra dove l'hai fatto |
+
+All'apertura è già scelto *Come l'ho fatto* quando hai fatto di più, *Solo oggi* quando hai fatto di meno o saltato: un giorno storto non abbassa la scheda per sbaglio. *Tutto come l'ho fatto* e *Niente, solo oggi* valgono per tutti. Sotto ogni scelta una riga dice esattamente cosa diventa la scheda; poi **Aggiorna la scheda**.
+
+![Diverso dalla scheda: serie per serie, e cosa diventa la scheda](guide/it/36-diff.webp)
+
 ### L'aumento automatico, nelle impostazioni
 
 In *Impostazioni → Aumento automatico* scegli quando (*Se completo*: solo se l'ultima volta hai fatto tutte le serie; *Sempre*) e di quanto per tipo: macchine +2,5 kg, manubri +1, corpo libero +1 ripetizione, cardio +1 minuto. Nella pagina di un esercizio puoi dargli un passo suo o escluderlo.
 
 ![Aumento automatico: quando e di quanto, per tipo](guide/it/27-increase-settings.webp)
+
+### Il tuo corpo, per i pesi suggeriti
+
+In *Impostazioni → Il tuo corpo* metti peso, altezza, sesso ed esperienza (tutto facoltativo). Servono solo a proporre un peso di partenza quando un esercizio non ce l'ha ancora: il tuo peso per un rapporto per esercizio, prudente, corretto per esperienza e sesso; l'altezza sposta di poco. Sotto vedi i pesi di partenza dei tuoi esercizi. Sulle macchine è davvero solo un'indicazione: cambiano da palestra a palestra.
+
+![Il tuo corpo: i pesi di partenza](guide/it/37-body.webp)
 
 ## Storico
 
@@ -284,10 +339,18 @@ Accanto a *Nuovo workout*, *Nuova scheda* e *Aggiungi esercizio* c'è *Importa*.
 | `WORKOUT: Upper Lower di Marco` | Il nome della settimana (facoltativo) |
 | `SCHEDA: Upper @ lun 18:00` | Inizia una scheda; dopo `@` giorno e ora, facoltativi |
 | `Panca piana 4x8 60 kg rec 2:30` | Un esercizio: serie x ripetizioni, peso e recupero facoltativi |
+| `Curl con bilanciere 8/6/4 x 10/12/14` | Serie diverse: 8 × 10, 6 × 12, 4 × 14 kg |
+| `Curl con bilanciere 3x8 10/12/14 kg` | Stesse ripetizioni, peso che sale |
+| `Leg press 12/10/8 x 100` | Stesso peso, ripetizioni che scendono |
+| `Chest press 3x8-12 rec 2:00` | Una fascia di ripetizioni: il peso sale quando arrivi a 12 in tutte |
+| `Chest press 3x8-12 cedimento` | Ogni serie fino a cedimento |
+| `Rematore 3x8-12 ultima a cedimento` | Solo l'ultima serie fino a cedimento |
 | `Plank 3x45s` | Un esercizio a tempo |
 | `Ellittica 10 min livello 6` | Cardio, con i suoi obiettivi |
 | `(manubri)` | L'attrezzo, se vuoi: (bilanciere), (manubri), (cavi), (macchina) |
 | `- Gomiti appena piegati.` | Una nota per l'esercizio sopra |
+
+Con le barre, il numero di serie è quante voci ci sono tra le barre. Se ripetizioni e pesi sono entrambi a barre devono essere tanti quanti: se no l'anteprima segna la riga e usa il primo peso per tutte. *Esporta* scrive le schede nello stesso formato.
 
 I file scritti prima, con `SCHEDA:` per la settimana e `GIORNO:` per le schede, si leggono ancora.
 

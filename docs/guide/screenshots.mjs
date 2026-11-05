@@ -95,6 +95,7 @@ async function seed({ T, PLAN, lang }) {
   const re = (x) => new RegExp(x.source, x.flags);
   await saveSettings({ lang, owner: 'tommaso', repo: 'palestra-data', branch: 'main', token: 'github_pat_fake' });
   setPref('gymName', T.gym);
+  setPref('body', { kg: 78, cm: 180, sex: 'm', level: 'months' });
   const zones = T.zones.map((name, i) => upsert('places', { id: uid(), name, order: i }));
   const M = {};
   for (const [number, name, zone, cardio, settings] of T.machines) {
@@ -229,6 +230,12 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await page.click('[data-action=add-item]'); await page.waitForSelector('#modal[open]'); await shot('13-add-exercise');
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   // Workout
+  // v24: trying a routine, sets that differ, your body
+  await go(`#/try/${ids.mon}`); await page.waitForSelector('.trial-strip'); await page.waitForTimeout(300); await shot('33-try');
+  await page.click('[data-action=exit-trial]'); await page.waitForTimeout(300);
+  { const ix = await page.evaluate(async (id) => (await import('/js/store.js')).get('routines', id).items.findIndex((x) => x.perSet), ids.mon);
+    await go(`#/routine/${ids.mon}/edit`); await page.click(`[data-edit-item="${ix}"]`); await page.waitForSelector('#modal .set-row-edit'); await shot('34-sets-editor'); await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  await go('#/settings/body'); await shot('37-body');
   await go('#/plans'); await shot('14-plans');
   await go(`#/plan/${ids.plan}`); await shot('15-plan');
   await go('#/plans');
@@ -247,14 +254,17 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await page.click('.today-hero .btn.yellow');
   await page.waitForSelector('.inc-row'); await shot('19-increase');
   await page.click('[data-action=confirm]');
+  await page.waitForSelector('[data-action=go]'); await page.waitForTimeout(300); await shot('32-ready');
+  await page.click('[data-action=go]');
   await page.waitForSelector('.w-main'); await page.waitForTimeout(300);
   const tick = async (sec) => { now += sec * 1000; await page.clock.setFixedTime(now); await page.waitForTimeout(260); };
   await tick(4 * 60 + 12); await shot('22-cardio');
-  let restShot = false; let setShot = false;
+  let restShot = false; let setShot = false; let moreShot = false; let plusOne = false;
   for (let i = 0; i < 80 && !(await page.$('.summary')); i++) {
     if (await page.$('[data-action=end-rest]')) {
       await tick(75);
-      if (!restShot && (await page.$('.ring')) && setShot) { await shot('21-rest'); restShot = true; }
+      if (!restShot && (await page.$('.ring')) && setShot && !(await page.$('.more-q'))) { await shot('21-rest'); restShot = true; }
+      if (!moreShot && setShot && (await page.$('[data-action=add-set]')) && (await page.$('.ring'))) { await page.click('[data-action=add-set]'); await page.waitForSelector('[data-action=undo-set]'); await shot('35-more'); moreShot = true; }
       await page.click('[data-action=end-rest]');
     } else {
       await tick(40);
@@ -262,12 +272,13 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
         await shot('20-set'); setShot = true;
         if (await page.$('.w-thumb')) { await page.click('.w-thumb'); await page.waitForSelector('.viewer'); await shot('30-viewer'); await page.click('.viewer-close'); }
         await page.click('.w-edge.r'); await page.waitForSelector('.pv-banner'); await shot('31-preview'); await page.click('[data-action=peek-home]'); await page.waitForSelector('[data-action=done]');
-      }
+      } else if (setShot && !plusOne && (await page.$('[data-stepper=reps]'))) { await page.click('[data-stepper=reps] [data-delta="1"]'); plusOne = true; }
       await (await page.$('[data-action=done]')).click();
     }
     await page.waitForTimeout(120);
   }
   await page.waitForSelector('.summary'); await tick(1); await shot('23-summary');
+  if (await page.$('.diff-card')) { await page.evaluate(() => document.querySelector('.diff-card').scrollIntoView({ block: 'start' })); await page.evaluate(() => window.scrollBy(0, -60)); await page.waitForTimeout(200); await shot('36-diff'); await page.evaluate(() => window.scrollTo(0, 0)); }
   await page.click('[data-action=close]'); await page.waitForTimeout(400);
   await page.evaluate(async () => (await import('/js/sync.js')).syncNow()); await page.waitForTimeout(500);
   await go(`#/history?ex=${ids.bench}`); await shot('24-history');

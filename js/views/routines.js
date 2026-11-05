@@ -7,9 +7,9 @@ import { backLink, stepper, bindSteppers, stepVal, toggle, empty, exTag, segment
 import { openSheet, askConfirm, toast, chooseHowToCreate } from '../ui/dialogs.js';
 import { isWide } from '../shell.js';
 import {
-  routines, exercises, routineMinutes, refreshEstimates, lastDone, whereText, placeOf, machineOf, training, measureLabel, typeLabel, places, sessions,
+  routines, exercises, routineMinutes, refreshEstimates, lastDone, whereText, placeOf, machineOf, training, measureLabel, typeLabel, places, sessions, bodyPrefs,
 } from '../data.js';
-import { plannedAhead, measuresFor, defaultTargets } from '../model.js';
+import { plannedAhead, measuresFor, defaultTargets, setsText, setsOf, setPlan, itemFromRows, variedSets, suggestWeight } from '../model.js';
 import { thumbOf, openViewer } from './pictures.js';
 import { activeInfo, planDays, plans, plansWith, savePlan } from '../plans.js';
 
@@ -21,8 +21,7 @@ function itemPlan(it, ex) {
     const ms = measuresFor(ex, machineOf(ex)).slice(0, 2);
     return ms.map((m) => `${fmtNum(it.targets?.[m.key])}${m.unit ? ` ${m.unit}` : ''}`).join(' · ');
   }
-  const amount = it.seconds ? `${it.seconds} s` : `${it.reps ?? '–'}`;
-  return `${it.sets ?? 1} × ${amount}${ex.type === 'weights' && it.weight ? ` · ${fmtNum(it.weight)} kg` : ''}`;
+  return `${setsText(it, ex.type === 'weights')}${it.failure ? ` · ${t(it.failure === 'last' ? 'failureLastShort' : 'failureShort')}` : ''}`;
 }
 
 export function plannedFor(routineId) {
@@ -158,6 +157,7 @@ export function routineView(id, { pane = false } = {}) {
     </div></div>
     ${items.length ? `<div class="stack tight">${list}</div>` : empty(t('esItemsTitle'), t('esItemsText'), `<a class="btn primary" href="#/routine/${rid}/edit">${esc(t('addExercise'))}</a>`)}
     <button type="button" class="btn wide" data-action="duplicate-to" data-id="${esc(r.id)}">${icon('copy', 18)}${esc(t('duplicateTo'))}</button>
+    ${items.length ? `<a class="btn wide" href="#/try/${rid}">${icon('eye', 18)}${esc(t('tryIt'))}</a>` : ''}
     ${items.length ? `<div class="${pane ? 'pane-cta' : 'sticky-cta'}"><a class="btn yellow big" href="#/start/${rid}">${icon('play', 18)}${esc(t('start'))}</a></div>` : ''}`;
   return { html, bind: bindRoutineActions };
 }
@@ -337,46 +337,102 @@ export function addExerciseToRoutine(routineId, exId) {
   refreshEstimates();
 }
 
-async function editItem(routineId, index) {
+/** The draft of an item being edited, so switching "Serie uguali / diverse" can redraw the sheet. */
+function itemDraft(it) {
+  const rows = Array.from({ length: setsOf(it) }, (_, i) => { const p = setPlan(it, i + 1); return { reps: p.reps ?? 10, weight: p.weight ?? 0 }; });
+  return {
+    shape: variedSets(it) ? 'diff' : 'same', rows, sets: setsOf(it), mode: it.seconds != null ? 'time' : 'reps',
+    reps: it.reps ?? 10, seconds: it.seconds ?? 45, range: Number(it.repsMax) > 0, repsMax: Number(it.repsMax) || (Number(it.reps) || 10) + 4,
+    weight: it.weight ?? 0, rest: it.rest ?? training().rest, failure: it.failure || 'none',
+  };
+}
+
+async function editItem(routineId, index, draft = null) {
   const r = get('routines', routineId);
   const it = r.items[index];
   const ex = get('exercises', it.exerciseId);
+  const d = draft || itemDraft(it);
+  const W = ex.type === 'weights';
+  const kgStep = ex.equipment === 'dumbbell' ? 1 : 2.5;
+  const sug = W ? suggestWeight(ex, bodyPrefs()) : null;
   let body;
   if (ex.type === 'cardio') {
     body = measuresFor(ex, machineOf(ex)).map((m) => stepper({ name: `t_${m.key}`, value: it.targets?.[m.key] ?? 0, step: m.step, min: m.min ?? 0, unit: m.unit, label: measureLabel(m) })).join('');
   } else {
-    const timed = it.seconds != null;
-    body = `${stepper({ name: 'sets', value: it.sets ?? 3, step: 1, min: 1, label: t('sets') })}
-      ${ex.type === 'bodyweight' ? segmented({ name: 'mode', value: timed ? 'time' : 'reps', options: [['reps', t('reps')], ['time', t('seconds')]], label: t('measureBy') }) : ''}
-      <div data-mode="reps" ${timed ? 'hidden' : ''}>${stepper({ name: 'reps', value: it.reps ?? 10, step: 1, min: 1, label: t('reps') })}</div>
-      <div data-mode="time" ${timed ? '' : 'hidden'}>${stepper({ name: 'seconds', value: it.seconds ?? 45, step: 5, min: 5, unit: 's', label: t('seconds') })}</div>
-      ${ex.type === 'weights' ? stepper({ name: 'weight', value: it.weight ?? 0, step: ex.equipment === 'dumbbell' ? 1 : 2.5, min: 0, unit: 'kg', label: t('weight') }) : ''}
-      ${stepper({ name: 'rest', value: it.rest ?? training().rest, step: 15, min: 0, unit: 's', label: t('rest') })}`;
+    const timed = d.mode === 'time';
+    const shape = timed ? 'same' : d.shape;
+    body = `${!timed ? segmented({ name: 'shape', value: shape, options: [['same', t('setsSame')], ['diff', t('setsDiff')]], label: t('setsShape') }) : ''}
+      ${ex.type === 'bodyweight' && shape === 'same' ? segmented({ name: 'mode', value: timed ? 'time' : 'reps', options: [['reps', t('reps')], ['time', t('seconds')]], label: t('measureBy') }) : ''}
+      ${shape === 'same' ? `${stepper({ name: 'sets', value: d.sets, step: 1, min: 1, label: t('sets') })}
+        ${timed ? stepper({ name: 'seconds', value: d.seconds, step: 5, min: 5, unit: 's', label: t('seconds') })
+    : `${stepper({ name: 'reps', value: d.reps, step: 1, min: 1, label: d.range ? t('repsFrom') : t('reps') })}
+          ${toggle({ name: 'range', checked: d.range, label: t('repRange'), hint: t('repRangeHint') })}
+          <div data-range ${d.range ? '' : 'hidden'}>${stepper({ name: 'repsMax', value: d.repsMax, step: 1, min: 1, label: t('repsTo') })}</div>`}
+        ${W ? stepper({ name: 'weight', value: d.weight, step: kgStep, min: 0, unit: 'kg', label: t('weight') }) : ''}`
+    : `<div class="set-rows">${d.rows.map((row, i) => `<div class="set-row-edit"><b>${esc(t('setN', i + 1))}</b>
+          ${stepper({ name: `r${i}`, value: row.reps, step: 1, min: 1, label: t('reps') })}
+          ${W ? stepper({ name: `w${i}`, value: row.weight, step: kgStep, min: 0, unit: 'kg', label: t('weight') }) : ''}
+          ${d.rows.length > 1 ? `<button type="button" class="btn small ghost" data-del-row="${i}">${esc(t('removeSet'))}</button>` : ''}</div>`).join('')}</div>
+        <button type="button" class="btn dashed wide" data-add-row>+ ${esc(t('addSetRow'))}</button>
+        <p class="muted small">${esc(t('setsDiffHint'))}</p>`}
+      ${W && sug ? `<p class="muted small sug-line">${esc(t('sugFor', fmtNum(sug)))}</p>` : ''}
+      ${!timed ? `<label class="field"><span>${esc(t('failure'))}</span><select name="failure">${['none', 'all', 'last'].map((v) => `<option value="${v}" ${d.failure === v ? 'selected' : ''}>${esc(t(`failure_${v}`))}</option>`).join('')}</select></label>` : ''}
+      ${stepper({ name: 'rest', value: d.rest, step: 15, min: 0, unit: 's', label: t('rest') })}`;
   }
   const html = `<h2>${esc(ex.name)}</h2><p class="muted">${esc([typeLabel(ex), whereText(ex)].filter(Boolean).join(' · '))}</p>
     <div class="stack">${body}</div>
     <div class="button-row"><button class="btn primary" value="save">${esc(t('save'))}</button><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>
     <button type="button" class="btn danger-text wide" data-remove>${esc(t('removeFromRoutine'))}</button>`;
+  let again = null;
   await openSheet(html, (form, close) => {
     bindSteppers(form);
-    form.querySelectorAll('[name=mode]').forEach((x) => x.addEventListener('change', () => {
-      const mode = form.querySelector('[name=mode]:checked').value;
-      form.querySelector('[data-mode=reps]').hidden = mode !== 'reps';
-      form.querySelector('[data-mode=time]').hidden = mode !== 'time';
+    // read what's on screen into the draft
+    const read = () => {
+      if (ex.type === 'cardio') return;
+      d.mode = form.querySelector('[name=mode]:checked')?.value || d.mode;
+      if (form.querySelector('[name=sets]')) d.sets = stepVal(form, 'sets') ?? d.sets;
+      if (form.querySelector('[name=reps]')) d.reps = stepVal(form, 'reps') ?? d.reps;
+      if (form.querySelector('[name=seconds]')) d.seconds = stepVal(form, 'seconds') ?? d.seconds;
+      if (form.querySelector('[name=repsMax]')) d.repsMax = stepVal(form, 'repsMax') ?? d.repsMax;
+      if (form.querySelector('[name=range]')) d.range = form.querySelector('[name=range]').checked;
+      if (form.querySelector('[name=weight]')) d.weight = stepVal(form, 'weight') ?? d.weight;
+      if (form.querySelector('[name=failure]')) d.failure = form.failure.value;
+      d.rest = stepVal(form, 'rest') ?? d.rest;
+      d.rows = d.rows.map((row, i) => ({ reps: form.querySelector(`[name=r${i}]`) ? stepVal(form, `r${i}`) ?? row.reps : row.reps, weight: form.querySelector(`[name=w${i}]`) ? stepVal(form, `w${i}`) ?? row.weight : row.weight }));
+    };
+    const redraw = () => { read(); again = d; close(null); };
+    form.querySelectorAll('[name=shape]').forEach((x) => x.addEventListener('change', () => {
+      read();
+      d.shape = x.value;
+      // the rows start from the equal sets, and back
+      if (d.shape === 'diff' && !variedSets(it) && (!draft || d.rows.length !== d.sets)) d.rows = Array.from({ length: d.sets }, () => ({ reps: d.reps, weight: d.weight }));
+      if (d.shape === 'same') { d.sets = d.rows.length; d.reps = d.rows[0].reps; d.weight = d.rows[0].weight; }
+      again = d; close(null);
     }));
+    form.querySelectorAll('[name=mode]').forEach((x) => x.addEventListener('change', redraw));
+    form.querySelector('[name=range]')?.addEventListener('change', () => { form.querySelector('[data-range]').hidden = !form.querySelector('[name=range]').checked; });
+    form.querySelector('[data-add-row]')?.addEventListener('click', () => { read(); const l = d.rows[d.rows.length - 1]; d.rows.push({ ...l }); again = d; close(null); });
+    form.querySelectorAll('[data-del-row]').forEach((b) => b.addEventListener('click', () => { read(); d.rows.splice(Number(b.dataset.delRow), 1); again = d; close(null); }));
     form.querySelector('[value=save]').addEventListener('click', () => {
+      read();
       const cur = get('routines', routineId);
       const items = [...cur.items];
-      const next = { ...items[index] };
+      let next = { ...items[index] };
       if (ex.type === 'cardio') {
         next.targets = {};
         for (const m of measuresFor(ex, machineOf(ex))) next.targets[m.key] = stepVal(form, `t_${m.key}`) ?? 0;
       } else {
-        next.sets = stepVal(form, 'sets') ?? 1;
-        const mode = form.querySelector('[name=mode]:checked')?.value || 'reps';
-        if (mode === 'time') { next.seconds = stepVal(form, 'seconds'); delete next.reps; } else { next.reps = stepVal(form, 'reps'); delete next.seconds; }
-        if (ex.type === 'weights') next.weight = stepVal(form, 'weight') ?? 0;
-        next.rest = stepVal(form, 'rest') ?? 0;
+        delete next.repsMax; delete next.failure;
+        if (d.mode === 'time') {
+          next = itemFromRows(next, Array.from({ length: d.sets }, () => ({ seconds: d.seconds, ...(W ? { weight: d.weight } : {}) })));
+        } else if (d.shape === 'diff') {
+          next = itemFromRows(next, d.rows.map((row) => ({ reps: row.reps, ...(W ? { weight: row.weight } : {}) })));
+        } else {
+          next = itemFromRows(next, Array.from({ length: d.sets }, () => ({ reps: d.reps, ...(W ? { weight: d.weight } : {}) })));
+          if (d.range && d.repsMax > d.reps) next.repsMax = d.repsMax;
+        }
+        if (d.mode !== 'time' && d.failure !== 'none') next.failure = d.failure;
+        next.rest = d.rest ?? 0;
       }
       items[index] = next;
       upsert('routines', { ...cur, items });
@@ -391,6 +447,8 @@ async function editItem(routineId, index) {
       close(true);
     });
   });
+  if (again) return editItem(routineId, index, again);
+  return null;
 }
 
 export { minText };

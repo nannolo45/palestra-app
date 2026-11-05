@@ -3,7 +3,7 @@
 import { state, get, live, pref, setPref, upsert } from './store.js';
 import { routineMinutes } from './data.js';
 import { machineOf } from './data.js';
-import { measuresFor } from './model.js';
+import { measuresFor, setsImportText } from './model.js';
 
 const DAY = 86400000;
 
@@ -159,8 +159,7 @@ export function planToText(plan) {
         for (const m of ms) if (m.key !== 'duration' && it.targets?.[m.key] != null && MEASURE_TXT[m.key]) line += ` ${MEASURE_TXT[m.key](it.targets[m.key])}`;
       } else {
         if (ex.type === 'weights' && ex.equipment) line += ` (${EQ_TXT[ex.equipment]})`;
-        line += it.seconds ? ` ${it.sets}x${it.seconds}s` : ` ${it.sets}x${it.reps}`;
-        if (it.weight) line += ` ${String(it.weight).replace('.', ',')} kg`;
+        line += ` ${setsImportText(it, ex.type === 'weights')}`;
         if (it.rest != null) line += ` rec ${restText(it.rest)}`;
       }
       lines.push(line);

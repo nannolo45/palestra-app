@@ -7,7 +7,7 @@ import { icon } from '../ui/icons.js';
 import { backLink, segmented, toggle } from '../ui/parts.js';
 import { toast } from '../ui/dialogs.js';
 import { parseImport, planImport, runImport } from '../importer.js';
-import { estMinutes } from '../model.js';
+import { estMinutes, setsText } from '../model.js';
 import { training, refreshEstimates } from '../data.js';
 import { activeInfo, activate, isoDate, nextMonday, savePlan } from '../plans.js';
 
@@ -27,7 +27,7 @@ const HELP = () => (getLang() === 'en' ? [
 
 function itemText(it, ex) {
   if (ex.type === 'cardio') return [`${fmtNum(it.targets?.duration)} min`, it.targets?.speed != null ? `${fmtNum(it.targets.speed)} km/h` : '', it.targets?.level != null ? `${t('m_level').toLowerCase()} ${it.targets.level}` : ''].filter(Boolean).join(' · ');
-  return `${it.sets} × ${it.seconds != null ? `${it.seconds} s` : it.reps}${it.weight ? ` · ${fmtNum(it.weight)} kg` : ''}`;
+  return `${setsText(it, ex.type === 'weights')}${it.failure ? ` · ${t(it.failure === 'last' ? 'failureLastShort' : 'failureShort')}` : ''}`;
 }
 
 function preview() {
@@ -45,12 +45,12 @@ function preview() {
       const issue = it._line && byLine.get(it._line);
       const status = issue ? 'q' : plan.map.get(ex.id) ? 'ok' : 'new';
       const tag = { ok: t('tagYours'), new: t('tagNew'), q: t('tagCheck') }[status];
-      return `<div class="imp-row"><span class="row-text"><span class="row-title">${esc(ex.name)}</span>${issue ? `<span class="imp-issue">${esc(t('notUnderstood', issue.detail || ''))}</span>` : ''}</span>
+      return `<div class="imp-row"><span class="row-text"><span class="row-title">${esc(ex.name)}</span>${issue ? `<span class="imp-issue">${esc(issue.reason === 'perSetMismatch' ? t('issue_perSetMismatch', issue.detail) : t('notUnderstood', issue.detail || ''))}</span>` : ''}</span>
         <span class="muted small nowrap">${esc(itemText(it, ex))}</span><span class="imp-tag ${status}">${esc(tag)}</span></div>`;
     }).join('');
     return `<section class="card imp-day"><div class="imp-head"><b>${esc(`${i + 1} · ${plan.routines[i].finalName}`)}</b><span class="muted small">${mins} min</span></div>${rows}</section>`;
   }).join('');
-  const lost = issues.filter((x) => x.reason !== 'leftover');
+  const lost = issues.filter((x) => x.reason !== 'leftover' && x.reason !== 'perSetMismatch');
   const counts = t('importCounts', data.routines.length, data.exercises.length, reusedCount, data.exercises.length - reusedCount, issues.length);
   const a = activeInfo();
   return `<header class="bar"><button type="button" class="back plain" data-action="back-edit">${icon('back', 20)}<span>${esc(t('importShort'))}</span></button></header>

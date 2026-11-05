@@ -254,6 +254,12 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
 
   console.log('Workout from an Everyday block');
   await page.evaluate(() => { location.hash = location.hash.replace('#/routine/', '#/start/') + '?block=blk-1'; });
+  // Pronto?: the whole scheda first, the clock starts with Inizia
+  await page.waitForSelector('[data-action=go]');
+  check((await page.textContent('.w-head-mid')).includes('Pronto?') && (await page.$$('.ov-row')).length === 3, 'Pronto?: the scheda in order before starting');
+  check((await page.textContent('.ov-first')).includes('Tapis roulant'), 'the first exercise in large');
+  await shot('p6-ready', { fullPage: true });
+  await page.click('[data-action=go]');
   await page.waitForSelector('.w-ex', { timeout: 4000 }).catch(async () => { await shot('debug-start'); console.log(page.url(), errors); });
   check((await page.textContent('.w-ex')) === 'Tapis roulant', 'starts with cardio');
   const livePref = () => page.evaluate(async () => (await import('/js/store.js')).pref('live', 'unset'));
@@ -326,6 +332,18 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   { const v = await livePref(); check(v.pausedAt === null && Math.abs(v.pausedMs - 120000) < 1000, `live: resumed, pause counted (${v.pausedMs})`); }
   await page.click('[data-action=end-rest]');
   await page.click('[data-action=done]');
+  // the last set of the leg press: one more set?
+  check(Boolean(await page.waitForSelector('.more-q', { timeout: 3000 }).catch(() => null)), 'after the last set: "Ne fai un\'altra?"');
+  await page.click('[data-action=add-set]');
+  await page.waitForSelector('[data-action=undo-set]');
+  check((await page.textContent('.w-card.next')).includes('Serie 3 di 3 · in più'), 'the extra set comes next');
+  await shot('p7-more');
+  await page.click('[data-action=end-rest]');
+  await page.waitForSelector('.w-setline .w-tag');
+  await page.click('[data-stepper=reps] [data-delta="1"]');
+  check((await page.textContent('[data-extra]')).includes('una in più'), 'one more rep than the scheda');
+  await page.clock.runFor(35 * 1000);
+  await page.click('[data-action=done]');
   await page.click('[data-action=end-rest]');
   // plank: 3 sets
   for (let i = 0; i < 3; i++) {
@@ -333,10 +351,30 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
     await page.click('[data-action=done]');
     if (i < 2) await page.click('[data-action=end-rest]');
   }
+  // the very end: add an exercise, then finish
+  await page.waitForSelector('.more-q');
+  check((await page.textContent('.w-main')).includes('Finito?'), 'after the last set: Finito?');
+  await page.click('[data-action=add-ex]');
+  await page.click('#modal .pick:has-text("Plank")');
+  await page.waitForSelector('.w-card.next');
+  check((await page.textContent('.w-card.next')).includes('aggiunto'), 'the added exercise comes next');
+  await page.click('[data-action=end-rest]');
+  await page.waitForSelector('.w-ex .w-tag.add');
+  await page.clock.runFor(45 * 1000);
+  await page.click('[data-action=done]');
+  await page.waitForSelector('.more-q');
+  await page.click('[data-action=end-rest]');
   await page.waitForSelector('.summary');
+  check((await page.$$('.diff-card')).length === 2, `the summary lists what was different (${(await page.$$('.diff-card')).length})`);
+  const d1 = await page.textContent('.diff-card');
+  check(d1.includes('in più') && d1.includes('10/10/11 × 100 kg'), `leg press: the extra set and rep, and what the scheda becomes (${d1.replace(/\s+/g, ' ')})`);
+  check((await page.textContent('.diff-card >> nth=1')).includes('Entra nella scheda dopo Plank'), 'the added exercise goes in after Plank');
   await shot('13-summary', { fullPage: true });
   check((await page.textContent('.summary')).includes('tutte le serie'), 'session complete');
-  await page.click('[data-action=close]');
+  await page.click('[data-action=save-diff]');
+  await page.waitForTimeout(200);
+  { const r = await page.evaluate(async () => { const { live } = await import('/js/store.js'); return live('routines').find((x) => x.name === 'Gambe'); });
+    check(r.items.length === 4 && r.items[1].perSet && r.items[1].perSet.map((x) => x.reps).join('/') === '10/10/11' && r.items[3].sets === 1 && r.items[3].exerciseId === r.items[2].exerciseId, `the scheda updated from the summary (${JSON.stringify(r.items.map((x) => [x.sets, x.reps, x.perSet ? 'perSet' : '']))})`); }
   await page.waitForSelector('.chart');
   await page.clock.runFor(5000);
   await page.waitForTimeout(300);
@@ -383,6 +421,8 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   const incText = await page.textContent('.w-card.list');
   check(incText.includes('100') && incText.includes('102,5'), 'leg press 100 → 102,5 proposed');
   await page.click('[data-action=confirm]');
+  await page.waitForSelector('[data-action=go]');
+  await page.click('[data-action=go]');
   await page.waitForSelector('.w-ex');
   await page.click('[data-action=end]');
   await page.click('#confirm [data-confirm=ok]');
@@ -407,6 +447,81 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(days.join('|') === 'A · Spinta|B · Tirata|C · Gambe', 'home shows the active plan\'s days');
   const mins = await page.$$eval('.day-home .row-sub', (els) => els.map((e) => Number(e.textContent.match(/(\d+) min/)[1])));
   check(mins.every((m) => m >= 85 && m <= 120), `days last 85–120 min (${mins.join(', ')})`);
+
+  console.log('v24: sets that differ, rep ranges, the trial, Pronto?, the starting weight');
+  await go('#/import?for=routine');
+  await page.fill('#imp-text', 'SCHEDA: Piramide\nCurl con bilanciere 8/6/4 x 10/12/14\nChest press 3x8-12 cedimento rec 2:00\nSquat 8/6 x 60/70/80');
+  await page.click('[data-action=read]');
+  await page.waitForSelector('.imp-day');
+  const prev24 = await page.textContent('.imp-day');
+  check(prev24.includes('8/6/4 × 10/12/14 kg') && prev24.includes('3 × 8–12') && prev24.includes('a cedimento'), `import: sets that differ and a rep range to failure (${prev24.replace(/\s+/g, ' ')})`);
+  check(prev24.includes('Ripetizioni e pesi per serie non sono tanti quanti'), 'import: 2 reps and 3 weights flagged');
+  await shot('p8-import-sets', { fullPage: true });
+  await page.click('[data-action=do-import]');
+  await page.waitForTimeout(300);
+  const pid = await page.evaluate(async () => { const { live } = await import('/js/store.js'); return live('routines').find((r) => r.name === 'Piramide').id; });
+  // the editor: Serie diverse, one more row
+  await go(`#/routine/${pid}/edit`);
+  await page.click('[data-edit-item="0"]');
+  await page.waitForSelector('#modal [name=shape]');
+  check(await page.isChecked('#modal [name=shape][value=diff]') && (await page.$$('#modal .set-row-edit')).length === 3, 'editor: Serie diverse with three rows');
+  await shot('p9-sets-editor', { fullPage: true });
+  await page.click('#modal [data-add-row]');
+  await page.waitForSelector('#modal .set-row-edit >> nth=3');
+  await page.click('#modal [value=save]');
+  await page.waitForTimeout(200);
+  { const it = await page.evaluate(async (id) => { const { get } = await import('/js/store.js'); return get('routines', id).items[0]; }, pid);
+    check(it.perSet && it.perSet.length === 4 && it.sets === 4, `editor: a fourth set (${JSON.stringify(it)})`); }
+  // the trial: the real screens, still, nothing saved
+  const nSess = await page.evaluate(async () => (await import('/js/store.js')).live('sessions').length);
+  await go(`#/routine/${pid}`);
+  await page.click(`a[href="#/try/${pid}"]`);
+  await page.waitForSelector('.trial-strip');
+  check((await page.textContent('[data-live=elapsed]')).includes('—:—'), 'trial: no clock');
+  check((await page.$$('.w-planline span')).length === 4, 'trial: the row of sets that differ');
+  await shot('p10-trial');
+  await page.click('[data-action=done]');
+  await page.waitForSelector('[data-action=end-rest]');
+  check((await page.textContent('.w-main')).includes('il recupero non scorre'), 'trial: the rest stands still');
+  await page.click('[data-action=end-rest]');
+  await page.waitForSelector('[data-stepper=reps]');
+  check((await page.inputValue('[data-stepper=reps] input')) === '6' && (await page.inputValue('[data-stepper=weight] input')) === '12', 'set 2 starts from its own numbers, not the set before');
+  for (let i = 0; i < 3; i++) { await page.click('[data-action=skip-set]'); await page.waitForTimeout(80); }
+  await page.waitForSelector('.fail-tag');
+  check((await page.textContent('.w-goal')).includes('Obiettivo 8–12'), 'to failure: the range shown');
+  await shot('p11-failure');
+  await page.click('[data-action=exit-trial]');
+  await page.waitForSelector('.title');
+  check((await page.evaluate(async () => (await import('/js/store.js')).live('sessions').length)) === nSess && !(await page.evaluate(async () => (await import('/js/store.js')).kvGet('active'))), 'trial: no session, nothing in progress');
+  // your body: a starting weight
+  await go('#/settings/body');
+  await page.fill('[name=kg]', '75'); await page.dispatchEvent('[name=kg]', 'change');
+  await page.fill('[name=cm]', '178'); await page.dispatchEvent('[name=cm]', 'change');
+  await page.waitForSelector('.kv-list .kv');
+  check((await page.textContent('.kv-list')).includes('Chest press'), 'Il tuo corpo: starting weights listed');
+  await shot('p12-body', { fullPage: true });
+  // countdown before starting, and the suggestion in the set
+  await go('#/settings/training');
+  await page.click('.seg-opt:has(input[name=start][value=countdown])');
+  await page.waitForTimeout(150);
+  await go(`#/start/${pid}`);
+  await page.waitForTimeout(300);
+  if (await page.$('.inc-row')) await page.click('[data-action=skip]');
+  await page.waitForSelector('[data-live=countdown]');
+  await shot('p13-countdown');
+  { const t0 = await page.evaluate(() => Date.now()); await page.clock.setFixedTime(t0 + 16 * 1000); await page.clock.runFor(1000); }
+  await page.waitForSelector('.w-ex');
+  check((await page.textContent('.w-ex')).startsWith('Curl con bilanciere'), 'the countdown starts it on its own');
+  for (let i = 0; i < 4; i++) { await page.click('[data-action=skip-set]'); await page.waitForTimeout(80); }
+  await page.waitForSelector('.sug-chip');
+  await page.click('[data-action=use-sug]');
+  check(Number((await page.inputValue('[data-stepper=weight] input')).replace(',', '.')) > 0, 'Usa puts the suggested weight in');
+  await page.click('[data-action=end]');
+  await page.click('#confirm [data-confirm=ok]');
+  await page.waitForTimeout(300);
+  await go('#/settings/training');
+  await page.click('.seg-opt:has(input[name=start][value=overview])');
+  await page.waitForTimeout(150);
 
   console.log('Compact exercise list');
   await go('#/exercises');
@@ -593,7 +708,10 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await go(`#/start/${ids.r}`);
   await page.waitForTimeout(300);
   if (await page.$('.inc-row')) { await overflowAt('weekly increase'); await page.click('[data-action=skip]'); }
-  await page.waitForSelector('.w-main');
+  await page.waitForSelector('[data-action=go]');
+  await overflowAt('Pronto?');
+  await page.click('[data-action=go]');
+  await page.waitForSelector('.w-main .w-ex');
   await overflowAt('workout: first step');
   await shot('narrow-workout');
   await page.clock.runFor(500); // let the page's frames run before clicking below the fold

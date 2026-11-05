@@ -97,7 +97,11 @@ The first page tells you what's on today. At the top is the day's routine, with 
 
 ### Start today's routine
 
-Tap *Start*. The workout opens full screen: [During the workout](#during-the-workout) explains what you see.
+Tap *Start*. Before the real workout there's **Ready?**: how long it takes, how many sets and zones, the first exercise large with its picture, and the whole routine in order with the changes of zone. The clock starts only when you tap *Start*. Then the workout opens full screen: [During the workout](#during-the-workout) explains what you see.
+
+Rather have it start on its own? In *Settings → Training → Before starting* choose **Countdown**: 15 seconds (or as many as you like) to get to the first machine, with *+15 s* and *Start now*.
+
+![Ready?: the whole routine before starting](guide/en/32-ready.webp)
 
 ### Move to tomorrow
 
@@ -159,10 +163,21 @@ Tap *Edit*.
 | *Automatic increase* | Whether Palestra offers to raise your weights each week |
 | Order | Drag by the handle; *Sort by walking route* follows your way round the gym |
 | An exercise | Tap it: sets, reps or seconds, weight, rest, or *Remove from routine* |
+| *Equal sets / Different sets* | With *different* each set has its own reps and weight (pyramids, drop sets, a warm-up); *Another set* adds one |
+| *Rep range* | E.g. 8–12 instead of a fixed number: the weight goes up when you reach 12 in every set |
+| *To failure* | Every set or only the last, until you can't do another clean rep |
 | *Add exercise* | Pick it from the list, or make a new one |
 | *Import* | Adds exercises written as text |
 
 ![Add exercise: the list, with each one's machine](guide/en/13-add-exercise.webp)
+
+![Different sets: each set with its own reps and weight](guide/en/34-sets-editor.webp)
+
+### Try it out
+
+On a routine's page, **Try it out** opens the same screens as the real workout, standing still: a yellow strip says *Trial · nothing is saved*, the clock shows "—:—", the rest doesn't count down (*Next* to move on). *Done* goes to the next set, the edges jump from one exercise to another. No session, no increases, nothing sent to Everyday. *Exit* takes you back to the routine.
+
+![Try it out: the real workout, standing still](guide/en/33-try.webp)
 
 ### Duplicate into another workout
 
@@ -226,6 +241,25 @@ You see the exercise, the set (2 of 4), reps and kg, the machine and its zone, a
 
 **What the weight means.** With dumbbells the number is *per dumbbell* (what's written on it), with the sum underneath: "Take 2 dumbbells of 15 kg · 30 kg in all". With a barbell it's the total with the 20 kg bar, with the plates per side underneath. For an exercise that's different (one dumbbell, or a barbell counted per side) change it on the exercise's page, under *Equipment*: *The weight is* and *Dumbbells*.
 
+**Sets that differ.** If the routine has different sets (e.g. 8 × 10, 6 × 12, 4 × 14 kg), a row under the title shows them all: done, now and to come. Each set starts from its own numbers.
+
+**To failure.** A yellow *To failure* label above the reps, and the goal underneath (e.g. *Goal 8–12*) with last time's reps. The reps start from what you did last time in that set: adjust them with − and + at the end of the set.
+
+**A starting weight.** If an exercise has no weight yet and you've filled in *Settings → Your body*, the set suggests *To start with: … kg* with **Use**. It's only a guide, on the prudent side: if the reps come easily, go up.
+
+**One more rep.** Press + beyond the routine: "one more than the routine" shows next to the number. What you did is saved; at the end you decide whether to keep it in the routine.
+
+### One more set or exercise
+
+In the rest after the **last** set of an exercise, Palestra asks: *…: sets done. One more?*
+
+- **+ Another set**: comes right away, marked *extra*, with the numbers of the set you just did. *Remove* if you change your mind.
+- **+ An exercise**: pick one of yours; it comes right away, marked *added*, with one set from last time's numbers. When it's done, the same question.
+
+After the workout's last set the question stays, with **Finish the workout** underneath.
+
+![Another set: it comes right away, marked extra](guide/en/35-more.webp)
+
 ### Looking at the exercises before and after
 
 Tap the left or right edge of the screen (or swipe) to see the exercise before or after. It's clear you're only looking: *Preview* at the top, a dashed box saying where you really are, the rest in grey, and *Back to exercise …* instead of *Done*. In the bar at the top, the segment you're looking at has an outline; the yellow one stays where you are.
@@ -257,11 +291,32 @@ For cardio you see the time left and the targets, which you can change with − 
 
 ![Finished: the session summary](guide/en/23-summary.webp)
 
+### Different from the routine
+
+If you did anything differently from the routine, the summary shows it exercise by exercise, set by set: what the routine said, what you did, and a tag for each difference (*+1 reps*, *−2,5 kg*, *extra*, *skipped*, *new*). For each one you choose:
+
+| Choice | The routine |
+|---|---|
+| *Just today* | Doesn't change |
+| *As I did it* | Takes today's numbers, set by set |
+| *All …* | Every set like the best one (if one went better) or like the last (if you dropped) |
+| *Add to the routine* | An added exercise goes in where you did it |
+
+When it opens, *As I did it* is already picked when you did more, *Just today* when you did less or skipped: a bad day doesn't lower the routine by mistake. *All as I did it* and *None, just today* apply to all. Under each choice a line says exactly what the routine becomes; then **Update the routine**.
+
+![Different from the routine: set by set, and what the routine becomes](guide/en/36-diff.webp)
+
 ### Automatic increase, in Settings
 
 In *Settings → Automatic increase* choose when (*If complete*: only if you did every set last time; *Always*) and by how much per type: machines +2.5 kg, dumbbells +1, bodyweight +1 rep, cardio +1 minute. On an exercise's page you can give it its own step or leave it out.
 
 ![Automatic increase: when, and by how much per type](guide/en/27-increase-settings.webp)
+
+### Your body, for suggested weights
+
+In *Settings → Your body* enter your weight, height, sex and experience (all optional). They're only used to suggest a starting weight when an exercise doesn't have one yet: your weight times a prudent ratio per exercise, adjusted for experience and sex; height moves it a little. Below you see your exercises' starting weights. On machines it's really only a guide: they differ from gym to gym.
+
+![Your body: the starting weights](guide/en/37-body.webp)
 
 ## History
 
@@ -284,10 +339,18 @@ Next to *New workout*, *New routine* and *Add exercise* there's *Import*. Paste 
 | `WORKOUT: Marco's upper lower` | The week's name (optional) |
 | `ROUTINE: Upper @ mon 18:00` | Starts a routine; after `@` an optional day and time |
 | `Bench press 4x8 60 kg rest 2:30` | An exercise: sets x reps, weight and rest optional |
+| `Barbell curl 8/6/4 x 10/12/14` | Different sets: 8 × 10, 6 × 12, 4 × 14 kg |
+| `Barbell curl 3x8 10/12/14 kg` | Same reps, rising weight |
+| `Leg press 12/10/8 x 100` | Same weight, falling reps |
+| `Chest press 3x8-12 rest 2:00` | A rep range: the weight goes up when you reach 12 in every set |
+| `Chest press 3x8-12 to failure` | Every set to failure (Italian: `cedimento`) |
+| `Barbell row 3x8-12 last to failure` | Only the last set to failure (Italian: `ultima a cedimento`) |
 | `Plank 3x45s` | A timed exercise |
 | `Elliptical 10 min level 6` | Cardio, with its targets |
 | `(dumbbells)` | The equipment, if you like: (barbell), (dumbbells), (cables), (machine) |
 | `- Elbows slightly bent.` | A note for the exercise above |
+
+With slashes, the number of sets is how many values sit between the slashes. If reps and weights both use slashes they must be the same number: if not, the preview flags the line and uses the first weight for all. *Export* writes routines in the same format.
 
 Older files, with `PLAN:` for the week and `DAY:` for the routines, still read.
 

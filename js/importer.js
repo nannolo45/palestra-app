@@ -75,8 +75,21 @@ export function parseLine(line) {
     if (/corpo libero|bodyweight/i.test(w)) out.body = true;
   });
   take(/\b(rec|recupero|riposo|rest)\.?\s*:?\s*(\d+:\d{2}|\d+(?:[.,]\d+)?\s*(?:min|m|'|s|sec|")?)(?=\s)/i, (m) => { out.rest = restSeconds(m[2]); });
-  take(/\s(\d+)\s*[x×]\s*(\d+)\s*(s|sec|secondi|"|'')(?=\s)/i, (m) => { out.sets = Number(m[1]); out.seconds = Number(m[2]); });
+  // to failure: "ultima a cedimento" (the last set only) or "cedimento" (every set)
+  take(/\b(ultima\s+(serie\s+)?a\s+cedimento|last\s+(set\s+)?to\s+failure)\b/i, () => { out.failure = 'last'; });
+  if (!out.failure) take(/\b((a|fino\s+a(l)?)\s+)?cedimento\b|\b(to\s+)?failure\b/i, () => { out.failure = 'all'; });
+  // sets that differ: "8/6/4 x 10/12/14", "12/10/8 x 100", reps with slashes and the weight(s) after the x
+  take(/\s(\d+(?:\/\d+)+)\s*[x×]\s*(\d+(?:[.,]\d+)?(?:\/\d+(?:[.,]\d+)?)*)\s*(kg)?(?=\s)/i, (m) => {
+    out.repsList = m[1].split('/').map(Number);
+    out.weightList = m[2].split('/').map((x) => Number(x.replace(',', '.')));
+    out.sets = out.repsList.length;
+  });
+  // a rep range: "3x8-12"
+  if (out.sets == null) take(/\s(\d+)\s*[x×]\s*(\d+)\s*[-–]\s*(\d+)(?=\s)/i, (m) => { out.sets = Number(m[1]); out.reps = Number(m[2]); out.repsMax = Number(m[3]); });
+  if (out.sets == null) take(/\s(\d+)\s*[x×]\s*(\d+)\s*(s|sec|secondi|"|'')(?=\s)/i, (m) => { out.sets = Number(m[1]); out.seconds = Number(m[2]); });
   if (out.sets == null) take(/\s(\d+)\s*[x×]\s*(\d+)(?=\s)/i, (m) => { out.sets = Number(m[1]); out.reps = Number(m[2]); });
+  // the weight: "60 kg", or one per set: "10/12/14 kg"
+  if (!out.weightList) take(/\s(\d+(?:[.,]\d+)?(?:\/\d+(?:[.,]\d+)?)+)\s*kg(?=\s)/i, (m) => { out.weightList = m[1].split('/').map((x) => Number(x.replace(',', '.'))); });
   take(/\s(\d+(?:[.,]\d+)?)\s*kg(?=\s)/i, (m) => { out.weight = Number(m[1].replace(',', '.')); });
   take(/\s(\d+(?:[.,]\d+)?)\s*km\/h(?=\s)/i, (m) => { out.targets.speed = Number(m[1].replace(',', '.')); });
   take(/\b(pendenza|incline|inclinazione)\s*(\d+(?:[.,]\d+)?)\s*%?(?=\s)/i, (m) => { out.targets.incline = Number(m[2].replace(',', '.')); });
@@ -170,6 +183,17 @@ export function parseText(text) {
       if (p.seconds != null) item.seconds = p.seconds; else item.reps = p.reps;
       if (p.weight != null) item.weight = p.weight;
       if (p.rest != null) item.rest = p.rest;
+      if (p.repsMax) item.repsMax = p.repsMax;
+      if (p.failure) item.failure = p.failure;
+      if (p.repsList || p.weightList) {
+        const nSets = p.repsList ? p.repsList.length : p.sets;
+        let w = p.weightList || [];
+        if (w.length > 1 && w.length !== nSets) { issues.push({ line: i + 1, text: line, reason: 'perSetMismatch', detail: `${nSets} / ${w.length}` }); w = [w[0]]; }
+        const rows = Array.from({ length: nSets }, (_, k) => ({ reps: p.repsList ? p.repsList[k] : p.reps, ...(w.length ? { weight: w.length > 1 ? w[k] : w[0] } : {}) }));
+        item.sets = nSets; item.reps = rows[0].reps;
+        if (w.length) item.weight = rows[0].weight;
+        if (rows.some((r) => r.reps !== rows[0].reps || r.weight !== rows[0].weight)) item.perSet = rows;
+      }
     }
     item._line = i + 1;
     routine.items.push(item);
@@ -244,6 +268,12 @@ export function runImport(data, { asPlan = true } = {}) {
         if (it.seconds != null) out.seconds = n(it.seconds); else out.reps = n(it.reps) ?? 10;
         if (it.weight != null) out.weight = n(it.weight);
         out.rest = n(it.rest) ?? 90;
+        if (Number(it.repsMax) > 0) out.repsMax = n(it.repsMax);
+        if (it.failure === 'all' || it.failure === 'last') out.failure = it.failure;
+        if (Array.isArray(it.perSet) && it.perSet.length) {
+          out.perSet = it.perSet.map((x) => ({ ...(x.seconds != null ? { seconds: n(x.seconds) } : { reps: n(x.reps) ?? out.reps }), ...(x.weight != null ? { weight: n(x.weight) } : {}) }));
+          out.sets = out.perSet.length;
+        }
       }
       return out;
     });

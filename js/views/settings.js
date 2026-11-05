@@ -7,14 +7,14 @@ import { backLink, stepper, bindSteppers, stepVal, toggle, segmented, bold } fro
 import { askConfirm, toast } from '../ui/dialogs.js';
 import { syncStatus } from '../shell.js';
 import { syncNow, isSyncing, isConfigured, testConnection, clearFileCache, CONTRACT } from '../sync.js';
-import { training, increaseSettings, refreshEstimates } from '../data.js';
-import { INCREASE_STEP, plannedAhead } from '../model.js';
+import { training, increaseSettings, refreshEstimates, bodyPrefs, exercises } from '../data.js';
+import { INCREASE_STEP, plannedAhead, suggestWeight } from '../model.js';
 import { activeInfo } from '../plans.js';
 
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
 import { themeChoice, applyTheme } from '../theme.js';
 
-export const APP_VERSION = 'v23';
+export const APP_VERSION = 'v24';
 const VERSION = APP_VERSION;
 
 function statusCard() {
@@ -53,6 +53,7 @@ export function settingsView(sub, sub2) {
       ['#/plans', 'calendar', t('plansTitle'), activeInfo() ? t('activeIs', activeInfo().plan.name) : t('noActivePlanShort')],
       ['increase', 'trend', t('set_increase'), `${inc.when === 'always' ? t('whenAlways') : t('whenDone')} · ${t('cat_machine').toLowerCase()} +${fmtNum(inc.steps.machine)} kg`],
       ['training', 'timer', t('set_training'), [t('restBetweenSetsShort', tr.rest), tr.vibrate ? t('vibration') : '', tr.wake ? t('screenOn') : ''].filter(Boolean).join(' · ')],
+      ['body', 'user', t('set_body'), bodyPrefs() ? t('bodySub', fmtNum(bodyPrefs().kg), bodyPrefs().cm ? fmtNum(bodyPrefs().cm) : '–') : t('bodyNone')],
       ['gym', 'pin', t('set_gym'), [pref('gymName', '') || t('yourGym'), 'kg, km/h'].join(' · ')],
     ]],
     [t('grpApp'), [
@@ -166,15 +167,49 @@ const SUB = {
         ${stepper({ name: 'rest', value: tr.rest, step: 15, min: 0, unit: 's', label: t('restBetweenSets') })}
         ${stepper({ name: 'between', value: tr.between, step: 15, min: 0, unit: 's', label: t('restBetweenExercises') })}
       </div>
+      <div class="field-head">${esc(t('beforeStart'))}</div>
+      ${segmented({ name: 'start', value: tr.start === 'countdown' ? 'countdown' : 'overview', options: [['overview', t('startOverview')], ['countdown', t('startCountdown')]], label: t('beforeStart') })}
+      <div class="card" data-cd ${tr.start === 'countdown' ? '' : 'hidden'}>${stepper({ name: 'countdown', value: tr.countdown ?? 15, step: 5, min: 5, unit: 's', label: t('countdownSecs') })}</div>
+      <p class="muted small">${esc(t('beforeStartHint'))}</p>
       <div class="card">${toggle({ name: 'vibrate', checked: tr.vibrate, label: t('vibrateAtEnd') })}${toggle({ name: 'sound', checked: tr.sound, label: t('soundAtEnd') })}${toggle({ name: 'wake', checked: tr.wake, label: t('keepScreenOn'), hint: t('keepScreenOnHint') })}</div>
       <p class="muted small">${esc(t('trainingHint'))}</p>
     </form>`;
     return page(t('set_training'), body, (view) => {
       const form = view.querySelector('[data-form=tr]');
-      const save = () => { setPref('training', { rest: stepVal(form, 'rest') ?? 90, between: stepVal(form, 'between') ?? 120, vibrate: form.vibrate.checked, sound: form.sound.checked, wake: form.wake.checked }); refreshEstimates(); };
+      const save = () => {
+        const start = form.querySelector('[name=start]:checked')?.value || 'overview';
+        form.querySelector('[data-cd]').hidden = start !== 'countdown';
+        setPref('training', { rest: stepVal(form, 'rest') ?? 90, between: stepVal(form, 'between') ?? 120, vibrate: form.vibrate.checked, sound: form.sound.checked, wake: form.wake.checked, start, countdown: stepVal(form, 'countdown') ?? 15 });
+        refreshEstimates();
+      };
       bindSteppers(form, save);
+      form.querySelectorAll('[name=start]').forEach((x) => x.addEventListener('change', save));
       form.querySelectorAll('input[type=checkbox]').forEach((x) => x.addEventListener('change', save));
     });
+  },
+
+  /** Il tuo corpo: for a starting weight when an exercise has none yet. */
+  body() {
+    const b = pref('body', null) || {};
+    const ex = exercises().filter((e) => e.type === 'weights');
+    const sugs = bodyPrefs() ? ex.map((e) => [e, suggestWeight(e, bodyPrefs())]).filter(([, w]) => w != null) : [];
+    const body = `<form class="stack form" data-form="body">
+      <div class="two"><label class="field"><span>${esc(t('bodyKg'))}</span><input name="kg" inputmode="decimal" value="${esc(b.kg ?? '')}" placeholder="75" autocomplete="off"></label>
+        <label class="field"><span>${esc(t('bodyCm'))}</span><input name="cm" inputmode="numeric" value="${esc(b.cm ?? '')}" placeholder="178" autocomplete="off"></label></div>
+      <div class="field-head">${esc(t('bodySex'))}</div>
+      ${segmented({ name: 'sex', value: b.sex || 'm', options: [['m', t('sexM')], ['f', t('sexF')]], label: t('bodySex') })}
+      <label class="field"><span>${esc(t('bodyLevel'))}</span><select name="level">${['first', 'weeks', 'months', 'years'].map((v) => `<option value="${v}" ${(b.level || 'weeks') === v ? 'selected' : ''}>${esc(t(`level_${v}`))}</option>`).join('')}</select></label>
+      <p class="muted small">${esc(t('bodyHint'))}</p>
+      ${sugs.length ? `<div class="field-head">${esc(t('bodyYourStarts'))}</div><div class="card kv-list">${sugs.map(([e, w]) => `<div class="kv"><span>${esc(e.name)}</span><b>${esc(fmtNum(w))} kg</b></div>`).join('')}</div>` : ''}
+    </form>`;
+    return page(t('set_body'), body, (view) => {
+      const form = view.querySelector('[data-form=body]');
+      const num = (v) => { const n = Number(String(v).replace(',', '.')); return Number.isFinite(n) && n > 0 ? n : null; };
+      const save = () => {
+        setPref('body', { kg: num(form.kg.value), cm: num(form.cm.value), sex: form.querySelector('[name=sex]:checked')?.value || 'm', level: form.level.value });
+      };
+      form.querySelectorAll('input, select').forEach((x) => x.addEventListener('change', () => { save(); window.dispatchEvent(new CustomEvent('palestra:render')); }));
+    }, t('bodyIntro'), { ic: 'user' });
   },
 
   gym() {

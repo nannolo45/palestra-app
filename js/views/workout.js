@@ -6,8 +6,8 @@ import { esc, fmtNum, clock, num, timeOfDay, minText } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { stepper, bindSteppers, stepVal } from '../ui/parts.js';
 import { askConfirm, toast, openSheet } from '../ui/dialogs.js';
-import { machineOf, placeOf, whereText, measureLabel, training, increaseSettings, refreshEstimates, routineMinutes } from '../data.js';
-import { increaseProposals, applyIncrease, measuresFor, totalWeight, lastResult, weightMode, BAR_KG } from '../model.js';
+import { machineOf, placeOf, whereText, measureLabel, training, increaseSettings, refreshEstimates, routineMinutes, bodyPrefs } from '../data.js';
+import { increaseProposals, applyIncrease, measuresFor, totalWeight, lastResult, weightMode, BAR_KG, setsOf, setPlan, setsText, suggestWeight, defaultTargets, itemFromRows } from '../model.js';
 import * as W from '../workout.js';
 import { breakdownBar, setText } from './history.js';
 import { syncNow } from '../sync.js';
@@ -15,6 +15,7 @@ import { thumbOf, openViewer } from './pictures.js';
 
 let active = null; // the workout in progress
 let summaryId = null; // the session just finished, shown until closed
+let summaryDiff = null; // { routineId, rows, pick }: what was done differently from the scheda, for the summary
 let pendingStart = null; // { routineId, blockId, proposals }
 let unchecked = new Set();
 let wakeLock = null;
@@ -31,7 +32,7 @@ export async function initWorkout() {
   active = await W.loadActive();
   return active;
 }
-export const hasActive = () => Boolean(active && active.phase !== 'done');
+export const hasActive = () => Boolean(active && active.phase !== 'done' && !active.trial);
 export const activeWorkout = () => active;
 
 /** Tell Everyday (prefs → live) when the workout starts, pauses, resumes or ends; nothing for sets and rests. */
@@ -47,6 +48,7 @@ function publishLive(w) {
 async function commit(next) {
   active = next;
   peek = null;
+  if (active?.trial) { window.dispatchEvent(new CustomEvent('palestra:render')); return; }
   publishLive(active);
   await W.saveActive(active);
   window.dispatchEvent(new CustomEvent('palestra:render'));
@@ -84,6 +86,7 @@ export function startView(routineId, query = {}) {
     pendingStart = { routineId, blockId: query.block || null, props };
     unchecked = new Set();
   }
+  if (pendingStart.ready) return readyView(r);
   const props = pendingStart.props;
   if (!props || (!props.proposals.length && !props.held.length)) {
     if (!pendingStart.starting) {
@@ -91,8 +94,8 @@ export function startView(routineId, query = {}) {
       const blockId = pendingStart.blockId;
       setTimeout(() => {
         const cur = get('routines', routineId);
-        const next = props ? upsert('routines', applyIncrease(cur, [], [])) : cur;
-        begin(next, blockId);
+        if (props) upsert('routines', applyIncrease(cur, [], []));
+        toReady(blockId);
       }, 0);
     }
     return { dark: true, html: '<div class="dark-page"></div>' };
@@ -134,11 +137,11 @@ export function startView(routineId, query = {}) {
         const accepted = props.proposals.map((p) => p.itemIndex).filter((i) => !unchecked.has(i));
         const next = upsert('routines', applyIncrease(get('routines', routineId), props.proposals, accepted));
         refreshEstimates();
-        begin(next, pendingStart.blockId);
+        toReady(pendingStart.blockId);
       });
       view.querySelector('[data-action=skip]').addEventListener('click', () => {
-        const next = upsert('routines', applyIncrease(get('routines', routineId), [], []));
-        begin(next, pendingStart.blockId);
+        upsert('routines', applyIncrease(get('routines', routineId), [], []));
+        toReady(pendingStart.blockId);
       });
     },
   };
@@ -151,14 +154,98 @@ function heldReason(h) {
   if (s.kind === 'sets') return t('heldSets', s.done, s.goal);
   if (s.kind === 'seconds') return t('heldSeconds', s.under, s.of, s.goal);
   if (s.kind === 'minutes') return t('heldMinutes', fmtNum(s.done), fmtNum(s.goal));
+  if (s.kind === 'top') return t('heldTop', s.under, s.of, s.goal);
   return '';
 }
 
 function begin(routine, blockId) {
   pendingStart = null;
   summaryId = null;
-  const w = W.newWorkout(routine, live('exercises'), { blockId, training: training() });
+  const w = W.newWorkout(routine, live('exercises'), { blockId, training: training(), sessions: live('sessions') });
   commit(w).then(() => { location.replace('#/workout'); });
+}
+
+/** After the question about the increase (or straight away): the "Pronto?" screen, or the countdown. */
+function toReady(blockId) {
+  pendingStart = { ...pendingStart, blockId, ready: true, until: Date.now() + (Number(training().countdown) || 15) * 1000 };
+  window.dispatchEvent(new CustomEvent('palestra:render'));
+  window.scrollTo(0, 0);
+}
+
+/** The whole scheda before the clock starts: length, sets, zones, the first exercise, and every exercise in order. */
+function overviewList(r) {
+  const items = (r.items || []).map((it) => ({ it, ex: get('exercises', it.exerciseId) })).filter((x) => x.ex);
+  let prev = null;
+  return items.map(({ it, ex }, i) => {
+    const p = placeOf(ex);
+    const walk = i > 0 && p && prev && p.id !== prev ? `<div class="ov-walk">${icon('arrowDown', 14)}${esc(p.name)}</div>` : '';
+    if (p) prev = p.id;
+    return `${walk}<div class="ov-row${i === 0 ? ' first' : ''}"><span class="ov-n">${i + 1}</span><span class="ov-t"><b>${esc(ex.name)}</b><small>${esc(whereText(ex) || '')}</small></span><span class="ov-p">${esc(planShort(it, ex))}</span></div>`;
+  }).join('');
+}
+
+function planShort(it, ex) {
+  if (ex.type === 'cardio') return t('minutesN', fmtNum(Number(it.targets?.duration) || 10));
+  return setsText(it, ex.type === 'weights');
+}
+
+function readyView(r) {
+  const items = (r.items || []).map((it) => ({ it, ex: get('exercises', it.exerciseId) })).filter((x) => x.ex);
+  const first = items[0];
+  const sets = items.reduce((a, x) => a + (x.ex.type === 'cardio' ? 1 : setsOf(x.it)), 0);
+  const zones = new Set(items.map((x) => placeOf(x.ex)?.id).filter(Boolean)).size;
+  const countdown = training().start === 'countdown';
+  const th = first ? thumbOf(first.ex) : '';
+  const firstCard = first ? `<div class="w-card ov-first">${th ? `<img src="${esc(th)}" alt="">` : `<span class="ov-ph">${icon('dumbbell', 26)}</span>`}<div><small>${esc(t(countdown ? 'firstUp' : 'startsWith'))}</small><b>${esc(`${first.ex.name} · ${planShort(first.it, first.ex)}`)}</b><small>${esc(whereText(first.ex) || '')}</small></div></div>` : '';
+  const left = Math.max(0, Math.ceil((pendingStart.until - Date.now()) / 1000));
+  const html = `<div class="w-screen">
+    <header class="w-head"><a class="w-icon" href="#/routine/${encodeURIComponent(r.id)}" aria-label="${esc(t('cancel'))}">${icon('close')}</a>
+      <div class="w-head-mid"><span class="w-small">${esc(countdown ? `${r.name} · ${t('nExercises', items.length)} · ${routineMinutes(r)} min` : t('readyQ'))}</span><span class="w-clock">${esc(countdown ? t('startsIn') : r.name)}</span></div><span></span></header>
+    <main class="w-main">
+      ${countdown ? `<div class="ov-count"><span class="w-bigclock" data-live="countdown">${clock(left)}</span><small>${esc(t('goToFirst'))}</small></div>${firstCard}
+        <details class="w-card ov-all"><summary>${esc(t('wholeScheda'))}</summary><div class="ov-list">${overviewList(r)}</div></details>`
+    : `<div class="w-grid3"><div class="w-card stat"><b>${routineMinutes(r)} min</b><small>${esc(t('estimated'))}</small></div><div class="w-card stat"><b>${sets}</b><small>${esc(t('setsWord'))}</small></div><div class="w-card stat"><b>${zones}</b><small>${esc(t('zonesWord'))}</small></div></div>
+        ${firstCard}<div class="ov-list">${overviewList(r)}</div>`}
+    </main>
+    <div class="w-foot${countdown ? ' row2' : ''}">${countdown ? `<button type="button" class="btn ghost-dark fill" data-action="more15">+15 s</button><button type="button" class="btn yellow huge" data-action="go">${esc(t('startNow'))}</button>`
+    : `<button type="button" class="btn yellow huge" data-action="go">${icon('play', 22)}${esc(t('start'))}</button>`}</div></div>`;
+  const go = () => { const cur = get('routines', r.id); if (cur && pendingStart) begin(cur, pendingStart.blockId); };
+  return {
+    dark: true,
+    html,
+    bind(view) {
+      view.querySelector('[data-action=go]').addEventListener('click', go);
+      view.querySelector('[data-action=more15]')?.addEventListener('click', () => { pendingStart.until += 15000; });
+    },
+    tick(view) {
+      if (!countdown || !pendingStart?.ready) return;
+      const l = Math.max(0, Math.ceil((pendingStart.until - Date.now()) / 1000));
+      const el = view.querySelector('[data-live=countdown]');
+      if (el) el.textContent = clock(l);
+      if (l <= 0 && !pendingStart.going) { pendingStart.going = true; go(); }
+    },
+  };
+}
+
+/** #/try/<routineId>: the real workout screens, still: no clock, nothing saved. */
+export function tryView(routineId) {
+  const r = get('routines', routineId);
+  if (!r) return { html: `<div class="dark-page"><p>${esc(t('notFound'))}</p></div>`, dark: true };
+  if (hasActive() && !active.trial) {
+    return { dark: true, html: `<div class="dark-page center"><h1 class="w-title">${esc(t('workoutInProgress'))}</h1><p class="w-text">${esc(t('tryBusy'))}</p><a class="btn yellow big" href="#/workout">${esc(t('resume'))}</a></div>` };
+  }
+  summaryId = null;
+  active = W.newWorkout(r, live('exercises'), { training: training(), sessions: live('sessions'), trial: true });
+  peek = null;
+  setTimeout(() => location.replace('#/workout'), 0);
+  return { dark: true, html: '<div class="dark-page"></div>' };
+}
+
+function exitTrial() {
+  const rid = active?.routineId;
+  active = null;
+  peek = null;
+  location.hash = rid ? `#/routine/${encodeURIComponent(rid)}` : '#/routines';
 }
 
 // ---- the workout screen ----
@@ -166,7 +253,8 @@ function begin(routine, blockId) {
 export function workoutView() {
   if (summaryId) return summaryView();
   if (!active) return { dark: true, html: `<div class="dark-page center"><p class="w-text">${esc(t('noWorkout'))}</p><a class="btn yellow" href="#/routines">${esc(t('tab_routines'))}</a></div>` };
-  if (active.phase === 'done') { finish(false); return { dark: true, html: '<div class="dark-page"></div>' }; }
+  if (active.phase === 'done') { if (active.trial) { exitTrial(); return { dark: true, html: '<div class="dark-page"></div>' }; } finish(false); return { dark: true, html: '<div class="dark-page"></div>' }; }
+  const trial = Boolean(active.trial);
   const r = state.routines.find((x) => x.id === active.routineId);
   const step = W.current(active);
   const ex = state.exercises.find((e) => e.id === step.exerciseId);
@@ -175,9 +263,9 @@ export function workoutView() {
   const paused = W.isPaused(active);
   if (peek != null && (peek === pos || peek < 0 || peek >= exIndexes.length || paused)) peek = null;
   const looking = peek != null;
-  const head = `<header class="w-head">
+  const head = `${trial ? `<div class="trial-strip"><span>${esc(t('trialStrip'))}</span><button type="button" data-action="exit-trial">${esc(t('exit'))}</button></div>` : ''}<header class="w-head">
       <button type="button" class="w-icon" data-action="end" aria-label="${esc(t('endWorkout'))}">${icon('close')}</button>
-      <div class="w-head-mid"><span class="w-small">${looking ? esc(t('pvPrefix')) : ''}${esc(t('exNofM', r?.name || '', (looking ? peek : pos) + 1, exIndexes.length))}</span><span class="w-clock" data-live="elapsed">${clock(W.elapsedSec(active))}</span></div>
+      <div class="w-head-mid"><span class="w-small">${looking ? esc(t('pvPrefix')) : ''}${esc(t('exNofM', r?.name || '', (looking ? peek : pos) + 1, exIndexes.length))}</span><span class="w-clock" data-live="elapsed">${trial ? '—:—' : clock(W.elapsedSec(active))}</span></div>
       <button type="button" class="w-icon filled" data-action="pause" aria-label="${esc(paused ? t('resume') : t('pauseWorkout'))}">${icon(paused ? 'play' : 'pause', 18)}</button>
     </header>
     <div class="w-progress" aria-hidden="true">${exIndexes.map((ix, i) => `<span class="${i < pos ? 'done' : i === pos ? 'now' : ''}${looking && i === peek ? ' view' : ''}"></span>`).join('')}</div>`;
@@ -191,10 +279,23 @@ export function workoutView() {
     dark: true,
     html: `<div class="w-screen${looking ? ' peeking' : ''}">${head}${body}${paused ? '' : edges(exIndexes.length, looking ? peek : pos)}</div>`,
     bind(view) {
-      bindSteppers(view, (name, v) => { if (name === 'weight') { const h = view.querySelector('[data-wt-hint]'); if (h) h.textContent = weightTexts(ex, v).hint; } });
+      bindSteppers(view, (name, v) => {
+        if (name === 'weight') { const h = view.querySelector('[data-wt-hint]'); if (h) h.textContent = weightTexts(ex, v).hint; }
+        if (name === 'reps' || name === 'seconds') showExtra(view, step, v);
+      });
       bindPeek(view, exIndexes, pos);
       view.querySelectorAll('[data-action=pause]').forEach((b) => b.addEventListener('click', () => commit(paused ? W.resume(active) : W.pause(active))));
-      view.querySelector('[data-action=end]').addEventListener('click', endEarly);
+      view.querySelector('[data-action=end]').addEventListener('click', () => (active?.trial ? exitTrial() : endEarly()));
+      view.querySelector('[data-action=exit-trial]')?.addEventListener('click', exitTrial);
+      view.querySelector('[data-action=add-set]')?.addEventListener('click', () => commit(W.addSet(active)));
+      view.querySelector('[data-action=undo-set]')?.addEventListener('click', () => commit(W.removeAddedSet(active)));
+      view.querySelector('[data-action=add-ex]')?.addEventListener('click', pickExtraExercise);
+      view.querySelector('[data-action=use-sug]')?.addEventListener('click', (e) => {
+        const box = view.querySelector('[data-stepper=weight] input');
+        if (box) { box.value = fmtNum(Number(e.currentTarget.dataset.kg)); box.dispatchEvent(new Event('change')); }
+        const h = view.querySelector('[data-wt-hint]'); if (h) h.textContent = weightTexts(ex, Number(e.currentTarget.dataset.kg)).hint;
+        e.currentTarget.closest('.sug-chip')?.remove();
+      });
       view.querySelector('[data-action=resume]')?.addEventListener('click', () => commit(W.resume(active)));
       view.querySelector('[data-action=done]')?.addEventListener('click', () => {
         const values = {};
@@ -219,7 +320,7 @@ export function workoutView() {
       view.querySelector('[data-action=viewer]')?.addEventListener('click', () => openViewer(ex));
       view.querySelector('[data-action=add30]')?.addEventListener('click', () => commit(W.addRest(active, 30)));
       view.querySelector('[data-action=end-rest]')?.addEventListener('click', () => commit(W.endRest(active)));
-      keepAwake();
+      if (!active.trial) keepAwake();
     },
     tick: liveTick,
   };
@@ -231,19 +332,25 @@ function setBody(step, ex) {
   const lastSet = doneHere[doneHere.length - 1];
   const prev = lastResult(it, ex, live('sessions'), active.start);
   const prevText = prev ? t('lastTimeWas', prevSummary(ex, prev.session)) : '';
-  const m = machineOf(ex);
-  const p = placeOf(ex);
+  const planned = active.steps.filter((x) => x.itemIndex === step.itemIndex && !x.extra).length;
+  const sug = step.plan.weight === 0 && !active.trial ? suggestWeight(ex, bodyPrefs()) : null;
+  const range = step.plan.repsMax ? t('repsGoal', step.plan.repsMin, step.plan.repsMax) : '';
+  const lastReps = step.plan.repsMax && prev ? prev.session.sets.filter((x) => x.exerciseId === ex.id).map((x) => x.reps).filter((x) => x != null) : [];
   return `<main class="w-main">
-      <div><h1 class="w-ex">${esc(ex.name)}</h1>
-        <div class="w-setline"><span>${esc(t('setNofM', step.n, step.of))}</span><span class="dots" aria-hidden="true">${Array.from({ length: step.of }, (_, i) => `<i class="${i + 1 < step.n ? 'done' : i + 1 === step.n ? 'now' : ''}"></i>`).join('')}</span></div></div>
+      <div><h1 class="w-ex">${esc(ex.name)}${step.added != null ? `<span class="w-tag add">${esc(t('tagAdded'))}</span>` : ''}</h1>
+        <div class="w-setline"><span>${esc(t('setNofM', step.n, step.of))}</span>${step.extra ? `<span class="w-tag">${esc(t('tagExtra'))}</span>` : ''}<span class="dots" aria-hidden="true">${Array.from({ length: step.of }, (_, i) => `<i class="${i + 1 < step.n ? 'done' : i + 1 === step.n ? 'now' : ''}${i >= planned && step.added == null ? ' extra' : ''}"></i>`).join('')}</span></div>
+        ${step.plan.varied ? `<div class="w-planline">${active.steps.filter((x) => x.itemIndex === step.itemIndex).map((x) => `<span class="${x.n < step.n ? 'done' : x.n === step.n ? 'now' : ''}">${esc(`${x.plan.reps ?? `${x.plan.seconds} s`}${x.plan.weight ? ` × ${fmtNum(x.plan.weight)} kg` : ''}`)}</span>`).join('')}</div>` : ''}</div>
       <div class="w-grid2">
         ${step.plan.seconds != null
-    ? `<div class="w-card stepcard">${stepper({ name: 'seconds', value: step.plan.seconds, step: 5, min: 0, label: t('seconds'), big: true })}</div>`
-    : `<div class="w-card stepcard">${stepper({ name: 'reps', value: step.plan.reps, step: 1, min: 0, label: t('reps'), big: true })}</div>`}
+    ? `<div class="w-card stepcard">${stepper({ name: 'seconds', value: step.plan.seconds, step: 5, min: 0, label: t('seconds'), big: true })}<span class="w-extra" data-extra></span></div>`
+    : `<div class="w-card stepcard${step.plan.failure ? ' failure' : ''}">${step.plan.failure ? `<span class="fail-tag">${esc(t('toFailure'))}</span>` : ''}${stepper({ name: 'reps', value: step.plan.reps, step: 1, min: 0, label: t('reps'), big: true })}<span class="w-extra" data-extra></span></div>`}
         ${step.plan.weight != null ? `<div class="w-card stepcard">${stepper({ name: 'weight', value: step.plan.weight, step: ex.equipment === 'dumbbell' ? 1 : 2.5, min: 0, label: weightTexts(ex).label, big: true })}</div>` : ''}
       </div>
       ${step.plan.weight != null && weightMode(ex) !== 'plain' ? `<p class="w-small w-wthint" data-wt-hint>${esc(weightTexts(ex, step.plan.weight).hint)}</p>` : ''}
-      ${step.plan.weight === 0 ? `<p class="w-small">${esc(t('weightFirstTime'))}</p>` : ''}
+      ${range ? `<p class="w-small w-goal">${esc(range)}${step.plan.failure ? esc(t('untilFailure')) : ''}${lastReps.length ? ` · ${esc(t('lastTimeReps', lastReps.join(', ')))}` : ''}</p>` : ''}
+      ${sug ? `<div class="sug-chip"><span>${esc(t('sugStart'))} <b>${esc(fmtNum(sug))} kg</b><small>${esc(t('sugFrom', bodyPrefs().kg))}</small></span><button type="button" class="btn small yellow" data-action="use-sug" data-kg="${sug}">${esc(t('use'))}</button></div>` : ''}
+      ${step.plan.weight === 0 ? `<p class="w-small">${esc(t('weightFirstTime'))}${!bodyPrefs() && !active.trial ? ` <a href="#/settings/body">${esc(t('sugSetBody'))}</a>` : ''}</p>` : ''}
+      ${step.extra ? `<p class="w-small">${esc(t('extraSetHint'))}</p>` : step.added != null ? `<p class="w-small">${esc(t('addedExHint'))}</p>` : ''}
       ${machineCard(ex)}
       ${ex.notes ? `<section class="w-note" aria-label="${esc(t('notes'))}">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
       <p class="w-small">${esc([lastSet ? t('setDone', lastSet.n, setText(ex, lastSet)) : '', prevText].filter(Boolean).join(' · '))}</p>
@@ -252,6 +359,63 @@ function setBody(step, ex) {
       <button type="button" class="btn yellow huge done-btn" data-action="done">${icon('check', 30)}${esc(t('doneSet'))}</button>
       <div class="w-minor">${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(active.phase === 'rest' && W.current(active)?.kind === 'set' ? 'backToSet' : 'prevStep'))}</button>` : ''}<button type="button" class="btn ghost-dark" data-action="skip-set">${esc(t('skipSet'))}</button></div>
     </div>`;
+}
+
+/** "+1" next to the reps when you do more than the scheda (less shows too). */
+function showExtra(view, step, v) {
+  const el = view.querySelector('[data-extra]');
+  if (!el || step.plan.repsMax) return;
+  const plan = step.plan.seconds != null ? step.plan.seconds : step.plan.reps;
+  const d = (Number(v) || 0) - (Number(plan) || 0);
+  el.textContent = d > 0 ? t(step.plan.seconds != null ? 'moreSecs' : 'moreReps', d) : d < 0 ? t(step.plan.seconds != null ? 'lessSecs' : 'lessReps', -d) : '';
+  el.classList.toggle('up', d > 0);
+}
+
+/** + Un esercizio: one of yours, right after; it starts from last time's numbers. */
+async function pickExtraExercise() {
+  const list = live('exercises').sort((a, b) => String(a.name).localeCompare(b.name));
+  const html = `<h2>${esc(t('addExTitle'))}</h2>
+    <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchExercises'))}</span><input id="ax-q" type="search" placeholder="${esc(t('searchExercises'))}" autocomplete="off"></label>
+    <div class="pick-list" data-list>${list.map((e) => `<button type="button" class="row pick" data-pick="${esc(e.id)}"><span class="row-text"><span class="row-title">${esc(e.name)}</span><span class="row-sub">${esc(whereText(e) || '')}</span></span></button>`).join('')}</div>
+    <p class="muted small">${esc(t('addExHint'))}</p>
+    <div class="button-row"><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+  const id = await openSheet(html, (form, close) => {
+    form.querySelector('#ax-q').addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      form.querySelectorAll('[data-pick]').forEach((b) => { b.hidden = q && !b.textContent.toLowerCase().includes(q); });
+    });
+    form.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => close(b.dataset.pick)));
+  });
+  if (!id || !active) return;
+  const ex = get('exercises', id);
+  const lastS = [...live('sessions')].filter((x) => x.end && (x.sets || []).some((y) => y.exerciseId === id)).sort((a, b) => b.start - a.start)[0];
+  const lastSet = lastS?.sets.find((y) => y.exerciseId === id);
+  const plan = ex.type === 'cardio'
+    ? { targets: lastSet?.targets || { ...defaultTargets(ex.cardio?.kind || 'treadmill', machineOf(ex)), ...(ex.cardio?.targets || {}) } }
+    : { reps: lastSet?.reps ?? (ex.timed ? null : 10), seconds: lastSet?.seconds ?? (ex.timed ? 45 : null), weight: lastSet?.weight ?? suggestWeight(ex, bodyPrefs()) ?? 0, rest: ex.defaultRest };
+  commit(W.addExercise(active, ex, plan));
+  toast(t('addedEx', ex.name));
+}
+
+/** The question after an exercise's last set: another set, or another exercise. */
+function moreCard() {
+  const s = W.current(active);
+  const nx = active.steps[active.idx + 1];
+  if (nx && nx.extra && !W.isLogged(active, nx)) return `<p class="w-small center-text">${esc(t('extraAdded'))} <button type="button" class="link-btn" data-action="undo-set">${esc(t('removeIt'))}</button></p>`;
+  if (!W.afterLastSet(active)) return '';
+  const ex = state.exercises.find((e) => e.id === s.exerciseId);
+  return `<div class="w-card more-q"><p>${t('moreQ', `<b>${esc(ex?.name || '')}</b>`)}</p><div class="w-grid2"><button type="button" class="btn yellow" data-action="add-set">+ ${esc(t('oneMoreSet'))}</button><button type="button" class="btn dark-btn" data-action="add-ex">+ ${esc(t('oneMoreEx'))}</button></div></div>`;
+}
+
+/** After the very last set: add something, or finish. */
+function endBody() {
+  return `<main class="w-main center">
+      <span class="eyebrow">${esc(t('lastSetDone'))}</span>
+      <h2 class="w-title">${esc(t('allDoneQ'))}</h2>
+      ${moreCard()}
+    </main>
+    <div class="w-foot"><button type="button" class="btn yellow huge" data-action="end-rest">${icon('check', 26)}${esc(active.trial ? t('endTrial') : t('finishWorkout'))}</button>
+      ${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t('backToSet'))}</button>` : ''}</div>`;
 }
 
 /** Machine number, zone and settings, with a small picture (your photo, or the exercise's) that opens full screen. */
@@ -383,7 +547,7 @@ async function fixSets(ix) {
 function cardioBody(step, ex) {
   const ms = measuresFor(ex, machineOf(ex));
   const dur = Number(step.plan.targets.duration) || 10;
-  const sec = W.phaseSec(active);
+  const sec = active.trial ? 0 : W.phaseSec(active);
   const left = dur * 60 - sec;
   return `<main class="w-main">
       <div><h1 class="w-ex">${esc(ex.name)}</h1><p class="w-sub">${esc([t('minutesN', fmtNum(dur)), whereText(ex)].filter(Boolean).join(' · '))}</p></div>
@@ -402,14 +566,16 @@ function cardioBody(step, ex) {
 }
 
 function restBody() {
-  const left = W.restLeft(active);
+  if (active.restKind === 'end') return endBody();
+  const trial = Boolean(active.trial);
+  const left = trial ? active.restPlanned : W.restLeft(active);
   const nxt = W.current({ ...active, idx: active.idx + 1 }) ;
   const nex = nxt && state.exercises.find((e) => e.id === nxt.exerciseId);
   const after = active.steps.slice(active.idx + 1).find((s) => s.itemIndex !== nxt?.itemIndex);
   const aex = after && state.exercises.find((e) => e.id === after.exerciseId);
   const C = 691.15;
   const frac = left > 0 ? left / active.restPlanned : 0;
-  const nextText = nxt && nex ? (nxt.kind === 'cardio' ? nex.name : `${nex.name} · ${t('setNofM', nxt.n, nxt.of)}`) : '';
+  const nextText = nxt && nex ? (nxt.kind === 'cardio' ? nex.name : `${nex.name} · ${t('setNofM', nxt.n, nxt.of)}${nxt.extra ? ` · ${t('tagExtra')}` : nxt.added != null ? ` · ${t('tagAdded')}` : ''}`) : '';
   const nextAmount = nxt && nxt.kind === 'set' ? `${nxt.plan.reps ?? `${nxt.plan.seconds} s`}${nxt.plan.weight ? ` × ${fmtNum(nxt.plan.weight)}` : ''}` : '';
   const sameMachine = nxt && active.restKind === 'set';
   return `<main class="w-main center">
@@ -418,8 +584,10 @@ function restBody() {
         <svg width="260" height="260" viewBox="0 0 260 260" aria-hidden="true"><circle cx="130" cy="130" r="110" class="ring-bg"/><circle cx="130" cy="130" r="110" class="ring-fg${left <= 0 ? ' over' : ''}" data-live="ring" stroke-dasharray="${(C * frac).toFixed(1)} 700" transform="rotate(-90 130 130)"/></svg>
         <div class="ring-text" role="timer"><span class="w-bigclock" data-live="rest-left">${left >= 0 ? clock(left) : `+${clock(-left)}`}</span><small>${esc(t('ofPlanned', clock(active.restPlanned)))}</small></div>
       </div>
-      <p class="w-text">${esc(t('youRested'))} <b data-live="rested">${clock(W.phaseSec(active))}</b></p>
-      <div class="w-grid2 wide"><button type="button" class="btn dark-btn big" data-action="add30">+30 s</button><button type="button" class="btn ${left <= 0 ? 'yellow' : 'light'} big" data-action="end-rest" data-live="end-rest">${esc(left <= 0 ? t('restEnd') : t('skip'))}</button></div>
+      ${trial ? `<p class="w-text">${esc(t('trialRest'))}</p>` : `<p class="w-text">${esc(t('youRested'))} <b data-live="rested">${clock(W.phaseSec(active))}</b></p>`}
+      ${moreCard()}
+      ${trial ? `<button type="button" class="btn light big wide" data-action="end-rest">${esc(t('forward'))}</button>`
+    : `<div class="w-grid2 wide"><button type="button" class="btn dark-btn big" data-action="add30">+30 s</button><button type="button" class="btn ${left <= 0 ? 'yellow' : 'light'} big" data-action="end-rest" data-live="end-rest">${esc(left <= 0 ? t('restEnd') : t('skip'))}</button></div>`}
       ${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(active.phase === 'rest' && W.current(active)?.kind === 'set' ? 'backToSet' : 'prevStep'))}</button>` : ''}
     </main>
     ${nxt && nex ? `<section class="w-card next" aria-label="${esc(t('next'))}">
@@ -437,7 +605,7 @@ function pausedBody() {
 
 /** Update the clocks without redrawing the page (so a field being typed in isn't disturbed). */
 function liveTick(view) {
-  if (!active || summaryId) return;
+  if (!active || summaryId || active.trial) return;
   const set = (k, v) => { const el = view.querySelector(`[data-live="${k}"]`); if (el && el.textContent !== v) el.textContent = v; };
   set('elapsed', clock(W.elapsedSec(active)));
   if (W.isPaused(active)) { set('paused', clock((Date.now() - active.pausedAt) / 1000)); return; }
@@ -523,21 +691,25 @@ async function finish(early) {
   if (active.phase === 'rest') active = W.endRest(active);
   const session = W.toSession(active);
   if (early) session.outcome = active.log.length >= active.steps.length ? 'done' : 'partial';
+  summaryDiff = null;
   if (session.sets.length) {
     upsert('sessions', session);
-    // a routine imported without weights: the first session sets them
+    // a routine imported without weights: the first session sets them, set by set
     const r = get('routines', session.routineId);
     if (r) {
       let changed = false;
-      const items = (r.items || []).map((it) => {
+      const items = (r.items || []).map((it, ix) => {
         const ex = get('exercises', it.exerciseId);
-        if (!ex || ex.type !== 'weights' || Number(it.weight) > 0) return it;
-        const used = Math.max(0, ...session.sets.filter((x) => x.exerciseId === ex.id).map((x) => Number(x.weight) || 0));
-        if (!used) return it;
+        if (!ex || ex.type !== 'weights' || Array.from({ length: setsOf(it) }, (_, i) => setPlan(it, i + 1).weight).some((w) => w > 0)) return it;
+        const done = active.log.filter((x) => x.item === ix && x.weight > 0);
+        if (!done.length) return it;
         changed = true;
-        return { ...it, weight: used };
+        const rows = Array.from({ length: setsOf(it) }, (_, i) => { const p = setPlan(it, i + 1); const d = done.find((x) => x.n === i + 1) || done[done.length - 1]; return { ...(p.seconds != null ? { seconds: p.seconds } : { reps: p.reps }), weight: d.weight }; });
+        return itemFromRows(it, rows);
       });
-      if (changed) upsert('routines', { ...r, items });
+      const next = changed ? upsert('routines', { ...r, items }) : r;
+      const rows = diffRows(active, next);
+      if (rows.length) summaryDiff = { routineId: r.id, rows, pick: Object.fromEntries(rows.map((x) => [x.ix, x.def])) };
     }
   }
   await W.saveActive(null);
@@ -549,6 +721,150 @@ async function finish(early) {
   if (session.sets.length) syncNow().finally(() => publishLive(null)); else publishLive(null);
   if (!summaryId) location.hash = '#/routines';
   else window.dispatchEvent(new CustomEvent('palestra:render'));
+}
+
+// ---- the summary: what was different from the scheda, and saving it there ----
+
+const sameSet = (a, b, range) => Boolean(a && b) && (range || (a.reps ?? null) === (b.reps ?? null)) && (a.seconds ?? null) === (b.seconds ?? null) && (a.weight ?? null) === (b.weight ?? null);
+
+/** Every exercise done differently from the scheda: extra or skipped sets, other reps or kg, exercises added. */
+export function diffRows(w, r) {
+  const items = r.items || [];
+  const groups = new Map();
+  for (const st of w.steps) { if (!groups.has(st.itemIndex)) groups.set(st.itemIndex, []); groups.get(st.itemIndex).push(st); }
+  const out = [];
+  for (const [ix, steps] of groups) {
+    const first = steps[0];
+    const ex = state.exercises.find((e) => e.id === first.exerciseId);
+    if (!ex) continue;
+    const added = first.added != null;
+    if (!added && (!items[ix] || first.kind === 'cardio')) continue;
+    const logOf = (st) => w.log.find((x) => x.item === ix && x.n === st.n) || null;
+    if (first.kind === 'cardio') {
+      const e = logOf(first);
+      if (e) out.push({ ix, exerciseId: ex.id, added: first.added, cardio: true, plan: [], done: [{ targets: e.targets }], def: 'fatto' });
+      continue;
+    }
+    const it = items[ix];
+    const W8 = ex.type === 'weights';
+    const plan = added ? [] : Array.from({ length: setsOf(it) }, (_, i) => { const p = setPlan(it, i + 1); return { reps: p.reps, seconds: p.seconds, weight: W8 ? p.weight : null }; });
+    const done = steps.map((st) => { const e = logOf(st); return e ? { reps: e.reps ?? null, seconds: e.seconds ?? null, weight: W8 ? e.weight ?? 0 : null } : null; });
+    const range = !added && Boolean(setPlan(it, 1).repsMax);
+    if (!added && done.length === plan.length && done.every((d, i) => sameSet(d, plan[i], range))) continue;
+    if (!done.some(Boolean)) continue; // nothing of it done: skipped is for today
+    const lower = done.some((d, i) => !d || (plan[i] && ((!range && (d.reps ?? d.seconds) < (plan[i].reps ?? plan[i].seconds)) || (d.weight ?? 0) < (plan[i].weight ?? 0))));
+    out.push({ ix, exerciseId: ex.id, added: added ? first.added : null, range, plan, done, def: added || !lower ? 'fatto' : 'oggi' });
+  }
+  return out;
+}
+
+function diffOptions(row) {
+  if (row.added != null) return ['oggi', 'fatto'];
+  const did = row.done.filter(Boolean);
+  const o = ['oggi', 'fatto'];
+  const allSame = did.every((d) => sameSet(d, did[0], row.range));
+  if (!allSame && !row.range) {
+    const p0 = row.plan[0];
+    const better = (a, b) => ((b.weight ?? 0) > (a.weight ?? 0) || ((b.weight ?? 0) === (a.weight ?? 0) && (b.reps ?? b.seconds) > (a.reps ?? a.seconds)) ? b : a);
+    const best = did.reduce(better);
+    const planEqual = row.plan.every((p) => sameSet(p, p0));
+    if (planEqual && ((best.weight ?? 0) > (p0.weight ?? 0) || (best.reps ?? best.seconds) > (p0.reps ?? p0.seconds))) o.push('best');
+    else o.push('last');
+  }
+  return o;
+}
+
+/** The rows the scheda would get for a choice. */
+function chosenRows(row, choice) {
+  const did = row.done.filter(Boolean);
+  const keepReps = (d, i) => (row.range ? { ...d, reps: row.plan[Math.min(i, row.plan.length - 1)].reps } : d);
+  if (choice === 'best') { const b = did.reduce((a, c) => ((c.weight ?? 0) > (a.weight ?? 0) || ((c.weight ?? 0) === (a.weight ?? 0) && (c.reps ?? c.seconds) > (a.reps ?? a.seconds)) ? c : a)); return did.map(() => ({ ...b })); }
+  if (choice === 'last') { const l = did[did.length - 1]; return did.map(() => ({ ...l })); }
+  return did.map(keepReps);
+}
+
+const clean = (x) => ({ ...(x.seconds != null ? { seconds: x.seconds } : { reps: x.reps }), ...(x.weight != null ? { weight: x.weight } : {}) });
+
+function diffBecomes(row, choice, r) {
+  const ex = state.exercises.find((e) => e.id === row.exerciseId);
+  const it = r.items[row.ix];
+  if (row.cardio) return choice === 'oggi' ? t('becomesNone') : t('becomesAdded', r.items[row.added] ? state.exercises.find((e) => e.id === r.items[row.added].exerciseId)?.name || '' : '', setText(ex, row.done[0]));
+  if (row.added != null) {
+    if (choice === 'oggi') return t('becomesNone');
+    const after = state.exercises.find((e) => e.id === r.items[row.added]?.exerciseId)?.name || '';
+    return t('becomesAdded', after, setsText(itemFromRows({}, chosenRows(row, choice).map(clean)), ex.type === 'weights'));
+  }
+  if (choice === 'oggi') return t('becomesStays', setsText(it, ex.type === 'weights'));
+  return t('becomesNew', setsText(itemFromRows(it, chosenRows(row, choice).map(clean)), ex.type === 'weights'));
+}
+
+function chip(cls, txt) { return `<span class="chg ${cls}">${esc(txt)}</span>`; }
+
+function diffCard(row, pick, r) {
+  const ex = state.exercises.find((e) => e.id === row.exerciseId);
+  const n = Math.max(row.plan.length, row.done.length);
+  const amt = (x) => (x ? `${x.seconds != null ? `${x.seconds} s` : x.reps}${x.weight != null ? ` × ${fmtNum(x.weight)}` : ''}` : '');
+  let rows = '';
+  if (row.cardio) rows = `<tr><td class="n">—</td><td class="p">—</td><td class="d"><b>${esc(setText(ex, row.done[0]))}</b>${chip('new', t('chipNew'))}</td></tr>`;
+  else {
+    for (let i = 0; i < n; i++) {
+      const p = row.plan[i]; const d = row.done[i];
+      let chips = '';
+      if (!p) chips = chip('new', row.added != null ? t('chipNew') : t('tagExtra'));
+      else if (d === null || d === undefined) chips = chip('skip', t('chipSkipped'));
+      else {
+        const pa = p.reps ?? p.seconds; const da = d.reps ?? d.seconds;
+        if (!row.range && da !== pa) chips += chip(da > pa ? 'up' : 'dn', t(p.seconds != null ? 'chipSecs' : 'chipReps', `${da > pa ? '+' : '−'}${Math.abs(da - pa)}`));
+        if ((d.weight ?? null) !== (p.weight ?? null)) chips += chip((d.weight ?? 0) > (p.weight ?? 0) ? 'up' : 'dn', `${(d.weight ?? 0) > (p.weight ?? 0) ? '+' : '−'}${fmtNum(Math.abs((d.weight ?? 0) - (p.weight ?? 0)))} kg`);
+      }
+      const same = p && d && sameSet(d, p, row.range);
+      rows += `<tr class="${same ? 'same' : ''}${p && !d ? ' skipped' : ''}"><td class="n">${esc(t('setN', i + 1))}</td><td class="p">${esc(p ? amt(p) : '—')}</td><td class="d"><b>${esc(d ? amt(d) : amt(p))}</b>${chips}</td></tr>`;
+    }
+  }
+  const opts = diffOptions(row);
+  const did = row.done.filter(Boolean);
+  const label = (k) => {
+    if (k === 'oggi') return t('onlyToday');
+    if (k === 'fatto') return row.added != null ? t('addToScheda') : t('asIDid');
+    const x = chosenRows(row, k)[0];
+    return t('allLike', amt(x));
+  };
+  void did;
+  return `<div class="w-card diff-card"><h3>${esc(ex?.name || '')}${row.added != null ? `<span class="w-tag add">${esc(t('tagAdded'))}</span>` : ''}</h3>
+    <table class="diff-t"><tr><th></th><th>${esc(t('colScheda'))}</th><th>${esc(t('colDone'))}</th></tr>${rows}</table>
+    <div class="diff-choose" role="radiogroup">${opts.map((k) => `<button type="button" class="${pick === k ? 'on' : ''}" aria-pressed="${pick === k}" data-pick="${row.ix}|${k}">${esc(label(k))}</button>`).join('')}</div>
+    <p class="w-small">${esc(diffBecomes(row, pick, r))}</p></div>`;
+}
+
+/** Write the chosen changes into the scheda: changed items in place, added exercises after the one they followed. */
+function applyDiff() {
+  const d = summaryDiff;
+  const r = d && get('routines', d.routineId);
+  if (!r) return 0;
+  const items = r.items.map((x) => ({ ...x }));
+  let n = 0;
+  for (const row of d.rows) {
+    const k = d.pick[row.ix];
+    if (k === 'oggi' || row.added != null) continue;
+    items[row.ix] = itemFromRows(items[row.ix], chosenRows(row, k).map(clean));
+    n++;
+  }
+  // added exercises: after the item they followed, in the order they were done
+  const adds = d.rows.filter((row) => row.added != null && d.pick[row.ix] !== 'oggi');
+  const inserts = new Map();
+  for (const row of adds) {
+    const ex = state.exercises.find((e) => e.id === row.exerciseId);
+    const base = { exerciseId: row.exerciseId, ...(ex?.type !== 'cardio' ? { rest: ex?.defaultRest ?? training().rest } : {}) };
+    const item = row.cardio ? { exerciseId: row.exerciseId, targets: { ...(row.done[0].targets || {}) } } : itemFromRows(base, chosenRows(row, 'fatto').map(clean));
+    if (!inserts.has(row.added)) inserts.set(row.added, []);
+    inserts.get(row.added).push(item);
+    n++;
+  }
+  const out = [];
+  items.forEach((x, i) => { out.push(x); if (inserts.has(i)) out.push(...inserts.get(i)); });
+  upsert('routines', { ...r, items: out });
+  refreshEstimates();
+  return n;
 }
 
 function summaryView() {
@@ -566,6 +882,11 @@ function summaryView() {
   }
   const best = new Set(groups.filter((g) => isNewBest(g, s)).map((g) => g.exerciseId));
   const total = totalWeight(s, state.exercises);
+  const diff = summaryDiff && summaryDiff.routineId === s.routineId ? summaryDiff : null;
+  const pending = diff ? diff.rows.filter((x) => diff.pick[x.ix] !== 'oggi').length : 0;
+  const diffSection = (rr) => (diff && rr ? `<h2 class="eyebrow pad">${esc(t('diffTitle', diff.rows.length))}</h2>
+    <div class="w-minor diff-all"><button type="button" class="btn ghost-dark" data-action="all-fatto">${esc(t('allAsIDid'))}</button><button type="button" class="btn ghost-dark" data-action="all-oggi">${esc(t('noneOnlyToday'))}</button></div>
+    ${diff.rows.map((x) => diffCard(x, diff.pick[x.ix], rr)).join('')}` : '');
   const html = `<div class="w-screen summary">
     <header class="w-intro"><span class="eyebrow yellow">${esc(t('workoutFinished'))}</span><h1 class="w-title">${esc(r?.name || t('workout'))}</h1>
       <p class="w-text">${esc(`${timeOfDay(s.start)} – ${timeOfDay(s.end)} · ${s.outcome === 'done' ? t('allSets') : t('partial')}`)}</p></header>
@@ -575,6 +896,7 @@ function summaryView() {
       ${total ? `<div class="w-card stat"><span class="eyebrow">${esc(t('totalWeight'))}</span><b>${esc(fmtNum(total))} kg</b><small>${esc(t('repsTimesKg'))}</small></div>` : ''}
       <div class="w-card stat"><span class="eyebrow">${esc(t('rests'))}</span><b>${esc(clock(restsTaken))}</b><small>${esc(t('restsBreakdown', clock(restsPlanned)))}</small></div>
     </div>
+    ${diffSection(r)}
     ${breakdownBar(s.breakdown || {}, true)}
     <h2 class="eyebrow pad">${esc(t('perExercise'))}</h2>
     <div class="w-card list">${groups.map((g) => {
@@ -585,13 +907,26 @@ function summaryView() {
     return `<div class="sum-row"><span>${esc(ex?.name || '')}</span>${best.has(g.exerciseId) ? `<span class="badge best">${esc(t('newBest'))}</span>` : ''}<b>${esc(txt)}</b></div>`;
   }).join('')}</div>
     <p class="w-small with-icon">${icon('cloud', 16)}${esc(s.everydayBlockId ? t('savedEveryday') : t('savedLocal'))}</p>
-    <div class="w-foot"><button type="button" class="btn light huge" data-action="close">${esc(t('close'))}</button></div>
+    <div class="w-foot">${pending ? `<button type="button" class="btn yellow huge" data-action="save-diff">${esc(t('updateScheda', pending))}</button><button type="button" class="btn ghost-dark" data-action="close">${esc(t('onlyTodayAll'))}</button>`
+    : `<button type="button" class="btn light huge" data-action="close">${esc(t('close'))}</button>`}</div>
   </div>`;
   return {
     dark: true,
     html,
     bind(view) {
-      view.querySelector('[data-action=close]').addEventListener('click', () => { summaryId = null; location.hash = '#/history'; });
+      view.querySelector('[data-action=close]').addEventListener('click', () => { summaryId = null; summaryDiff = null; location.hash = '#/history'; });
+      view.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => { const [ix, k] = b.dataset.pick.split('|'); summaryDiff.pick[ix] = k; window.dispatchEvent(new CustomEvent('palestra:render')); }));
+      view.querySelectorAll('[data-action=all-fatto],[data-action=all-oggi]').forEach((b) => b.addEventListener('click', () => {
+        const k = b.dataset.action === 'all-fatto' ? 'fatto' : 'oggi';
+        for (const x of summaryDiff.rows) summaryDiff.pick[x.ix] = k;
+        window.dispatchEvent(new CustomEvent('palestra:render'));
+      }));
+      view.querySelector('[data-action=save-diff]')?.addEventListener('click', () => {
+        const n = applyDiff();
+        summaryId = null; summaryDiff = null;
+        toast(t('schedaUpdated', n));
+        location.hash = '#/history';
+      });
     },
   };
 }
