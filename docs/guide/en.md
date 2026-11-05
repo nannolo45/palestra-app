@@ -89,6 +89,18 @@ In *Settings → Language and appearance*, **Appearance** picks the app's colour
 
 ![Settings: everything in its own section](guide/en/03-settings.webp)
 
+### Search, filter and group
+
+*Exercises*, *Routines* and *Workouts* have the same tools at the top:
+
+- **Search** and **Filters**. *Filters* opens a sheet with everything: *Group by*, *Sort by*, the filters (each with how many it finds), *Colours* and *Rows* (compact, or with details and notes). The button shows how many filters are on; under the search they stay as tags with a ✕ to remove them.
+- **The groups**, as coloured tags with their count: tap one to see only that group (more than one too). **Hold and drag** a tag to reorder them: the list follows the same order.
+- **Each group closes** when you tap its title; *Close all* closes them together. The coloured square next to the title changes the group's colour, which comes back as a bar on the left of each row.
+
+Each workout has its own colour, the same in *Routines* and *Workouts*. In *Workouts*, the other workouts are rows with **⋯**: *Make active*, *Open*, *Duplicate*, *Export as text*, *Delete*. Closed groups, order, filters and colours stay as you leave them, on this device.
+
+![The group tags: a tap to filter, drag to reorder](guide/en/38-tags.webp)
+
 ## Today
 
 The first page tells you what's on today. At the top is the day's routine, with its time if you set one, and *Start*. If Everyday has already put it in your plan, it says *in Everyday*.
@@ -131,7 +143,7 @@ For each routine tap the weekday (M T W T F S S) and, if you like, pick a *Time*
 
 ### Change the active workout
 
-In *Workouts* tap *Make active* on another workout. Mid-week, choose *From Monday* to finish the week with the old one, or *From today*. The old workout stays saved.
+In *Workouts* tap **⋯** on another workout, then *Make active*. Mid-week, choose *From Monday* to finish the week with the old one, or *From today*. The old workout stays saved.
 
 ### Export and duplicate
 
@@ -145,7 +157,7 @@ A routine is a sequence of exercises you repeat, like "Legs". Palestra works out
 
 ### Find a routine
 
-Type in the search, or pick *In the active workout* or *In no workout*. Under each routine you see which workout it's in.
+They're grouped by workout, each with its colour. Type in the search, tap a workout's tag, or open *Filters* (workout, state, length). With *Rows → With details and notes* you see under each routine which workouts it's in.
 
 ### Inside a routine
 
@@ -185,7 +197,7 @@ In a routine tap *Duplicate into another workout* and choose where. The copy is 
 
 ## Exercises and the gym
 
-*Exercises* lists all your exercises, grouped *By muscle* or *By place*. Filter by type, open and close groups, or switch to the *Compact view* with the button at the top to see more at once.
+*Exercises* lists all your exercises, grouped by muscle (or zone, or type: *Filters → Group by*). Tap a muscle's tag to see only that one, close the groups you don't need; in *Filters* pick type, zone, whether they're in the active workout, and compact rows or rows with notes.
 
 ![Exercises: groups, filters and the compact view](guide/en/07-exercises.webp)
 

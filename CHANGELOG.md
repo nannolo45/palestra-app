@@ -5,6 +5,7 @@ Phones download the new version in the background and show the *Aggiorna* bar.
 
 | Version | What changed |
 |---|---|
+| v25 | Esercizi, Schede and Workout share one set of list tools: search and one *Filtri* sheet (group, sort, filters with counts, colours, compact or detailed rows), the filters that are on as tags with ✕, coloured group tags (tap to filter, hold and drag to reorder, the groups follow), groups that close, a colour per group. Other workouts are rows with ⋯ |
 | v24 | *Pronto?* before starting (or a countdown, in Impostazioni → Allenamento). *Prova com'è*: a routine's real screens, still, nothing saved. Sets that differ (*Serie diverse*, `8/6/4 x 10/12/14`), rep ranges (`3x8-12`) and *a cedimento*. Impostazioni → *Il tuo corpo* and a suggested starting weight. After an exercise's last set: *+ Un'altra serie* / *+ Un esercizio*. The summary shows what was different from the routine, set by set, and updates it |
 | v23 | What the weight means: dumbbells per dumbbell (with the sum underneath), barbell with the bar (with the plates per side); changeable per exercise (*Il peso è*, *Manubri*), and History's kilos lifted count it. Anteprima: tap the edges (or swipe) to look at the exercises before and after, with *Torna all'esercizio …*, *Fallo adesso* and *Correggi i numeri* |
 | v22 | Everyday sees the workout in progress: prefs → `live` is written on start, pause, resume and end (after the session is up), so the block shows as running there |

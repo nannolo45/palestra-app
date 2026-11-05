@@ -12,6 +12,7 @@ import {
 import { plannedAhead, measuresFor, defaultTargets, setsText, setsOf, setPlan, itemFromRows, variedSets, suggestWeight } from '../model.js';
 import { thumbOf, openViewer } from './pictures.js';
 import { activeInfo, planDays, plans, plansWith, savePlan } from '../plans.js';
+import { listKit, colorOf } from '../ui/listkit.js';
 
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
 
@@ -34,42 +35,60 @@ function plannedText(p) {
 
 // ---- the library ----
 
-let filter = 'all'; // all | active | none
-
-function workoutsText(r, activeId) {
-  const ws = plansWith(r.id);
-  if (!ws.length) return `<span class="chip muted">${esc(t('inNoWorkout'))}</span>`;
-  return ws.map((p) => `<span class="chip${p.id === activeId ? ' yellow' : ''}">${esc(p.id === activeId ? `${t('inActiveWorkout')} · ${p.name}` : p.name)}</span>`).join('');
-}
 
 export function routinesView(query = {}) {
   const all = routines();
   const a = activeInfo();
   const activeIds = new Set(a ? planDays(a.plan).map((d) => d.routineId) : []);
-  const list = all.filter((r) => filter === 'all' || (filter === 'active' ? activeIds.has(r.id) : !plansWith(r.id).length));
+  const ps = plans();
   const wide = isWide();
-  const sel = wide ? (get('routines', query.sel) ? query.sel : list[0]?.id) : null;
-  const rows = list.map((r) => {
-    const last = lastDone(r.id);
-    const meta = [t('nExercises', (r.items || []).length), last ? t('lastOn', shortDate(last)) : t('neverDone')].join(' · ');
-    const href = wide ? `#/routines?sel=${encodeURIComponent(r.id)}` : `#/routine/${encodeURIComponent(r.id)}`;
-    return `<a class="row card-row lib-row${r.id === sel ? ' selected' : ''}" href="${href}" data-name="${esc(r.name.toLowerCase())}"${r.id === sel ? ' aria-current="true"' : ''}>
-      <span class="min-badge"><b>${routineMinutes(r)}</b><small>min</small></span>
-      <span class="row-text"><span class="row-title">${esc(r.name)}</span><span class="row-sub">${esc(meta)}</span><span class="chips small">${workoutsText(r, a?.planId)}</span></span>
-      ${icon('chevron', 20, 'class="chev"')}
-    </a>`;
-  }).join('');
-  const filters = [['all', t('filterAll')], ['active', t('filterActive')], ['none', t('filterNone')]];
+  const wKey = (r) => { const ws = plansWith(r.id); return ws.length ? ws.map((p) => `w:${p.id}`) : ['w:none']; };
+  const wName = (k) => (k === 'w:none' ? t('inNoWorkout') : get('plans', k.slice(2))?.name || '');
+  const weekAgo = Date.now() - 7 * 86400000;
+  const lastKey = (r) => { const l = lastDone(r.id); return !l ? 'l:never' : l >= weekAgo ? 'l:week' : 'l:before'; };
+  const lenKey = (r) => { const m = routineMinutes(r); return m <= 45 ? 's' : m <= 75 ? 'm' : 'l'; };
+  const planKeys = [...ps.map((p) => `w:${p.id}`), 'w:none'];
+  const sel = wide ? (get('routines', query.sel) ? query.sel : all[0]?.id) : null;
+  const kit = listKit({
+    id: 'sc', items: all, searchPh: t('searchRoutine'),
+    text: (r) => [r.name, ...plansWith(r.id).map((p) => p.name)].join(' '),
+    noun: (n) => t('nRoutines', n),
+    groups: {
+      workout: { label: t('gWorkout'), keysOf: wKey, name: wName, paletteKeys: planKeys, order: (ks) => [...(a ? [`w:${a.planId}`] : []), ...planKeys.filter((k) => !a || k !== `w:${a.planId}`)].filter((k) => ks.includes(k)) },
+      last: { label: t('gLast'), keysOf: (r) => [lastKey(r)], name: (k) => t(`gl_${k.slice(2)}`), order: (ks) => ['l:week', 'l:before', 'l:never'].filter((k) => ks.includes(k)) },
+      none: { label: t('gNone'), keysOf: () => ['all'], name: () => '' },
+    },
+    facets: [
+      { key: 'workout', label: t('gWorkout'), options: planKeys.filter((k) => all.some((r) => wKey(r).includes(k))).map((k) => [k, wName(k), k, 'workout']), get: wKey },
+      { key: 'state', label: t('fState'), options: [...(a ? [['active', t('filterActive')]] : []), ['done', t('fDone')], ['never', t('fNever')]], get: (r) => [activeIds.has(r.id) ? 'active' : '', lastDone(r.id) ? 'done' : 'never'] },
+      { key: 'len', label: t('fLength'), options: [['s', t('len_s')], ['m', t('len_m')], ['l', t('len_l')]], get: lenKey },
+    ],
+    sorts: [
+      { key: 'order', label: t('sOrder'), cmp: (x, y) => (x.order ?? 0) - (y.order ?? 0) },
+      { key: 'name', label: t('sName'), cmp: (x, y) => x.name.localeCompare(y.name) },
+      { key: 'last', label: t('sLast'), cmp: (x, y) => (lastDone(y.id) || 0) - (lastDone(x.id) || 0) },
+      { key: 'length', label: t('sLength'), cmp: (x, y) => routineMinutes(x) - routineMinutes(y) },
+    ],
+    colors: ['workout'],
+    row: (r, { dense }) => {
+      const last = lastDone(r.id);
+      const meta = [t('nExercises', (r.items || []).length), last ? t('lastOn', shortDate(last)) : t('neverDone')].join(' · ');
+      const href = wide ? `#/routines?sel=${encodeURIComponent(r.id)}` : `#/routine/${encodeURIComponent(r.id)}`;
+      const ws = plansWith(r.id);
+      return `<a class="row list-row lib-row${dense ? ' dense' : ''}${r.id === sel ? ' selected' : ''}" href="${href}"${r.id === sel ? ' aria-current="true"' : ''}>
+        <span class="min-badge small"><b>${routineMinutes(r)}</b><small>min</small></span>
+        <span class="row-text"><span class="row-title">${esc(r.name)}</span><span class="row-sub">${esc(meta)}</span>
+        ${!dense && ws.length ? `<span class="wo-tags">${ws.map((p) => `<span class="wo-tag" style="--c:${colorOf(`w:${p.id}`, planKeys)}">${esc(p.id === a?.planId ? `${t('activeBadge')} · ${p.name}` : p.name)}</span>`).join('')}</span>` : ''}</span>
+        ${icon('chevron', 18, 'class="chev"')}</a>`;
+    },
+    def: { group: 'workout', sort: 'order', color: 'workout', dense: true },
+  });
   const head = `<header class="page-head">
       <div><h1>${esc(t('tab_routines'))}</h1><p class="sub">${esc(t('nRoutines', all.length))}</p></div>
       <div class="head-actions">${gearLink()}</div>
     </header>
     <div class="two-actions" data-top-actions><button type="button" class="btn primary" data-action="new-routine">${icon('plus', 18)}${esc(t('newRoutine'))}</button><a class="btn" href="#/import?for=routine">${icon('book', 18)}${esc(t('importShort'))}</a></div>`;
-  const listHtml = all.length ? `<div class="lib-tools">
-      <label class="search"><span class="sr">${esc(t('searchRoutine'))}</span>${icon('search', 18)}<input id="lib-q" type="search" placeholder="${esc(t('searchRoutine'))}" autocomplete="off"></label>
-      <div class="filter-row">${filters.map(([k, l]) => `<button type="button" class="chip-btn${filter === k ? ' on' : ''}" data-filter="${k}" aria-pressed="${filter === k}">${esc(l)}</button>`).join('')}</div>
-    </div>
-    <div class="stack tight" data-lib>${rows || `<p class="muted">${esc(t('noMatches'))}</p>`}</div>`
+  const listHtml = all.length ? kit.html
     : empty(t('esRoutinesTitle'), exercises().length ? t('esRoutinesText') : t('esRoutinesFirst'),
       exercises().length ? '' : `<div class="button-row"><a class="btn" href="#/gym">${esc(t('setUpGym'))}</a></div>`);
   let pane = '';
@@ -81,14 +100,7 @@ export function routinesView(query = {}) {
     html,
     bind(view) {
       view.querySelectorAll('[data-action=new-routine]').forEach((b) => b.addEventListener('click', newRoutine));
-      view.querySelectorAll('[data-filter]').forEach((b) => b.addEventListener('click', () => { filter = b.dataset.filter; rerender(); }));
-      const q = view.querySelector('#lib-q');
-      const applySearch = () => {
-        const v = (q?.value || '').trim().toLowerCase();
-        view.querySelectorAll('[data-lib] .lib-row').forEach((row) => { row.hidden = Boolean(v) && !row.dataset.name.includes(v); });
-      };
-      q?.addEventListener('input', applySearch);
-      applySearch();
+      kit.bind(view);
       bindRoutineActions(view);
     },
   };

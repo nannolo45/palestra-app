@@ -86,6 +86,8 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.clock.install({ time: new Date(2026, 9, 27, 18, 0) }); // Tue 27 Oct 2026, 18:00
   const shot = (n, opts = {}) => page.screenshot({ path: path.join(SHOTS, `${n}.png`), ...opts });
   const go = async (hash) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(150); };
+  const kitSheet = async (fn) => { await page.click('[data-kit-sheet]'); await page.waitForSelector('#modal[open] .kit-sheet'); await fn(); await page.click('#modal .kit-sheet [data-close]'); await page.waitForTimeout(150); };
+  const kitFac = (key, v) => kitSheet(() => page.click(`#modal [data-fac="${key}|${v}"]`));
 
   console.log('First run');
   await page.goto(base);
@@ -176,9 +178,11 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await go('#/exercises');
   await shot('06-exercises', { fullPage: true });
   check((await page.$$('.list-row')).length === 3, 'three exercises listed');
-  await page.click('[data-type=cardio]');
-  check((await page.$$('.list-row')).length === 1, 'type filter');
-  await page.click('[data-type=all]');
+  await kitFac('type', 'cardio');
+  check((await page.$$('.list-row')).length === 1 && (await page.$$('.kit-on')).length === 1, 'type filter, shown as a tag');
+  await page.click('.kit-on');
+  await page.waitForTimeout(100);
+  check((await page.$$('.list-row')).length === 3, 'the ✕ takes the filter off');
 
   console.log('Pictures');
   check(Boolean(await page.$('.pic-prompt')), 'Esercizi offers to match pictures');
@@ -246,7 +250,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForTimeout(150);
   await shot('07-routine-edit', { fullPage: true });
   await go('#/routines');
-  await page.click('.card-row');
+  await page.click('.lib-row');
   await shot('08-routine', { fullPage: true });
   check((await page.$$('.card-row .thumb')).length === 2, `small pictures in the scheda (${(await page.$$('.card-row .thumb')).length})`);
   const firstEx = await page.textContent('.stack .card-row .row-title');
@@ -525,26 +529,48 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
 
   console.log('Compact exercise list');
   await go('#/exercises');
+  await kitSheet(() => page.click('#modal [data-dense="0"]'));
   const tall = await page.evaluate(() => document.documentElement.scrollHeight);
   await shot('23-exercises-normal');
-  await page.click('[data-action=density]');
+  await kitSheet(() => page.click('#modal [data-dense="1"]'));
   await page.waitForSelector('.list-row.compact');
   const short = await page.evaluate(() => document.documentElement.scrollHeight);
   check(short < tall * 0.85, `compact list is much shorter (${tall} → ${short})`);
   await shot('24-exercises-compact');
-  await page.click('[data-action=toggle-all]');
+  await page.click('[data-kit-all]');
   await page.waitForTimeout(100);
   check((await page.$$('.list-row')).length === 0, 'all groups closed');
-  await page.click('.group-head button');
+  await page.click('.kit-gt');
   await page.waitForTimeout(100);
   await shot('25-exercises-closed');
-  check((await page.$$('.group .card.list')).length === 1, 'one group opened');
-  await page.fill('#ex-q', 'panca');
+  check((await page.$$('.kit-group .kit-list')).length === 1, 'one group opened');
+  await page.fill('#kit-q-ex', 'panca');
   await page.waitForTimeout(100);
   check((await page.$$('.list-row')).length >= 1, 'search opens closed groups');
-  await page.fill('#ex-q', '');
-  await page.click('[data-action=toggle-all]');
-  await page.click('[data-action=density]');
+  await page.fill('#kit-q-ex', '');
+  await page.click('[data-kit-all]');
+  await page.waitForTimeout(100);
+  // the group tags: a tap shows only that group, a drag reorders them (and the groups)
+  const tagNames = async () => page.$$eval('.kit-tag', (els) => els.map((e) => e.dataset.tag));
+  const tBefore = await tagNames();
+  check(tBefore.length >= 3, `group tags (${tBefore.join(', ')})`);
+  await page.click(`.kit-tag[data-tag="${tBefore[1]}"]`);
+  await page.waitForTimeout(100);
+  check((await page.$$('.kit-group')).length === 1 && (await page.$$('.kit-tag.on')).length === 1, 'a tag shows only its group');
+  await page.click(`.kit-tag[data-tag="${tBefore[1]}"]`);
+  await page.waitForTimeout(100);
+  { const a = await page.$(`.kit-tag[data-tag="${tBefore[0]}"]`); const b = await page.$(`.kit-tag[data-tag="${tBefore[2]}"]`);
+    const ra = await a.boundingBox(); const rb = await b.boundingBox();
+    await page.mouse.move(ra.x + ra.width / 2, ra.y + ra.height / 2); await page.mouse.down();
+    await page.mouse.move(ra.x + ra.width / 2 + 10, ra.y + ra.height / 2, { steps: 3 });
+    await page.mouse.move(rb.x + rb.width - 4, rb.y + rb.height / 2, { steps: 8 }); await page.mouse.up(); }
+  await page.waitForTimeout(200);
+  const tAfter = await tagNames();
+  check(tAfter.indexOf(tBefore[0]) > tAfter.indexOf(tBefore[2]) || tAfter.indexOf(tBefore[0]) === tAfter.length - 1 || tAfter[0] !== tBefore[0], `drag reorders the tags (${tAfter.join(', ')})`);
+  const gOrder = await page.$$eval('.kit-group .kit-gt span:first-child', (els) => els.map((e) => e.textContent));
+  const tOrder = await page.$$eval('.kit-tag', (els) => els.map((e) => e.querySelector('.nm').textContent));
+  check(gOrder.join('|') === tOrder.join('|'), `the groups follow the tags (${gOrder.join(', ')})`);
+  await shot('p14-tags');
 
   const txt = fs.readFileSync(path.join(__dirname, 'sample-plan.txt'), 'utf8').replace('Curl con bilanciere 4x10 rec 1:30', 'Curl con bilanciere 4x10 rc 1:30');
   await go('#/import');
@@ -612,10 +638,10 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check((await page.$$('.day-row')).length === 4, 'the copy joined the other workout');
   await go('#/routines');
   check((await page.$$('.lib-row')).length === nPlans + 1, 'the copy is in the library');
-  await page.click('[data-filter=none]');
-  await page.waitForTimeout(100);
+  await kitFac('workout', 'w:none');
   check((await page.$$('.lib-row')).length >= 1, 'filter: schede in no workout');
-  await page.click('[data-filter=all]');
+  await page.click('.kit-on');
+  await page.waitForTimeout(100);
   check(repo.has('data/plans.json') && JSON.parse(repo.get('data/plans.json').text).length === 2, 'plans synced');
 
   console.log('New routine by importing text');
@@ -693,9 +719,9 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('.imp-day');
   await overflowAt('import preview');
   await go('#/exercises');
-  await page.click('[data-action=density]');
-  await overflowAt('compact exercises');
-  await page.click('[data-action=density]');
+  await kitSheet(() => page.click('#modal [data-dense="0"]'));
+  await overflowAt('detailed exercises');
+  await page.click('[data-kit-sheet]'); await page.waitForSelector('#modal[open] .kit-sheet'); await overflowAt('filter sheet'); await page.click('#modal [data-dense="1"]'); await page.click('#modal .kit-sheet [data-close]');
   await go('#/gym');
   await page.click('.zone [data-add-machine]');
   await page.click('#modal .seg-opt:has(input[value=cardio])');

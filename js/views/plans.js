@@ -6,6 +6,7 @@ import { icon } from '../ui/icons.js';
 import { backLink, empty, toggle, gearLink } from '../ui/parts.js';
 import { openSheet, askConfirm, toast, chooseHowToCreate } from '../ui/dialogs.js';
 import { routines, routineMinutes, lastDone } from '../data.js';
+import { listKit, colorOf } from '../ui/listkit.js';
 import {
   plans, activeInfo, isActive, isUpcoming, dateOf, activate, validTime, deactivate, savePlan, planDays, planMinutes, weekNumber, nextMonday, isoDate, weekStart, planToText,
 } from '../plans.js';
@@ -49,6 +50,37 @@ export function plansView() {
       ${upcoming ? `<button type="button" class="btn small" data-activate-now="${esc(p.id)}">${esc(t('activateToday'))}</button>` : `<button type="button" class="btn small" data-activate="${esc(p.id)}">${esc(t('makeActive'))}</button>`}
     </div>`;
   };
+  const rest = others.filter((p) => !(a && a.upcoming && a.upcoming.planId === p.id));
+  const planKeys = [...all.map((p) => `w:${p.id}`), 'w:none'];
+  const lastUsed = (p) => Math.max(0, ...planDays(p).map((d) => lastDone(d.routineId) || 0));
+  const kit = listKit({
+    id: 'wo', items: rest, searchPh: t('searchWorkout'),
+    text: (p) => [p.name, ...planDays(p).map((d) => get('routines', d.routineId)?.name)].join(' '),
+    noun: (n) => t('nWorkouts', n),
+    groups: {
+      use: { label: t('gUse'), keysOf: (p) => [lastUsed(p) ? 'u:used' : 'u:never'], name: (k) => t(k === 'u:used' ? 'gu_used' : 'gu_never'), order: (ks) => ['u:used', 'u:never'].filter((k) => ks.includes(k)) },
+      none: { label: t('gNone'), keysOf: () => ['all'], name: () => '' },
+    },
+    facets: [
+      { key: 'use', label: t('gUse'), options: [['used', t('gu_used')], ['never', t('gu_never')]], get: (p) => (lastUsed(p) ? 'used' : 'never') },
+      { key: 'days', label: t('fDays'), options: [...new Set(rest.map((p) => planDays(p).length))].sort().map((n) => [String(n), t('nDays', n)]), get: (p) => String(planDays(p).length) },
+    ],
+    sorts: [
+      { key: 'last', label: t('sLastUsed'), cmp: (x, y) => lastUsed(y) - lastUsed(x) },
+      { key: 'name', label: t('sName'), cmp: (x, y) => x.name.localeCompare(y.name) },
+      { key: 'length', label: t('sWeekly'), cmp: (x, y) => planMinutes(x) - planMinutes(y) },
+    ],
+    colors: [],
+    row: (p, { dense }) => {
+      const meta = `${t('nDays', planDays(p).length)} · ${minText(planMinutes(p))} ${t('perWeek')} · ${sinceText(p)}`;
+      return `<div class="row list-row plan-row${dense ? ' dense' : ''}" style="--c:${colorOf(`w:${p.id}`, planKeys)}">
+        <span class="plan-dot" aria-hidden="true"></span>
+        <a class="row-text plain" href="#/plan/${encodeURIComponent(p.id)}"><span class="row-title">${esc(p.name)}</span><span class="row-sub">${esc(meta)}</span>
+        ${!dense ? `<span class="row-sub">${esc(planDays(p).map((d) => get('routines', d.routineId)?.name).filter(Boolean).join(' · '))}</span>` : ''}</a>
+        <button type="button" class="round-btn small" data-plan-menu="${esc(p.id)}" aria-label="${esc(t('moreActions'))}" aria-haspopup="menu">${icon('dots', 18)}</button></div>`;
+    },
+    def: { group: 'use', sort: 'last', color: 'none', dense: true },
+  });
   const html = `<header class="page-head">
       <div><h1>${esc(t('plansTitle'))}</h1><p class="sub">${esc(a ? t('activeIs', a.plan.name) : t('noActivePlanShort'))}</p></div>
       <div class="head-actions">${gearLink()}</div>
@@ -58,12 +90,14 @@ export function plansView() {
     ${all.length ? `<div class="stack">
       ${active ? card(active, true) : `<div class="card plain-note">${esc(t('noActivePlan'))}</div>`}
       ${a && a.upcoming ? `<h2 class="section-title">${esc(t('upcomingPlan'))}</h2>${card(a.upcoming.plan, false, true)}` : ''}
-      ${others.filter((p) => !(a && a.upcoming && a.upcoming.planId === p.id)).length ? `<h2 class="section-title">${esc(t('otherPlans'))}</h2>${others.filter((p) => !(a && a.upcoming && a.upcoming.planId === p.id)).map((p) => card(p, false)).join('')}` : ''}
+      ${rest.length ? `<h2 class="section-title">${esc(t('otherPlans'))}</h2>${kit.html}` : ''}
     </div>` : empty(t('esPlansTitle'), t('esPlansText'))}`;
   return {
     html,
     bind(view) {
       view.querySelectorAll('[data-activate]').forEach((b) => b.addEventListener('click', () => activateSheet(get('plans', b.dataset.activate))));
+      kit.bind(view);
+      view.querySelectorAll('[data-plan-menu]').forEach((b) => b.addEventListener('click', () => planMenu(b, b.dataset.planMenu)));
       view.querySelectorAll('[data-activate-now]').forEach((b) => b.addEventListener('click', () => { activate(get('plans', b.dataset.activateNow), isoDate(Date.now())); rerender(); }));
       view.querySelector('[data-action=new-plan]').addEventListener('click', async () => {
         const how = await chooseHowToCreate({ title: t('newPlan'), emptyLabel: t('startEmpty'), emptyHint: t('startEmptyPlanHint'), importLabel: t('importFromTextOrFile'), importHint: t('importPlanHint') });
@@ -74,6 +108,62 @@ export function plansView() {
       });
     },
   };
+}
+
+function duplicatePlan(id) {
+  const cur = get('plans', id);
+  const copy = upsert('plans', { ...cur, id: uid(), name: t('copyOf', cur.name), days: cur.days.map((d) => ({ ...d })) });
+  location.hash = `#/plan/${encodeURIComponent(copy.id)}`;
+}
+
+async function exportPlan(id) {
+  const cur = get('plans', id);
+  const text = planToText(cur);
+  const file = new File([text], `${cur.name.replace(/[^\p{L}\p{N} ._-]+/gu, '').trim() || 'workout'}.txt`, { type: 'text/plain' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: cur.name }); return; } catch { /* cancelled: fall back to a download */ }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(file); a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+async function deletePlan(id, stay = false) {
+  const cur = get('plans', id);
+  if (!(await askConfirm({ text: t('deletePlanQ', cur.name), ok: t('delete'), danger: true }))) return;
+  if (isActive(id)) deactivate();
+  const before = remove('plans', id);
+  if (!stay) location.hash = '#/plans'; else rerender();
+  toast(t('deleted', cur.name), { undo: () => restore('plans', before) });
+}
+
+/** The ⋯ of a workout in the list: make active, open, duplicate, export, delete. */
+function planMenu(anchor, id) {
+  document.querySelectorAll('.kit-menu').forEach((el) => el.remove());
+  const m = document.createElement('div');
+  m.className = 'kit-menu';
+  m.setAttribute('role', 'menu');
+  m.innerHTML = [['activate', t('makeActive')], ['open', t('open')], ['duplicate', t('duplicate')], ['export', t('exportText')], ['delete', t('delete')]]
+    .map(([k, l]) => `<button type="button" role="menuitem" data-m="${k}" class="${k === 'delete' ? 'danger' : ''}">${esc(l)}</button>`).join('');
+  const r = anchor.getBoundingClientRect();
+  m.style.top = `${r.bottom + window.scrollY + 4}px`;
+  m.style.right = `${Math.max(8, document.documentElement.clientWidth - r.right)}px`;
+  document.body.appendChild(m);
+  const close = () => { m.remove(); document.removeEventListener('pointerdown', off, true); };
+  const off = (e) => { if (!m.contains(e.target)) close(); };
+  setTimeout(() => document.addEventListener('pointerdown', off, true), 0);
+  m.querySelector('button').focus();
+  m.addEventListener('keydown', (e) => { if (e.key === 'Escape') { close(); anchor.focus(); } });
+  m.querySelectorAll('[data-m]').forEach((b) => b.addEventListener('click', () => {
+    close();
+    const k = b.dataset.m;
+    if (k === 'activate') activateSheet(get('plans', id));
+    if (k === 'open') location.hash = `#/plan/${encodeURIComponent(id)}`;
+    if (k === 'duplicate') duplicatePlan(id);
+    if (k === 'export') exportPlan(id);
+    if (k === 'delete') deletePlan(id, true);
+  }));
 }
 
 /** Confirm making a plan active, from Monday or from today. */
@@ -170,31 +260,9 @@ export function planView(id) {
         rerender();
       }));
       view.querySelector('[data-action=add-day]').addEventListener('click', () => addDay(id));
-      view.querySelector('[data-action=duplicate]').addEventListener('click', () => {
-        const cur = get('plans', id);
-        const copy = upsert('plans', { ...cur, id: uid(), name: t('copyOf', cur.name), days: cur.days.map((d) => ({ ...d })) });
-        location.hash = `#/plan/${encodeURIComponent(copy.id)}`;
-      });
-      view.querySelector('[data-action=export]').addEventListener('click', async () => {
-        const cur = get('plans', id);
-        const text = planToText(cur);
-        const file = new File([text], `${cur.name.replace(/[^\p{L}\p{N} ._-]+/gu, '').trim() || 'workout'}.txt`, { type: 'text/plain' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          try { await navigator.share({ files: [file], title: cur.name }); return; } catch { /* cancelled: fall back to a download */ }
-        }
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(file); a.download = file.name;
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      });
-      view.querySelector('[data-action=delete]').addEventListener('click', async () => {
-        const cur = get('plans', id);
-        if (!(await askConfirm({ text: t('deletePlanQ', cur.name), ok: t('delete'), danger: true }))) return;
-        if (isActive(id)) deactivate();
-        const before = remove('plans', id);
-        location.hash = '#/plans';
-        toast(t('deleted', cur.name), { undo: () => restore('plans', before) });
-      });
+      view.querySelector('[data-action=duplicate]').addEventListener('click', () => duplicatePlan(id));
+      view.querySelector('[data-action=export]').addEventListener('click', () => exportPlan(id));
+      view.querySelector('[data-action=delete]').addEventListener('click', () => deletePlan(id));
     },
   };
 }

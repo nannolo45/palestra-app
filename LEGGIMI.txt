@@ -1,15 +1,17 @@
-Palestra: da v19 a v23 in un colpo (v20, v21, v22 e v23 insieme)
+Palestra v25: elenchi più leggibili (Esercizi, Schede, Workout)
 
 COME CARICARE
-1. Repository palestra-app su GitHub → Add file → Upload files.
+1. Repository palestra-app → Add file → Upload files.
 2. Trascina TUTTO il contenuto di questa cartella (non la cartella stessa), sottocartelle comprese.
-3. Commit. Sono 56 file, sotto il limite di 100: un solo caricamento.
+3. Commit. Sono 47 file: un solo caricamento.
 
+NUOVO: js/ui/listkit.js
 DA CANCELLARE: niente.
-Non servono per far funzionare l'app: docs/, tests/, README.md, CHANGELOG.md (ma tienili aggiornati).
+Non servono per far funzionare l'app: docs/, tests/, CHANGELOG.md (ma tienili aggiornati).
 
-Cosa porta
-- v20: a fine recupero "Salta" diventa "Fine"; niente più "× 0" quando il peso è da scegliere.
-- v21: "Rifai la serie" nel recupero, "Indietro" su serie e cardio.
-- v22: Everyday vede l'allenamento in corso (prefs.json → live).
-- v23: "kg · per manubrio" / "con la sbarra" con il conto sotto, e l'Anteprima degli esercizi prima e dopo.
+Novità
+- In Esercizi, Schede e Workout: Cerca + Filtri (un foglio con Raggruppa, Ordina, i filtri con i conteggi, Colori, Righe).
+- I filtri accesi restano sotto la ricerca come etichette con la ✕.
+- Le etichette colorate dei gruppi: un tocco mostra solo quel gruppo; tieni premuto e trascina per riordinarle (anche i gruppi seguono).
+- Ogni gruppo si chiude toccandone il titolo; il quadratino colorato ne cambia il colore.
+- In Workout gli altri workout sono righe con ⋯ (Rendi attivo, Apri, Duplica, Esporta, Elimina).

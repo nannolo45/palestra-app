@@ -218,6 +218,7 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await page.click('.zone [data-add-machine]'); await page.waitForSelector('#modal[open]'); await shot('06-new-machine');
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   await go('#/exercises'); await shot('07-exercises');
+  { const tg = await page.$$('.kit-tag'); if (tg[1]) { await tg[1].click(); await page.waitForTimeout(300); await shot('38-tags'); await (await page.$('.kit-tag.on')).click(); await page.waitForTimeout(200); } }
   await go(`#/exercise/${ids.ex}`); await shot('08-exercise');
   await page.click('[data-action=pick-picture]'); await page.waitForSelector('#modal .pic-cand'); await page.waitForTimeout(500); await shot('28-picker');
   await page.click('#modal [data-close]'); await page.waitForTimeout(200);
@@ -239,7 +240,7 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await go('#/plans'); await shot('14-plans');
   await go(`#/plan/${ids.plan}`); await shot('15-plan');
   await go('#/plans');
-  await page.click(`[data-activate="${ids.lightPlan}"]`); await page.waitForSelector('#modal[open]'); await shot('16-activate');
+  await page.click(`[data-plan-menu="${ids.lightPlan}"]`); await page.click('.kit-menu [data-m=activate]'); await page.waitForSelector('#modal[open]'); await shot('16-activate');
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   // Importing
   await go('#/import?for=plan'); await page.fill('#imp-text', T.importText); await page.click('details.help summary'); await shot('17-import');

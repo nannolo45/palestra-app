@@ -13,8 +13,9 @@ import {
 import { CARDIO_KIND_KEYS, EQUIPMENT, measuresFor, defaultTargets, increaseCategory, progressOf, weightMode } from '../model.js';
 import { newMachineSheet } from './gym.js';
 import { addExerciseToRoutine } from './routines.js';
+import { listKit } from '../ui/listkit.js';
+import { activeInfo, planDays } from '../plans.js';
 
-const listState = { by: 'muscle', type: 'all', q: '' };
 
 function tagLabel(ex) {
   const m = machineOf(ex);
@@ -58,73 +59,53 @@ function settingsText(ex) {
 }
 
 export function exercisesView() {
-  const compact = Boolean(state.settings.exCompact);
-  const collapsed = new Set(state.settings.exCollapsed || []);
-  const q = listState.q.trim().toLowerCase();
-  let list = exercises().filter((e) => listState.type === 'all' || e.type === listState.type);
-  if (q) list = list.filter((e) => [e.name, machineOf(e)?.number, machineOf(e)?.name, ...(e.muscles || [])].some((x) => String(x || '').toLowerCase().includes(q)));
-  let groups = [];
-  if (listState.by === 'muscle') {
-    const keyOf = (e) => (e.type === 'cardio' ? t('cardio') : (e.muscles && e.muscles[0]) || t('other'));
-    const keys = [...new Set(list.map(keyOf))].sort((a, b) => (a === t('cardio') ? -1 : b === t('cardio') ? 1 : a === t('other') ? 1 : b === t('other') ? -1 : a.localeCompare(b)));
-    groups = keys.map((k) => ({ title: k, rows: list.filter((e) => keyOf(e) === k) }));
-  } else {
-    const ps = places();
-    groups = ps.map((p) => ({ title: p.name, rows: list.filter((e) => placeOf(e)?.id === p.id) }));
-    groups.push({ title: t('noPlace'), rows: list.filter((e) => !placeOf(e)) });
-  }
-  groups = groups.filter((g) => g.rows.length);
-  const key = (g) => `${listState.by}:${g.title}`;
-  // while searching, every group is open
-  const isClosed = (g) => !q && collapsed.has(key(g));
-  const allClosed = groups.length && groups.every(isClosed);
-  const filters = [['all', t('all')], ['weights', t('type_weights')], ['bodyweight', t('type_bodyweight')], ['cardio', t('type_cardio')]];
+  const all = exercises();
+  const ps = places();
+  const a = activeInfo();
+  const inActive = new Set();
+  if (a) for (const d of planDays(a.plan)) for (const it of get('routines', d.routineId)?.items || []) inActive.add(it.exerciseId);
+  const muscleKey = (e) => (e.type === 'cardio' ? 'm:cardio' : (e.muscles && e.muscles[0]) ? `m:${e.muscles[0]}` : 'm:none');
+  const zoneKey = (e) => (placeOf(e) ? `z:${placeOf(e).id}` : 'z:none');
+  const muscleName = (k) => (k === 'm:cardio' ? t('cardio') : k === 'm:none' ? t('other') : k.slice(2));
+  const zoneName = (k) => (k === 'z:none' ? t('noPlace') : get('places', k.slice(2))?.name || '');
+  const muscles = [...new Set(all.map(muscleKey))];
+  const lastFirst = (ks, last) => [...ks.filter((k) => !last.includes(k)), ...ks.filter((k) => last.includes(k))];
+  const kit = listKit({
+    id: 'ex', items: all, searchPh: t('searchExercisePh'), grid: true,
+    text: (e) => [e.name, machineOf(e)?.number, machineOf(e)?.name, placeOf(e)?.name, ...(e.muscles || [])].join(' '),
+    noun: (n) => t('nExercisesShort', n),
+    groups: {
+      muscle: { label: t('gMuscle'), keysOf: (e) => [muscleKey(e)], name: muscleName, order: (ks) => lastFirst([...ks].sort((x, y) => muscleName(x).localeCompare(muscleName(y))), ['m:cardio', 'm:none']) },
+      zone: { label: t('gZone'), keysOf: (e) => [zoneKey(e)], name: zoneName, order: (ks) => [...ps.map((p) => `z:${p.id}`).filter((k) => ks.includes(k)), ...(ks.includes('z:none') ? ['z:none'] : [])] },
+      type: { label: t('gType'), keysOf: (e) => [`t:${e.type}`], name: (k) => t(`type_${k.slice(2)}`), order: (ks) => ['t:weights', 't:bodyweight', 't:cardio'].filter((k) => ks.includes(k)) },
+      none: { label: t('gNone'), keysOf: () => ['all'], name: () => '' },
+    },
+    facets: [
+      { key: 'type', label: t('gType'), options: ['weights', 'bodyweight', 'cardio'].map((v) => [v, t(`type_${v}`), `t:${v}`, 'type']), get: (e) => e.type },
+      { key: 'muscle', label: t('gMuscle'), options: muscles.map((k) => [k, muscleName(k), k, 'muscle']), get: muscleKey },
+      { key: 'zone', label: t('gZone'), options: [...ps.map((p) => [`z:${p.id}`, p.name, `z:${p.id}`, 'zone']), ['z:none', t('noPlace'), 'z:none', 'zone']].filter((o) => all.some((e) => zoneKey(e) === o[0])), get: zoneKey },
+      ...(a ? [{ key: 'use', label: t('fUse'), options: [['on', t('fInActive')], ['off', t('fNotInActive')]], get: (e) => (inActive.has(e.id) ? 'on' : 'off') }] : []),
+    ],
+    sorts: [
+      { key: 'name', label: t('sName'), cmp: (x, y) => x.name.localeCompare(y.name) },
+      { key: 'route', label: t('sRoute'), cmp: (x, y) => (ps.indexOf(placeOf(x)) - ps.indexOf(placeOf(y))) || String(machineOf(x)?.number || '').localeCompare(String(machineOf(y)?.number || ''), undefined, { numeric: true }) || x.name.localeCompare(y.name) },
+    ],
+    colors: ['muscle', 'zone', 'type'],
+    row: (e, { dense }) => exRow(e, 'muscle', dense),
+    def: { group: 'muscle', sort: 'name', color: 'muscle', dense: true },
+    emptyHtml: empty(t('esExercisesTitle'), t('esExercisesText'), `<a class="btn primary" href="#/exercise/new">${esc(t('newExercise'))}</a>`),
+  });
   const html = `<header class="page-head tight">
       <h1>${esc(t('tab_exercises'))}</h1>
       <div class="head-actions">
-        <button type="button" class="round-btn${compact ? ' on' : ''}" data-action="density" aria-pressed="${compact}" aria-label="${esc(t('compactView'))}" title="${esc(t('compactView'))}">${icon('rowsCompact')}</button>
         <a class="round-btn" href="#/exercise/new" aria-label="${esc(t('newExercise'))}">${icon('plus')}</a>
         ${gearLink()}
       </div>
     </header>
     ${segTabs('exercises')}
-    <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchExercise'))}</span><input id="ex-q" type="search" placeholder="${esc(t('searchExercisePh'))}" value="${esc(listState.q)}"></label>
-    <div class="filter-row" role="group" aria-label="${esc(t('filterType'))}">
-      <button type="button" class="chip-btn by" data-action="by" aria-label="${esc(t('groupBy'))}">${icon('sort', 16)}${esc(listState.by === 'muscle' ? t('byMuscle') : t('byPlace'))}</button>
-      <span class="divider" aria-hidden="true"></span>
-      ${filters.map(([v, l]) => `<button type="button" class="chip-btn${listState.type === v ? ' on' : ''}" aria-pressed="${listState.type === v}" data-type="${v}">${v !== 'all' ? `<span class="swatch sw-${v}" aria-hidden="true"></span>` : ''}${esc(l)}</button>`).join('')}
-    </div>
     ${missingPictures().length ? `<a class="card pic-prompt" href="#/pictures">${icon('image', 20)}<span><b>${esc(t('picMatchTitle'))}</b><small>${esc(t('picMatchText', missingPictures().length))}</small></span>${icon('chevron', 18, 'class="chev"')}</a>` : ''}
-    ${groups.length > 1 && !q ? `<div class="list-tools"><span class="muted small">${esc(t('nExercisesShort', list.length))}</span><button type="button" class="link-btn" data-action="toggle-all">${esc(allClosed ? t('openAll') : t('closeAll'))}</button></div>` : ''}
-    ${groups.length ? `<div class="groups">${groups.map((g) => {
-    const closed = isClosed(g);
-    return `<section class="group${compact ? ' compact' : ''}">
-        <h2 class="group-head"><button type="button" data-group="${esc(key(g))}" aria-expanded="${!closed}">
-          <span>${esc(g.title)}</span><span class="count">${g.rows.length}</span>${icon(closed ? 'chevron' : 'down', 16, 'class="chev"')}
-        </button></h2>
-        ${closed ? '' : `<div class="card list">${g.rows.map((e) => exRow(e, listState.by, compact)).join('')}</div>`}
-      </section>`;
-  }).join('')}</div>`
-    : empty(exercises().length ? t('esNoMatch') : t('esExercisesTitle'), exercises().length ? t('esNoMatchText') : t('esExercisesText'),
-      `<a class="btn primary" href="#/exercise/new">${esc(t('newExercise'))}</a>`)}`;
-  return {
-    html,
-    bind(view) {
-      view.querySelector('#ex-q').addEventListener('input', (e) => { listState.q = e.target.value; rerender(); });
-      view.querySelector('[data-action=by]').addEventListener('click', () => { listState.by = listState.by === 'muscle' ? 'place' : 'muscle'; rerender(); });
-      view.querySelectorAll('[data-type]').forEach((b) => b.addEventListener('click', () => { listState.type = b.dataset.type; rerender(); }));
-      view.querySelector('[data-action=density]').addEventListener('click', () => saveSettings({ exCompact: !compact }).then(rerender));
-      view.querySelectorAll('[data-group]').forEach((b) => b.addEventListener('click', () => {
-        const k = b.dataset.group;
-        if (collapsed.has(k)) collapsed.delete(k); else collapsed.add(k);
-        saveSettings({ exCollapsed: [...collapsed] }).then(rerender);
-      }));
-      view.querySelector('[data-action=toggle-all]')?.addEventListener('click', () => {
-        const others = [...collapsed].filter((k) => !k.startsWith(`${listState.by}:`));
-        saveSettings({ exCollapsed: allClosed ? others : [...others, ...groups.map(key)] }).then(rerender);
-      });
-    },
-  };
+    ${all.length ? kit.html : empty(t('esExercisesTitle'), t('esExercisesText'), `<a class="btn primary" href="#/exercise/new">${esc(t('newExercise'))}</a>`)}`;
+  return { html, bind: kit.bind };
 }
 
 function rerender() { window.dispatchEvent(new CustomEvent('palestra:render')); }

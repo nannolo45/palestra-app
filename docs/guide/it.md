@@ -89,6 +89,18 @@ In *Impostazioni → Lingua e aspetto*, **Aspetto** sceglie i colori dell'app: *
 
 ![Impostazioni: ogni cosa nella sua sezione](guide/it/03-settings.webp)
 
+### Cercare, filtrare e raggruppare
+
+*Esercizi*, *Schede* e *Workout* hanno in alto gli stessi strumenti:
+
+- **Cerca** e **Filtri**. *Filtri* apre un foglio con tutto: *Raggruppa per*, *Ordina per*, i filtri (ognuno con quanti ne trova), *Colori* e *Righe* (compatte, o con dettagli e note). Sul pulsante c'è quanti filtri sono accesi; sotto la ricerca restano come etichette con la ✕ per toglierli.
+- **I gruppi**, come etichette colorate con il numero: toccane una per vedere solo quel gruppo (anche più d'una). **Tieni premuto e trascina** un'etichetta per riordinarle: l'elenco segue lo stesso ordine.
+- **Ogni gruppo si chiude** toccandone il titolo; *Chiudi tutti* li chiude insieme. Il quadratino colorato accanto al titolo cambia il colore del gruppo, che ritorna come barra a sinistra di ogni riga.
+
+Ogni workout ha il suo colore, lo stesso in *Schede* e in *Workout*. In *Workout*, gli altri workout sono righe con **⋯**: *Rendi attivo*, *Apri*, *Duplica*, *Esporta come testo*, *Elimina*. Gruppi chiusi, ordine, filtri e colori restano come li lasci, su questo dispositivo.
+
+![Le etichette dei gruppi: un tocco per filtrare, trascina per riordinare](guide/it/38-tags.webp)
+
 ## Oggi
 
 La prima pagina ti dice cosa ti tocca oggi. In alto c'è la scheda del giorno, con l'ora se l'hai data, e *Inizia*. Se Everyday l'ha già messa in agenda, accanto c'è scritto *in Everyday*.
@@ -131,7 +143,7 @@ Per ogni scheda tocca il giorno della settimana (L M M G V S D) e, se vuoi, sceg
 
 ### Cambiare il workout attivo
 
-In *Workout* tocca *Rendi attivo* su un altro workout. Se è metà settimana, scegli *Da lunedì* per finire la settimana con quello di prima, o *Da oggi*. Il workout di prima resta salvato.
+In *Workout* tocca **⋯** su un altro workout, poi *Rendi attivo*. Se è metà settimana, scegli *Da lunedì* per finire la settimana con quello di prima, o *Da oggi*. Il workout di prima resta salvato.
 
 ### Esportare e duplicare
 
@@ -145,7 +157,7 @@ Una scheda è una sequenza di esercizi che ripeti, come «Gambe». Palestra calc
 
 ### Trovare una scheda
 
-Scrivi nella ricerca, oppure scegli *Nel workout attivo* o *In nessun workout*. Sotto ogni scheda vedi in quale workout è.
+Sono raggruppate per workout, ognuno con il suo colore. Scrivi nella ricerca, tocca l'etichetta di un workout, o apri *Filtri* (workout, stato, durata). Con *Righe → Con dettagli e note* sotto ogni scheda vedi in quali workout è.
 
 ### Dentro una scheda
 
@@ -185,7 +197,7 @@ In una scheda tocca *Duplica in un altro workout* e scegli dove. La copia è tua
 
 ## Esercizi e palestra
 
-In *Esercizi* trovi tutti i tuoi esercizi, raggruppati *Per muscolo* o *Per posto*. Filtra per tipo, apri e chiudi i gruppi, o passa alla *Vista compatta* con il pulsante in alto per vederne di più.
+In *Esercizi* trovi tutti i tuoi esercizi, raggruppati per muscolo (o zona, o tipo: *Filtri → Raggruppa per*). Tocca l'etichetta di un muscolo per vedere solo quello, chiudi i gruppi che non ti servono; in *Filtri* scegli tipo, zona, se sono nel workout attivo, e righe compatte o con le note.
 
 ![Esercizi: i gruppi, i filtri e la vista compatta](guide/it/07-exercises.webp)
 
