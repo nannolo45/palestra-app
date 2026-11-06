@@ -1,9 +1,10 @@
 // Esercizi: the list (by muscle or by place, filtered by type) and the exercise card.
 import { state, get, upsert, remove, restore, uid, live, saveSettings } from '../store.js';
-import { t } from '../i18n.js';
+import { t, getLang } from '../i18n.js';
+import { REGION_KEYS, MUSCLE_KEYS, REGIONS, regionOf, regionName, muscleName, musclesOf, guessedMuscles, muscleFromWord, regionColor, regionOfMuscle } from '../body.js';
 import { esc, fmtNum, shortDate, num } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { backLink, stepper, bindSteppers, stepVal, segmented, empty, exTag, segTabs, gearLink } from '../ui/parts.js';
+import { backLink, stepper, bindSteppers, stepVal, segmented, empty, exTag, trainHead } from '../ui/parts.js';
 import { hasPicture, frameUrl } from '../pictures.js';
 import { pickPicture, machinePhotoBlock, bindPhotoInputs, missingPictures, picturesOn } from './pictures.js';
 import { askConfirm, toast } from '../ui/dialogs.js';
@@ -64,25 +65,39 @@ export function exercisesView() {
   const a = activeInfo();
   const inActive = new Set();
   if (a) for (const d of planDays(a.plan)) for (const it of get('routines', d.routineId)?.items || []) inActive.add(it.exerciseId);
-  const muscleKey = (e) => (e.type === 'cardio' ? 'm:cardio' : (e.muscles && e.muscles[0]) ? `m:${e.muscles[0]}` : 'm:none');
+  const lang = getLang();
+  // v25 grouped by the first muscle word; v26 groups by body region, with the muscles inside
+  const saved = (state.settings.lists || {}).ex;
+  if (saved && !saved.v26) {
+    const f = { ...(saved.f || {}) }; delete f.muscle;
+    saveSettings({ lists: { ...state.settings.lists, ex: { ...saved, v26: true, group: saved.group === 'muscle' ? 'region' : saved.group, color: saved.color === 'muscle' ? 'region' : saved.color, f } } }, { quiet: true });
+  }
+  const regKey = (e) => `r:${regionOf(e)}`;
+  const musKey = (e) => `m:${musclesOf(e)[0] || 'none'}`;
+  const regName = (k) => regionName(k.slice(2), lang);
+  const musName = (k) => (k === 'm:none' ? regionName('unsorted', lang) : muscleName(k.slice(2), lang));
+  const regOrder = (ks) => [...REGION_KEYS.map((r) => `r:${r}`), 'r:unsorted'].filter((k) => ks.includes(k));
+  const musOrder = (ks) => [...MUSCLE_KEYS.map((m) => `m:${m}`), 'm:none'].filter((k) => ks.includes(k));
+  const regColor = (k) => (k === 'r:unsorted' ? '#8A9A99' : regionColor(k.slice(2)));
+  const musColor = (k) => (k === 'm:none' ? '#8A9A99' : regionColor(regionOfMuscle(k.slice(2))));
   const zoneKey = (e) => (placeOf(e) ? `z:${placeOf(e).id}` : 'z:none');
-  const muscleName = (k) => (k === 'm:cardio' ? t('cardio') : k === 'm:none' ? t('other') : k.slice(2));
   const zoneName = (k) => (k === 'z:none' ? t('noPlace') : get('places', k.slice(2))?.name || '');
-  const muscles = [...new Set(all.map(muscleKey))];
-  const lastFirst = (ks, last) => [...ks.filter((k) => !last.includes(k)), ...ks.filter((k) => last.includes(k))];
+  const regs = regOrder([...new Set(all.map(regKey))]);
   const kit = listKit({
     id: 'ex', items: all, searchPh: t('searchExercisePh'), grid: true,
-    text: (e) => [e.name, machineOf(e)?.number, machineOf(e)?.name, placeOf(e)?.name, ...(e.muscles || [])].join(' '),
+    text: (e) => [e.name, machineOf(e)?.number, machineOf(e)?.name, placeOf(e)?.name, ...musclesOf(e).map((m) => `${muscleName(m, 'it')} ${muscleName(m, 'en')} ${m}`), regionName(regionOf(e), lang)].join(' '),
     noun: (n) => t('nExercisesShort', n),
     groups: {
-      muscle: { label: t('gMuscle'), keysOf: (e) => [muscleKey(e)], name: muscleName, order: (ks) => lastFirst([...ks].sort((x, y) => muscleName(x).localeCompare(muscleName(y))), ['m:cardio', 'm:none']) },
+      region: { label: t('gRegion'), keysOf: (e) => [regKey(e)], name: regName, order: regOrder, defColor: regColor,
+        sub: { keyOf: musKey, name: musName, order: musOrder } },
+      muscle: { label: t('gMuscle'), keysOf: (e) => [musKey(e)], name: musName, order: musOrder, defColor: musColor },
       zone: { label: t('gZone'), keysOf: (e) => [zoneKey(e)], name: zoneName, order: (ks) => [...ps.map((p) => `z:${p.id}`).filter((k) => ks.includes(k)), ...(ks.includes('z:none') ? ['z:none'] : [])] },
       type: { label: t('gType'), keysOf: (e) => [`t:${e.type}`], name: (k) => t(`type_${k.slice(2)}`), order: (ks) => ['t:weights', 't:bodyweight', 't:cardio'].filter((k) => ks.includes(k)) },
       none: { label: t('gNone'), keysOf: () => ['all'], name: () => '' },
     },
     facets: [
       { key: 'type', label: t('gType'), options: ['weights', 'bodyweight', 'cardio'].map((v) => [v, t(`type_${v}`), `t:${v}`, 'type']), get: (e) => e.type },
-      { key: 'muscle', label: t('gMuscle'), options: muscles.map((k) => [k, muscleName(k), k, 'muscle']), get: muscleKey },
+      { key: 'region', label: t('gRegion'), options: regs.map((k) => [k, regName(k), k, 'region']), get: regKey },
       { key: 'zone', label: t('gZone'), options: [...ps.map((p) => [`z:${p.id}`, p.name, `z:${p.id}`, 'zone']), ['z:none', t('noPlace'), 'z:none', 'zone']].filter((o) => all.some((e) => zoneKey(e) === o[0])), get: zoneKey },
       ...(a ? [{ key: 'use', label: t('fUse'), options: [['on', t('fInActive')], ['off', t('fNotInActive')]], get: (e) => (inActive.has(e.id) ? 'on' : 'off') }] : []),
     ],
@@ -90,19 +105,13 @@ export function exercisesView() {
       { key: 'name', label: t('sName'), cmp: (x, y) => x.name.localeCompare(y.name) },
       { key: 'route', label: t('sRoute'), cmp: (x, y) => (ps.indexOf(placeOf(x)) - ps.indexOf(placeOf(y))) || String(machineOf(x)?.number || '').localeCompare(String(machineOf(y)?.number || ''), undefined, { numeric: true }) || x.name.localeCompare(y.name) },
     ],
-    colors: ['muscle', 'zone', 'type'],
+    colors: ['region', 'zone', 'type'],
     row: (e, { dense }) => exRow(e, 'muscle', dense),
-    def: { group: 'muscle', sort: 'name', color: 'muscle', dense: true },
+    def: { group: 'region', sort: 'name', color: 'region', dense: true },
     emptyHtml: empty(t('esExercisesTitle'), t('esExercisesText'), `<a class="btn primary" href="#/exercise/new">${esc(t('newExercise'))}</a>`),
   });
-  const html = `<header class="page-head tight">
-      <h1>${esc(t('tab_exercises'))}</h1>
-      <div class="head-actions">
-        <a class="round-btn" href="#/exercise/new" aria-label="${esc(t('newExercise'))}">${icon('plus')}</a>
-        ${gearLink()}
-      </div>
-    </header>
-    ${segTabs('exercises')}
+  const html = `${trainHead('exercises')}
+    <div class="two-actions" data-top-actions><a class="btn primary" href="#/exercise/new">${icon('plus', 18)}${esc(t('newExercise'))}</a>${picturesOn() ? `<a class="btn only-wide" href="#/pictures">${icon('image', 18)}${esc(t('picTitle'))}</a>` : ''}</div>
     ${missingPictures().length ? `<a class="card pic-prompt" href="#/pictures">${icon('image', 20)}<span><b>${esc(t('picMatchTitle'))}</b><small>${esc(t('picMatchText', missingPictures().length))}</small></span>${icon('chevron', 18, 'class="chev"')}</a>` : ''}
     ${all.length ? kit.html : empty(t('esExercisesTitle'), t('esExercisesText'), `<a class="btn primary" href="#/exercise/new">${esc(t('newExercise'))}</a>`)}`;
   return { html, bind: kit.bind };
@@ -124,6 +133,8 @@ export function exerciseView(id, query = {}) {
     const ex = id === 'new' ? { ...blankExercise(), _new: true } : get('exercises', id);
     if (!ex) return { html: empty(t('notFound'), t('notFoundText'), `<a class="btn" href="#/exercises">${esc(t('tab_exercises'))}</a>`) };
     draft = JSON.parse(JSON.stringify(ex));
+    // muscles as keys (v26); words from before that don't match a muscle are dropped when saving
+    draft.muscles = [...new Set((draft.muscles || []).map(muscleFromWord).filter(Boolean))];
     if (query.type && id === 'new') draft.type = query.type;
   }
   const ex = draft;
@@ -180,13 +191,13 @@ export function exerciseView(id, query = {}) {
   const prog = !isNew ? progressOf(ex, live('sessions')) : [];
   const lastP = prog[prog.length - 1];
 
-  const html = `<header class="bar">${backLink(back, query.then ? t('back') : t('tab_exercises'))}<button type="button" class="bar-action strong" data-action="save">${esc(t('save'))}</button></header>
+  const html = `<header class="bar">${backLink(back, query.then ? t('back') : t('crumb', t('tab_exercises')))}<button type="button" class="bar-action strong" data-action="save">${esc(t('save'))}</button></header>
     <form class="stack form" data-form="exercise" autocomplete="off">
       <label class="field big"><span class="sr">${esc(t('name'))}</span><input id="ex-name" name="name" value="${esc(ex.name)}" placeholder="${esc(t('exerciseNamePh'))}" ${isNew ? 'autofocus' : ''}></label>
       ${pictureBlock(ex)}
       ${typeSeg}
       ${specific}
-      <label class="field"><span>${esc(t('muscles'))}</span><input id="ex-muscles" name="muscles" value="${esc((ex.muscles || []).join(', '))}" placeholder="${esc(t('musclesPh'))}"></label>
+      ${ex.type === 'cardio' ? '' : musclePicker(ex)}
       ${ex.type === 'bodyweight' ? `<label class="check"><input type="checkbox" name="timed" ${ex.timed ? 'checked' : ''}> ${esc(t('timedHint'))}</label>` : ''}
       <label class="field"><span>${esc(t('notes'))} <small class="muted">${esc(t('optional'))}</small></span>
         <textarea id="ex-notes" name="notes" rows="3" class="note-area" placeholder="${esc(t('notesPh'))}">${esc(ex.notes || '')}</textarea>
@@ -210,7 +221,6 @@ export function exerciseView(id, query = {}) {
       const form = view.querySelector('[data-form=exercise]');
       const read = () => {
         draft.name = form.name.value;
-        draft.muscles = form.muscles.value.split(',').map((s) => s.trim()).filter(Boolean);
         draft.notes = form.notes.value;
         if (form.timed) draft.timed = form.timed.checked;
         if (form.equipment) draft.equipment = form.equipment.value;
@@ -250,6 +260,13 @@ export function exerciseView(id, query = {}) {
         rerender();
       }));
       form.machineId?.addEventListener('change', () => { read(); rerender(); });
+      form.querySelectorAll('[data-mus]').forEach((b) => b.addEventListener('click', () => {
+        read();
+        const k = b.dataset.mus;
+        const cur = draft.muscles.length ? draft.muscles : [];
+        draft.muscles = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k];
+        rerender();
+      }));
       form.equipment?.addEventListener('change', () => { read(); delete draft.weightAs; rerender(); });
       form.querySelectorAll('[name=weightAs],[name=dumbbells]').forEach((x) => x.addEventListener('change', () => { read(); rerender(); }));
       form.incMode.addEventListener('change', () => { form.querySelector('[data-inc-custom]').hidden = form.incMode.value !== 'custom'; });
@@ -311,6 +328,22 @@ function lastText(ex, p) {
 }
 
 export function resetExerciseDraft() { draft = null; }
+
+/**
+ * The muscles, as tags under each body region: tap to add or remove; the first one chosen is the main one. With none
+ * chosen, the ones recognised from the name are shown (dashed) and used.
+ */
+function musclePicker(ex) {
+  const lang = getLang();
+  const chosen = ex.muscles || [];
+  const guessed = chosen.length ? [] : guessedMuscles({ ...ex, muscles: [] });
+  const hint = chosen.length ? t('musclesChosen', muscleName(chosen[0], lang))
+    : guessed.length ? t('musclesGuessed', guessed.map((m) => muscleName(m, lang)).join(', ')) : t('musclesNone');
+  return `<div class="field mus-field"><span class="field-label">${esc(t('muscles'))}</span>
+    <div class="mus-pick">${REGIONS.filter((r) => r.key !== 'cardio').map((r) => `<div class="mus-reg" style="--c:${r.color}"><span class="mus-rn">${esc(regionName(r.key, lang))}</span>
+      ${r.muscles.map((m) => { const i = chosen.indexOf(m); const on = i >= 0; const g = !on && guessed.includes(m); return `<button type="button" class="mus-chip${on ? ' on' : ''}${g ? ' guess' : ''}${i === 0 ? ' main' : ''}" data-mus="${m}" aria-pressed="${on}">${esc(muscleName(m, lang))}</button>`; }).join('')}</div>`).join('')}</div>
+    <small class="muted">${esc(hint)}</small></div>`;
+}
 
 // ---- the exercise's picture (free-exercise-db), at the top of its page ----
 

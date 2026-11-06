@@ -1,6 +1,7 @@
 // Start workout mode: the weekly increase, the set, the rest timer, cardio, pause, and the summary.
 // Dark, big, screen kept on, works offline. All timing comes from timestamps (see workout.js).
 import { state, get, upsert, live, pref, setPref } from '../store.js';
+import { routineIn, routineGymId } from '../gyms.js';
 import { t } from '../i18n.js';
 import { esc, fmtNum, clock, num, timeOfDay, minText } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
@@ -83,7 +84,7 @@ export function startView(routineId, query = {}) {
   }
   if (!pendingStart || pendingStart.routineId !== routineId) {
     const props = increaseProposals(r, live('exercises'), live('sessions'), increaseSettings());
-    pendingStart = { routineId, blockId: query.block || null, props };
+    pendingStart = { routineId, blockId: query.block || null, props, gym: query.gym || null };
     unchecked = new Set();
   }
   if (pendingStart.ready) return readyView(r);
@@ -159,9 +160,10 @@ function heldReason(h) {
 }
 
 function begin(routine, blockId) {
+  const gym = pendingStart?.gym || routineGymId(routine);
   pendingStart = null;
   summaryId = null;
-  const w = W.newWorkout(routine, live('exercises'), { blockId, training: training(), sessions: live('sessions') });
+  const w = W.newWorkout(routineIn(routine, gym), live('exercises'), { blockId, training: training(), sessions: live('sessions') });
   commit(w).then(() => { location.replace('#/workout'); });
 }
 
@@ -228,14 +230,14 @@ function readyView(r) {
 }
 
 /** #/try/<routineId>: the real workout screens, still: no clock, nothing saved. */
-export function tryView(routineId) {
+export function tryView(routineId, query = {}) {
   const r = get('routines', routineId);
   if (!r) return { html: `<div class="dark-page"><p>${esc(t('notFound'))}</p></div>`, dark: true };
   if (hasActive() && !active.trial) {
     return { dark: true, html: `<div class="dark-page center"><h1 class="w-title">${esc(t('workoutInProgress'))}</h1><p class="w-text">${esc(t('tryBusy'))}</p><a class="btn yellow big" href="#/workout">${esc(t('resume'))}</a></div>` };
   }
   summaryId = null;
-  active = W.newWorkout(r, live('exercises'), { training: training(), sessions: live('sessions'), trial: true });
+  active = W.newWorkout(routineIn(r, query.gym || routineGymId(r)), live('exercises'), { training: training(), sessions: live('sessions'), trial: true });
   peek = null;
   setTimeout(() => location.replace('#/workout'), 0);
   return { dark: true, html: '<div class="dark-page"></div>' };
@@ -739,6 +741,7 @@ export function diffRows(w, r) {
     if (!ex) continue;
     const added = first.added != null;
     if (!added && (!items[ix] || first.kind === 'cardio')) continue;
+    if (!added && items[ix].exerciseId !== first.exerciseId) continue; // a stand-in for this gym: the scheda stays as it is
     const logOf = (st) => w.log.find((x) => x.item === ix && x.n === st.n) || null;
     if (first.kind === 'cardio') {
       const e = logOf(first);

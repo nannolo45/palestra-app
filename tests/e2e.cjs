@@ -86,15 +86,16 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.clock.install({ time: new Date(2026, 9, 27, 18, 0) }); // Tue 27 Oct 2026, 18:00
   const shot = (n, opts = {}) => page.screenshot({ path: path.join(SHOTS, `${n}.png`), ...opts });
   const go = async (hash) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(150); };
-  const kitSheet = async (fn) => { await page.click('[data-kit-sheet]'); await page.waitForSelector('#modal[open] .kit-sheet'); await fn(); await page.click('#modal .kit-sheet [data-close]'); await page.waitForTimeout(150); };
-  const kitFac = (key, v) => kitSheet(() => page.click(`#modal [data-fac="${key}|${v}"]`));
+  // v26: Filtri opens a panel under the search (not a sheet); its Fine closes it
+  const kitSheet = async (fn) => { await page.click('.kit-tools [data-kit-panel]'); await page.waitForSelector('.kit-panel'); await fn(); await page.click('.kit-panel-foot [data-kit-panel]'); await page.waitForTimeout(150); };
+  const kitFac = (key, v) => kitSheet(() => page.click(`.kit-panel [data-fac="${key}|${v}"]`));
 
   console.log('First run');
   await page.goto(base);
   await page.waitForSelector('.page-head h1');
   check((await page.textContent('.page-head h1')) === 'Oggi', 'opens on Oggi, in Italian');
   const tabs = await page.$$eval('nav.tabs a[data-tab]', (as) => as.filter((a) => a.getClientRects().length).map((a) => a.textContent.trim()));
-  check(tabs.join('|') === 'Oggi|Workout|Schede|Esercizi|Storico', `five tabs (${tabs.join('|')})`);
+  check(tabs.join('|') === 'Oggi|Allenamento|Palestra|Storico', `four sections (${tabs.join('|')})`);
   await shot('01-empty');
 
   console.log('Connect GitHub');
@@ -148,7 +149,8 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await go('#/exercise/new');
   await page.fill('#ex-name', 'Leg press');
   await page.selectOption('[name=machineId]', { label: 'M14 · Leg press' });
-  await page.fill('#ex-muscles', 'Gambe');
+  await page.click('[data-mus=quadriceps]');
+  check(await page.$eval('[data-mus=quadriceps]', (b) => b.classList.contains('main')), 'a muscle chosen is the main one');
   await page.fill('#ex-notes', 'Piedi a metà pedana, non bloccare le ginocchia');
   await page.click('[data-action=save]');
   await go('#/exercise/new');
@@ -162,7 +164,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await go('#/exercise/new');
   await page.fill('#ex-name', 'Plank');
   await page.click('.seg-opt:has(input[value=bodyweight])');
-  await page.fill('#ex-muscles', 'Core');
+  check(await page.$eval('[data-mus=abs]', (b) => b.classList.contains('guess')), 'Plank: abs recognised from the name');
   await page.click('[data-action=save]');
   // what the weight means, for dumbbells
   await go('#/exercise/new');
@@ -529,10 +531,10 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
 
   console.log('Compact exercise list');
   await go('#/exercises');
-  await kitSheet(() => page.click('#modal [data-dense="0"]'));
+  await kitSheet(() => page.click('.kit-panel [data-dense="0"]'));
   const tall = await page.evaluate(() => document.documentElement.scrollHeight);
   await shot('23-exercises-normal');
-  await kitSheet(() => page.click('#modal [data-dense="1"]'));
+  await kitSheet(() => page.click('.kit-panel [data-dense="1"]'));
   await page.waitForSelector('.list-row.compact');
   const short = await page.evaluate(() => document.documentElement.scrollHeight);
   check(short < tall * 0.85, `compact list is much shorter (${tall} → ${short})`);
@@ -551,6 +553,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.click('[data-kit-all]');
   await page.waitForTimeout(100);
   // the group tags: a tap shows only that group, a drag reorders them (and the groups)
+  await page.click('.kit-tools [data-kit-panel]'); await page.waitForSelector('.kit-panel .kit-tags');
   const tagNames = async () => page.$$eval('.kit-tag', (els) => els.map((e) => e.dataset.tag));
   const tBefore = await tagNames();
   check(tBefore.length >= 3, `group tags (${tBefore.join(', ')})`);
@@ -571,6 +574,8 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   const tOrder = await page.$$eval('.kit-tag', (els) => els.map((e) => e.querySelector('.nm').textContent));
   check(gOrder.join('|') === tOrder.join('|'), `the groups follow the tags (${gOrder.join(', ')})`);
   await shot('p14-tags');
+  await page.click('.kit-panel-foot [data-kit-panel]'); await page.waitForTimeout(100);
+  check(!(await page.$('.kit-tags')), 'with the panel closed, no group tags');
 
   const txt = fs.readFileSync(path.join(__dirname, 'sample-plan.txt'), 'utf8').replace('Curl con bilanciere 4x10 rec 1:30', 'Curl con bilanciere 4x10 rc 1:30');
   await go('#/import');
@@ -719,9 +724,9 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('.imp-day');
   await overflowAt('import preview');
   await go('#/exercises');
-  await kitSheet(() => page.click('#modal [data-dense="0"]'));
+  await kitSheet(() => page.click('.kit-panel [data-dense="0"]'));
   await overflowAt('detailed exercises');
-  await page.click('[data-kit-sheet]'); await page.waitForSelector('#modal[open] .kit-sheet'); await overflowAt('filter sheet'); await page.click('#modal [data-dense="1"]'); await page.click('#modal .kit-sheet [data-close]');
+  await page.click('.kit-tools [data-kit-panel]'); await page.waitForSelector('.kit-panel'); await overflowAt('filter panel'); await page.click('.kit-panel [data-dense="1"]'); await page.click('.kit-panel-foot [data-kit-panel]');
   await go('#/gym');
   await page.click('.zone [data-add-machine]');
   await page.click('#modal .seg-opt:has(input[value=cardio])');
@@ -792,8 +797,10 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await shot('d1-today');
   await go('#/routines');
   await page.waitForSelector('.md-pane .title');
-  check(Boolean(await page.$('#nav-actions [data-action=new-routine]')) && !(await page.$('#view [data-top-actions]')), 'Nuova scheda · Importa moved to the top bar');
-  await page.click('#nav-actions [data-action=new-routine]');
+  check(Boolean(await page.$('.train-tabs .tt-acts [data-action=new-routine]')) && !(await page.$('#view [data-top-actions]')), 'Nuova scheda · Importa moved to the right of Allenamento\'s second bar');
+  { const b = await page.$eval('.train-tabs', (el) => { const r = el.getBoundingClientRect(); return { top: Math.round(r.top), w: Math.round(r.width) }; });
+    check(b.top >= 60 && b.top <= 70, `the second bar sits under the top bar (${JSON.stringify(b)})`); }
+  await page.click('.train-tabs [data-action=new-routine]');
   check(Boolean(await page.$('#modal[open] [data-choice]')), 'the moved button still works');
   await page.keyboard.press('Escape');
   check(Boolean(await page.$('.lib-row.selected')), 'Schede: list and detail side by side');
@@ -827,7 +834,54 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(!(await page.evaluate(() => document.getElementById('gear').classList.contains('active'))), 'the gear is plain elsewhere');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(200);
-  check(!(await page.$('#nav-actions [data-action]')), 'top bar actions cleared on the phone');
+  check(!(await page.$('#nav-actions [data-action]')) && !(await page.$('.tt-acts [data-action]')), 'top bar actions cleared on the phone');
+  console.log('v26: four sections, Allenamento\'s tabs, gyms, a missing machine, Storico');
+  await go('#/exercises');
+  await go('#/today');
+  check((await page.getAttribute('nav.tabs a[data-tab=train]', 'href')) === '#/exercises', 'Allenamento opens on the tab last seen');
+  await page.click('nav.tabs a[data-tab=train]'); await page.waitForTimeout(150);
+  check((await page.$$('.train-tabs a')).length === 3 && (await page.textContent('.train-tabs a.on')).startsWith('Esercizi'), 'Workout · Schede · Esercizi, with Esercizi on');
+  check((await page.textContent('.kit-group .kit-gt span')).length > 0 && !(await page.$('.kit-tags')), 'exercises by body part; the group tags only in the Filtri panel');
+  await page.click('.train-tabs a[data-train-tab=routines]'); await page.waitForTimeout(150);
+  check((await page.evaluate(() => location.hash)) === '#/routines', 'a tab is a link');
+  await go(`#/routine/${ids.r}`);
+  check((await page.textContent('.bar .back')).includes('Allenamento › Schede'), 'the way back says where');
+  check(!(await page.$('.where-row')), 'one gym: no "Dove"');
+  await go('#/gym');
+  await page.click('[data-action=add-gym]'); await page.waitForSelector('#modal[open]');
+  await page.fill('#modal [name=name]', 'Casa'); await page.click('#modal [value=save]'); await page.waitForTimeout(250);
+  check((await page.evaluate(() => location.hash)).includes('v=eq') && (await page.textContent('.gym-tabs a.on')) === 'Casa', 'a new gym opens on its equipment');
+  check((await page.$$('.gym-eq [data-eq]:checked')).length === 0, 'a new gym starts with nothing ticked');
+  await page.check('.gym-eq [data-eq=dumbbells]'); await page.waitForTimeout(150);
+  check((await page.$$('.gym-eq [data-eq]:checked')).length === 1, 'tick what there is');
+  await go(`#/routine/${ids.r}`);
+  check((await page.$$('.where-row .chip-btn')).length === 2, 'two gyms: "Dove" on the scheda');
+  await page.click('.where-row .chip-btn:nth-child(3)'); await page.waitForTimeout(150);
+  check(Boolean(await page.$('.warn-box')) && (await page.$$('.card-row.missing')).length >= 1, 'at Casa: a warning and the rows that need something');
+  await shot('v26-missing');
+  if (await page.$('[data-use]')) {
+    const before = (await page.$$('.card-row.missing')).length;
+    await page.click('[data-use]'); await page.waitForSelector('#modal[open] [data-how=here]');
+    await page.click('#modal [data-how=here]'); await page.waitForTimeout(250);
+    check((await page.$$('.card-row.missing')).length === before - 1 && Boolean(await page.$('.standin-tag')), 'Usa → only at Casa: a stand-in, one warning less');
+    const alt = await page.evaluate(async (id) => (await import('/js/store.js')).get('routines', id).items.some((it) => it.alt), ids.r);
+    check(alt, 'the scheda keeps its exercise, with the stand-in for Casa');
+    await page.click('[data-unalt]'); await page.waitForTimeout(200);
+    check((await page.$$('.card-row.missing')).length === before, 'back to the original');
+  }
+  check((await page.getAttribute('.sticky-cta a', 'href')).includes('?gym='), 'Inizia says which gym');
+  await page.click('.where-row .chip-btn:nth-child(2)'); await page.waitForTimeout(150);
+  check(!(await page.$('.warn-box')), 'at the usual gym, nothing missing');
+  await go('#/history');
+  check(Boolean(await page.$('.dim-chips')) && Boolean(await page.$('.chart.multi, .muted.small')), 'Storico: what to look at, and the chart');
+  await page.click('[data-dim=all]'); await page.waitForTimeout(150);
+  await page.click('[data-metric=sets]'); await page.waitForTimeout(150);
+  check(Boolean(await page.$('[data-metric=sets].on')), 'by sets');
+  await overflowAt('Storico v26');
+  await page.click('[data-dim=region]'); await page.waitForTimeout(150);
+  await page.click('[data-metric=volume]'); await page.waitForTimeout(150);
+  for (const r of ['#/gym', '#/plans', '#/routines', `#/routine/${ids.r}`]) { await go(r); await overflowAt(`v26 ${r}`); }
+
   console.log('Light, dark or automatic');
   const theme = () => page.evaluate(() => document.documentElement.className);
   const bar = () => page.evaluate(() => [...document.querySelectorAll('meta[name=theme-color]')].map((m) => m.content).join());

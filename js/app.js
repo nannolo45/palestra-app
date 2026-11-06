@@ -33,15 +33,15 @@ function viewFor(r) {
     case 'exercises': return exercisesView();
     case 'pictures': return picturesView();
     case 'exercise': return exerciseView(r.id, r.query);
-    case 'gym': return gymView();
+    case 'gym': return gymView(r.query);
     case 'history': return historyView(r.query);
     case 'session': return sessionView(r.id);
     case 'settings': return settingsView(r.id, r.sub);
-    case 'plans': return plansView();
+    case 'plans': return plansView(r.query);
     case 'plan': return planView(r.id);
     case 'import': return importView(r.query);
     case 'start': return startView(r.id, r.query);
-    case 'try': return tryView(r.id);
+    case 'try': return tryView(r.id, r.query);
     case 'workout': return workoutView();
     default: return todayView();
   }
@@ -133,6 +133,26 @@ async function registerSW() {
   setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
 }
 
+// Swiping left or right on an Allenamento list goes to the next or previous tab (not on group tags, fields, dragging).
+function initTrainSwipe() {
+  const order = ['plans', 'routines', 'exercises'];
+  let sx = null; let sy = 0;
+  const view = $('#view');
+  view.addEventListener('touchstart', (e) => {
+    const el = e.target;
+    if (!order.includes(route().name) || e.touches.length !== 1 || el.closest('.kit-tags, input, textarea, select, [data-sortable], .no-swipe')) { sx = null; return; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, { passive: true });
+  view.addEventListener('touchend', (e) => {
+    if (sx == null || isDragging()) { sx = null; return; }
+    const dx = e.changedTouches[0].clientX - sx; const dy = e.changedTouches[0].clientY - sy;
+    sx = null;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    const j = order.indexOf(route().name) + (dx < 0 ? 1 : -1);
+    if (j >= 0 && j < order.length) location.hash = `#/${order[j]}`;
+  }, { passive: true });
+}
+
 // ---- start ----
 
 async function init() {
@@ -154,6 +174,7 @@ async function init() {
   for (const d of ['#modal']) $(d)?.addEventListener('close', () => setTimeout(() => { if (pending) renderIfSafe(); }, 0));
   document.addEventListener('close', (e) => { if (e.target?.id === 'confirm' && pending) setTimeout(renderIfSafe, 0); }, true);
   window.addEventListener('hashchange', render);
+  initTrainSwipe();
   // the desktop layout changes the markup (sidebar, master-detail), so redraw when crossing 960px
   try { matchMedia('(min-width: 960px)').addEventListener('change', () => render()); } catch { /* old browsers */ }
   window.addEventListener('online', () => syncNow());

@@ -16,9 +16,15 @@ export function route() {
 }
 
 export const TAB_OF = {
-  today: 'today', plans: 'plans', plan: 'plans', routines: 'routines', routine: 'routines', import: 'routines', try: 'routines',
-  exercises: 'exercises', exercise: 'exercises', pictures: 'exercises', gym: 'exercises', machine: 'exercises', history: 'history', session: 'history', settings: 'settings',
+  today: 'today', plans: 'train', plan: 'train', routines: 'train', routine: 'train', import: 'train', try: 'train',
+  exercises: 'train', exercise: 'train', pictures: 'train', gym: 'gym', machine: 'gym', history: 'history', session: 'history', settings: 'settings',
 };
+
+/** Allenamento's three tabs (v26), and the one a route belongs to. */
+export const TRAIN_TABS = ['plans', 'routines', 'exercises'];
+export const TRAIN_OF = { plans: 'plans', plan: 'plans', routines: 'routines', routine: 'routines', import: 'routines', try: 'routines', exercises: 'exercises', exercise: 'exercises', pictures: 'exercises' };
+/** Where Allenamento opens: the tab last seen on this device. */
+export const trainHref = () => `#/${TRAIN_TABS.includes(state.settings.trainTab) ? state.settings.trainTab : 'plans'}`;
 
 export function renderTabs() {
   for (const a of document.querySelectorAll('nav.tabs a[data-tab]')) a.querySelector('.label').textContent = a.dataset.tab === 'settings' ? t('settings') : t(`tab_${a.dataset.tab}`);
@@ -34,6 +40,7 @@ export function setActiveTab(routeName) {
   document.getElementById('gear')?.classList.toggle('active', routeName === 'settings');
   document.querySelectorAll('#view .gear').forEach((g) => g.classList.toggle('active', routeName === 'settings'));
   for (const a of document.querySelectorAll('nav.tabs a[data-tab]')) {
+    if (a.dataset.tab === 'train') a.setAttribute('href', trainHref());
     const on = a.dataset.tab === (TAB_OF[routeName] || 'today');
     a.classList.toggle('active', on);
     if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
@@ -103,6 +110,8 @@ export function placeTopActions(view) {
   if (!isWide()) return;
   const src = view.querySelector('[data-top-actions]');
   if (!src) return;
-  slot.append(...src.children);
+  // inside Allenamento they go at the right end of its second bar
+  const there = view.querySelector('.train-tabs .tt-acts') || slot;
+  there.append(...src.children);
   src.remove();
 }

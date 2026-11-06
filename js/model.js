@@ -70,7 +70,7 @@ export const DEFAULT_INCREASE = {
   when: 'done', // 'done': only after a complete session; 'always': every week
   steps: { machine: 2.5, barbell: 2.5, dumbbell: 1, cable: 2.5, bodyweight: 1, cardio: 1 },
 };
-export const DEFAULT_TRAINING = { rest: 90, between: 120, vibrate: true, sound: false, wake: true, start: 'overview', countdown: 15 };
+export const DEFAULT_TRAINING = { rest: 90, between: 120, vibrate: true, sound: false, wake: true, start: 'overview', countdown: 15, pauseDays: 10 };
 
 // ---- one set's plan (v24): sets that differ (item.perSet), rep ranges (item.repsMax), to failure (item.failure) ----
 

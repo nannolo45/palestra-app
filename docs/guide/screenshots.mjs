@@ -56,7 +56,7 @@ async function fakeGithub(route) {
 // ---- sample data, put in through the app's own modules ----
 const T = {
   it: {
-    gym: 'FitLab Firenze', zones: ['Ingresso e cardio', 'Sala macchine', 'Pesi liberi', 'Cavi e tappetini'],
+    home: ['Casa', 'Soggiorno', 'Manubri fino a 12 kg', 'Sbarra (porta della camera)'], gym: 'FitLab Firenze', zones: ['Ingresso e cardio', 'Sala macchine', 'Pesi liberi', 'Cavi e tappetini'],
     machines: [['C1–6', 'Tapis roulant', 0, 'treadmill'], ['C7', 'Bike', 0, 'bike'], ['C11', 'Ellittica', 0, 'elliptical'], ['C13', 'Vogatore', 0, 'rower'],
       ['M5', 'Lat machine', 1, '', 'Ginocchia 2'], ['M6', 'Pulley basso', 1], ['M9', 'Chest press', 1, '', 'Sedile 4'], ['M14', 'Leg press', 1, '', 'Schienale 3'], ['M18', 'Leg curl', 1],
       ['M21', 'Leg extension', 1], ['M23', 'Calf raise', 1], ['R1–2', 'Rack e panche', 2], ['MAN', 'Manubri', 2], ['CAV', 'Torre cavi', 3]],
@@ -70,7 +70,7 @@ const T = {
     importText: 'WORKOUT: Upper Lower di Marco\nSCHEDA: Upper @ lun 18:00\nPanca piana 4x8 60 kg rec 2:30\nLat machine 4x10\nAlzate laterali (manubri) 3x15\n- Gomiti appena piegati.\nSCHEDA: Lower @ gio 18:00\nSquat con bilanciere 4x8\nLeg curl 3x12\nAffondi in camminata 3x12\nPlank 3x45s',
   },
   en: {
-    gym: 'FitLab Oxford', zones: ['Entrance and cardio', 'Machine room', 'Free weights', 'Cables and mats'],
+    home: ['Home', 'Living room', 'Dumbbells up to 12 kg', 'Pull-up bar (bedroom door)'], gym: 'FitLab Oxford', zones: ['Entrance and cardio', 'Machine room', 'Free weights', 'Cables and mats'],
     machines: [['C1–6', 'Treadmill', 0, 'treadmill'], ['C7', 'Bike', 0, 'bike'], ['C11', 'Elliptical', 0, 'elliptical'], ['C13', 'Rower', 0, 'rower'],
       ['M5', 'Lat pulldown', 1, '', 'Knees 2'], ['M6', 'Seated cable row', 1], ['M9', 'Chest press', 1, '', 'Seat 4'], ['M14', 'Leg press', 1, '', 'Back rest 3'], ['M18', 'Leg curl', 1],
       ['M21', 'Leg extension', 1], ['M23', 'Calf raise', 1], ['R1–2', 'Racks and benches', 2], ['DB', 'Dumbbells', 2], ['CAB', 'Cable tower', 3]],
@@ -105,7 +105,7 @@ async function seed({ T, PLAN, lang }) {
   for (const ex of live('exercises')) {
     const m = T.match.find(([r]) => re(r).test(ex.name));
     const mu = T.muscles.find(([r]) => re(r).test(ex.name));
-    upsert('exercises', { ...ex, ...(m ? { machineId: M[m[1]].id } : {}), muscles: ex.type === 'cardio' ? [] : [mu ? mu[1] : ''].filter(Boolean),
+    upsert('exercises', { ...ex, ...(m ? { machineId: M[m[1]].id } : {}), muscles: [], // v26: recognised from the name
       ...(ex.name === T.note[0] ? { notes: T.note[1] } : {}) });
   }
   for (const r of live('routines')) {
@@ -138,6 +138,21 @@ async function seed({ T, PLAN, lang }) {
     upsert('sessions', { id: uid(), routineId: r.id, start, end: start + minutes * 60000, minutes, sets: partial ? sets.slice(0, -6) : sets, outcome: partial ? 'partial' : 'done',
       breakdown: { work: minutes * 22, rest: minutes * 31, walk: minutes * 5, pause: 0 } });
   });
+  // v26: two weeks in August, then a break until October (a holiday), so Storico shows a pause
+  for (const s of live('sessions').sort((a, b) => a.start - b.start)) {
+    const back = 9 * 7 * 864e5;
+    upsert('sessions', { ...s, id: uid(), start: s.start - back, end: s.end - back, sets: s.sets.map((x) => (x.weight != null ? { ...x, weight: Math.round(x.weight * 0.9 * 2) / 2 } : x)) });
+  }
+  const { pausesOf } = await import('/js/stats.js');
+  const pz = pausesOf(live('sessions'), 10, new Date(2026, 10, 2).getTime());
+  if (pz[0]) setPref('pauses', { [pz[0].key]: 'holiday' });
+  // v26: a second gym, at home, with little equipment
+  const gy = await import('/js/gyms.js');
+  const home = gy.addGym(T.home[0]);
+  gy.updateGym(home.id, { equipment: ['dumbbells', 'mats', 'bars'] });
+  const room = upsert('places', { id: uid(), name: T.home[1], order: 9, gymId: home.id });
+  upsert('machines', { id: uid(), number: 'MAN', name: T.home[2], placeId: room.id, kind: 'weights', settings: '' });
+  upsert('machines', { id: uid(), number: '', name: T.home[3], placeId: room.id, kind: 'weights', settings: '' });
   // what Everyday planned: today at 18:00, Wednesday, Saturday
   setPref('planned', [{ blockId: 'blk-mon', routineId: rs[0].id, date: '2026-11-02', start: '18:00' }, { blockId: 'blk-wed', routineId: rs[1].id, date: '2026-11-04', start: '18:00' }, { blockId: 'blk-sat', routineId: rs[2].id, date: '2026-11-07', start: '10:30' }]);
   // pictures: the best suggestion for every exercise but the last two (so Esercizi offers to match them),
@@ -202,9 +217,23 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
     const days = plans.planDays(main);
     return { plan: main.id, mon: days[0].routineId, wed: days[1].routineId, sat: days[2].routineId,
       ex: live('exercises').find((e) => e.name === other).id, bench: live('exercises').find((e) => e.name === note).id, cardio: live('exercises').find((e) => e.type === 'cardio').id,
-      lightPlan: live('plans').find((p) => p.id !== main.id).id };
+      lightPlan: live('plans').find((p) => p.id !== main.id).id, home: (await import('/js/gyms.js')).gyms()[1].id };
   }, [T.other, T.note[0]]);
 
+  // a quick look while building: PICK="#/routines|a;#/routine/{wed}|b" takes only those (ids in braces), then stops
+  if (process.env.PICK) {
+    if (process.env.PREP) { await page.evaluate(new Function('ids', `return (async () => { ${process.env.PREP} })()`), ids); await page.waitForTimeout(300); }
+    for (const part of process.env.PICK.split(';')) {
+      const [h, name, click] = part.split('|');
+      await go(h.replace(/\{(\w+)\}/g, (_, k) => ids[k]), 600);
+      if (click) for (const c of click.split(',')) { await page.click(c); await page.waitForTimeout(350); }
+      if (process.env.DUMP) console.log(name, await page.evaluate(new Function(`return (async () => { ${process.env.DUMP} })()`)));
+      await shot(name);
+    }
+    await browser.close(); server.kill();
+    console.log(`picked ${made.length}${errors.length ? `\nerrors: ${errors.join(' | ')}` : ''}`);
+    return;
+  }
   // Oggi
   await go('#/today'); await shot('01-today');
   await page.click('[data-move]'); await page.waitForTimeout(300); await shot('02-moved');
@@ -218,7 +247,11 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await page.click('.zone [data-add-machine]'); await page.waitForSelector('#modal[open]'); await shot('06-new-machine');
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   await go('#/exercises'); await shot('07-exercises');
-  { const tg = await page.$$('.kit-tag'); if (tg[1]) { await tg[1].click(); await page.waitForTimeout(300); await shot('38-tags'); await (await page.$('.kit-tag.on')).click(); await page.waitForTimeout(200); } }
+  await page.click('.kit-tools [data-kit-panel]'); await page.waitForSelector('.kit-panel');
+  { const tg = await page.$$('.kit-tag'); if (tg[1]) { await tg[1].click(); await page.waitForTimeout(300); await page.evaluate(() => window.scrollTo(0, 0)); await shot('38-tags'); await (await page.$('.kit-tag.on')).click(); await page.waitForTimeout(200); } }
+  await page.click('.kit-panel-foot [data-kit-panel]'); await page.waitForTimeout(200);
+  await go(`#/gym?g=${ids.home}&v=eq`); await shot('40-equipment');
+  await go('#/gym');
   await go(`#/exercise/${ids.ex}`); await shot('08-exercise');
   await page.click('[data-action=pick-picture]'); await page.waitForSelector('#modal .pic-cand'); await page.waitForTimeout(500); await shot('28-picker');
   await page.click('#modal [data-close]'); await page.waitForTimeout(200);
@@ -227,6 +260,9 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   // Schede
   await go(DESK ? `#/routines?sel=${ids.wed}` : '#/routines'); await shot('10-routines');
   await go(`#/routine/${ids.wed}`); await shot('11-routine');
+  await page.click('.where-row .chip-btn:nth-child(3)'); await page.waitForSelector('.warn-box');
+  await page.evaluate(() => { const r = document.querySelector('.card-row.missing'); window.scrollTo(0, r.getBoundingClientRect().top + window.scrollY - 230); }); await shot('39-missing');
+  await page.click('.where-row .chip-btn:nth-child(2)'); await page.waitForTimeout(200);
   await go(`#/routine/${ids.wed}/edit`); await shot('12-routine-edit');
   await page.click('[data-action=add-item]'); await page.waitForSelector('#modal[open]'); await shot('13-add-exercise');
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
@@ -282,7 +318,9 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   if (await page.$('.diff-card')) { await page.evaluate(() => document.querySelector('.diff-card').scrollIntoView({ block: 'start' })); await page.evaluate(() => window.scrollBy(0, -60)); await page.waitForTimeout(200); await shot('36-diff'); await page.evaluate(() => window.scrollTo(0, 0)); }
   await page.click('[data-action=close]'); await page.waitForTimeout(400);
   await page.evaluate(async () => (await import('/js/sync.js')).syncNow()); await page.waitForTimeout(500);
-  await go(`#/history?ex=${ids.bench}`); await shot('24-history');
+  await go('#/history'); await shot('24-history');
+  await page.evaluate(() => { const el = document.querySelector('.imp-card'); if (el) window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 70); }); await shot('41-improved');
+  await page.evaluate(() => window.scrollTo(0, 0));
   const sid = await page.evaluate(async () => (await import('/js/data.js')).sessions()[0].id);
   await go(`#/session/${sid}`); await shot('25-session');
 

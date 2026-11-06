@@ -10,6 +10,7 @@ import { syncStatus } from '../shell.js';
 import { isSyncing, syncNow } from '../sync.js';
 import { routines, exercises, routineMinutes, sessions, placeOf, lastDone } from '../data.js';
 import { plannedAhead } from '../model.js';
+import { routineGymId, missingIn, gymName, gymById } from '../gyms.js';
 import {
   activeInfo, weekStatus, weekNumber, planMinutes, outsidePlan, plans, todayDay, effectiveWeekday, isMoved, moveToTomorrow, undoMove, dateOf,
 } from '../plans.js';
@@ -86,12 +87,20 @@ function todayHero(a, status, planned) {
       <div class="hero-top"><span class="eyebrow">${esc(eyebrow)}</span>${block ? `<span>${esc(t('inEveryday'))}</span>` : ''}</div>
       <a class="hero-title" href="#/routine/${encodeURIComponent(r.id)}">${esc(r.name)}</a>
       <div class="hero-meta">${esc(t('nExercises', (r.items || []).length))} · ${esc(t('aboutMin', routineMinutes(r)))}${firstPlace ? ` · ${esc(t('startsAt', firstPlace.name))}` : ''}</div>
+      ${missWarn(r)}
       <div class="hero-actions">
         <a class="btn yellow big" href="${startHref(r.id, block)}">${icon('play', 18)}${esc(t('start'))}</a>
         ${td ? `<button type="button" class="btn on-dark" data-move="${esc(r.id)}">${esc(t('moveToTomorrow'))}</button>` : ''}
         ${moved ? `<button type="button" class="btn on-dark ghost" data-unmove="${esc(r.id)}">${esc(t('moveUndo'))}</button>` : ''}
       </div>
     </section>`;
+}
+
+/** Before starting: the scheda asks for something its gym doesn't have. */
+function missWarn(r) {
+  const gid = routineGymId(r);
+  const n = missingIn(r, gid).length;
+  return n ? `<a class="hero-warn" href="#/routine/${encodeURIComponent(r.id)}">${icon('alert', 15)}${esc(t('missingN', n, gymName(gymById(gid))))} <b>${esc(t('seeAlternatives'))}</b></a>` : '';
 }
 
 function withPlan(a) {

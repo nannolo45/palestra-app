@@ -136,10 +136,10 @@ export async function replaceCollection(collection, items) {
   emit(collection);
 }
 
-export async function saveSettings(patch) {
+export async function saveSettings(patch, { quiet = false } = {}) {
   Object.assign(state.settings, patch);
   await kvSet('settings', state.settings);
-  emit('settings');
+  if (!quiet) emit('settings');
 }
 
 export async function saveMeta(patch) {

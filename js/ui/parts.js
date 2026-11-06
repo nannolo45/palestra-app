@@ -2,6 +2,7 @@
 import { esc, fmtNum, num } from './format.js';
 import { icon } from './icons.js';
 import { t } from '../i18n.js';
+import { state, live, saveSettings } from '../store.js';
 
 export function backLink(href, label) {
   return `<a class="back" href="${esc(href)}">${icon('back', 20)}<span>${esc(label)}</span></a>`;
@@ -72,10 +73,17 @@ export function exTag(ex, label) {
 /** Turn **bold** into <strong> in already-escaped text. */
 export const bold = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 
-/** Esercizi | Palestra: the two halves of the Esercizi tab. */
-export function segTabs(which) {
-  const tab = (key, href, label) => `<a href="${href}" class="${which === key ? 'on' : ''}"${which === key ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
-  return `<nav class="seg-tabs" aria-label="${esc(t('tab_exercises'))}">${tab('exercises', '#/exercises', t('exercisesTab'))}${tab('gym', '#/gym', t('gymTab'))}</nav>`;
+/**
+ * Allenamento (v26): its title on the phone and the three underlined tabs Workout · Schede · Esercizi, with how many
+ * there are. On a computer the title hides and the tabs become a second bar under the top one, with the page's
+ * actions at its right end (shell.placeTopActions moves them into .tt-acts). Remembers the tab on this device.
+ */
+export function trainHead(which) {
+  if (state.settings.trainTab !== which) saveSettings({ trainTab: which }, { quiet: true });
+  const n = { plans: live('plans').length, routines: live('routines').length, exercises: live('exercises').length };
+  const tab = (key, label) => `<a href="#/${key}" class="${which === key ? 'on' : ''}" data-train-tab="${key}"${which === key ? ' aria-current="page"' : ''}>${esc(label)}<small>${n[key]}</small></a>`;
+  return `<header class="page-head train-head"><div><h1>${esc(t('tab_train'))}</h1></div><div class="head-actions">${gearLink()}</div></header>
+    <nav class="train-tabs" aria-label="${esc(t('tab_train'))}">${tab('plans', t('tab_plans'))}${tab('routines', t('tab_routines'))}${tab('exercises', t('tab_exercises'))}<span class="tt-acts"></span></nav>`;
 }
 
 /** The settings gear, the same in Ricette, Palestra and Everyday (see the handover). On the phone it sits at the

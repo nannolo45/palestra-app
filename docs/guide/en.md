@@ -37,7 +37,7 @@ In Palestra tap the gear, then *GitHub connection*. Enter your user, the reposit
 
 ### 3. Map out your gym
 
-In *Exercises → Gym* add the **zones** you move between (Entrance and cardio, Machine room, Free weights…) and tap *Reorder* to put them in the order you walk through them. Routines use this route so you walk less.
+In *Gym* add the **zones** you move between (Entrance and cardio, Machine room, Free weights…) and tap *Reorder* to put them in the order you walk through them. Routines use this route so you walk less.
 
 ![The gym: zones in the order you walk them](guide/en/05-gym.webp)
 
@@ -73,15 +73,16 @@ A **workout** groups the week's routines, each on its day. In *Workouts* open on
 
 ![Making a workout active: the old one stays saved](guide/en/16-activate.webp)
 
-## The five sections
+## The four sections
 
 | Section | What it's for |
 |---|---|
 | *Today* | Today's routine, the week, your last session and the month |
-| *Workouts* | Your weeks: which routines, on which days and at what time |
-| *Routines* | All your routines, to search, open, edit and start |
-| *Exercises* | Your exercises and, under *Gym*, the zones and machines |
-| *History* | Your progress and every session you've done |
+| *Training* | Three tabs: **Workouts** (your weeks: which routines, on which days and at what time), **Routines** (to search, open, edit and start) and **Exercises** |
+| *Gym* | Your gyms: zones, machines and equipment |
+| *History* | Your progress, your breaks and every session you've done |
+
+In *Training* you move between tabs by tapping them or **swiping** left and right on the list. It reopens the one you looked at last. From a routine, a workout or an exercise, **‹ Training › Routines** at the top takes you back to the right tab.
 
 At the top of each page are its actions, like *New routine* and *Import*. The **gear** at the top right opens *Settings*: one list in three groups (*Connections*, *Training*, *App*). Each row says how it's set now and opens a page about that one thing; *← Settings* at the top goes back to the list.
 
@@ -93,13 +94,13 @@ In *Settings → Language and appearance*, **Appearance** picks the app's colour
 
 *Exercises*, *Routines* and *Workouts* have the same tools at the top:
 
-- **Search** and **Filters**. *Filters* opens a sheet with everything: *Group by*, *Sort by*, the filters (each with how many it finds), *Colours* and *Rows* (compact, or with details and notes). The button shows how many filters are on; under the search they stay as tags with a ✕ to remove them.
-- **The groups**, as coloured tags with their count: tap one to see only that group (more than one too). **Hold and drag** a tag to reorder them: the list follows the same order.
+- **Search** and **Filters**. *Filters* opens a panel under the search, only when you tap it, with everything: the group tags, *Group by*, *Sort by*, the filters (each with how many it finds), *Colours* and *Rows* (compact, or with details and notes). *Done* closes it. The button shows how many filters are on; with the panel closed they stay under the search as tags with a ✕ to remove them.
+- **The groups**, in the panel, as coloured tags with their count: tap one to see only that group (more than one too). **Hold and drag** a tag to reorder them: the list follows the same order.
 - **Each group closes** when you tap its title; *Close all* closes them together. The coloured square next to the title changes the group's colour, which comes back as a bar on the left of each row.
 
 Each workout has its own colour, the same in *Routines* and *Workouts*. In *Workouts*, the other workouts are rows with **⋯**: *Make active*, *Open*, *Duplicate*, *Export as text*, *Delete*. Closed groups, order, filters and colours stay as you leave them, on this device.
 
-![The group tags: a tap to filter, drag to reorder](guide/en/38-tags.webp)
+![The Filters panel: group tags, a tap to filter, drag to reorder](guide/en/38-tags.webp)
 
 ## Today
 
@@ -195,11 +196,15 @@ On a routine's page, **Try it out** opens the same screens as the real workout, 
 
 In a routine tap *Duplicate into another workout* and choose where. The copy is yours to change: the original stays as it was.
 
-## Exercises and the gym
+## Exercises
 
-*Exercises* lists all your exercises, grouped by muscle (or zone, or type: *Filters → Group by*). Tap a muscle's tag to see only that one, close the groups you don't need; in *Filters* pick type, zone, whether they're in the active workout, and compact rows or rows with notes.
+*Training → Exercises* lists all your exercises, grouped by **body part**: Chest, Back, Shoulders, Arms, Legs, Core and Cardio. Inside each part are the muscles (in *Legs*: Quads, Hamstrings, Glutes, Calves, Adductors). *Filters → Group by* also lists them by muscle, zone or type; in *Filters* pick type, body part, zone, whether they're in the active workout, and compact rows or rows with notes.
 
-![Exercises: groups, filters and the compact view](guide/en/07-exercises.webp)
+![Exercises: by body part, with the muscles inside](guide/en/07-exercises.webp)
+
+### The muscles
+
+Palestra **recognises them from the name**, in English, Italian or German: *Chest press* goes to Chest, *Lat pulldown* to Back › Lats, *Cable pushdown* to Arms › Triceps, *Beinpresse* to Legs. On the exercise's page, under *Muscles*, the recognised ones have a dashed border; tap muscles to choose them yourself. The first one you pick is the **main** one (★): it decides the group; the others count half in History. An exercise Palestra can't place, with no muscles chosen, goes to **To sort out**, at the bottom, so you see it.
 
 ### The three types
 
@@ -227,13 +232,34 @@ The drawings come from free-exercise-db, in the public domain; they download the
 
 ![Match pictures: one exercise after another](guide/en/29-match.webp)
 
-### The gym: zones and machines
+## Gym
 
-In *Exercises → Gym* you change the zones, their order and the machines in each zone. Tap a machine for its number, name and settings.
+One gym or more: your usual one, *Home*, the hotel's. They're tabs at the top; *+ Another* adds one, the pencil renames it (or deletes it: its zones and machines move to the first).
 
-### A machine that isn't listed
+![Gym: the zones in walking order and the machines in each](guide/en/05-gym.webp)
 
-On an exercise's page tap *New machine* (or *Other machine* for cardio). For cardio, pick what it measures besides time, up to three things, or make your own measure with a name and a unit.
+### Zones and machines
+
+**Zones** are in the order you walk through them: *Reorder* moves them, and routines follow this route. In each zone tap **+** for a **machine**: number, name, settings. Tap a machine to change it. From an exercise's page you can add one that isn't listed (*New machine*, or *Other machine* for cardio, where you pick what it measures besides time).
+
+### Equipment
+
+*Equipment* (on the right on a computer) is what that gym has, as ticks: barbell, rack, benches, dumbbells, cables, leg press, machines, dip and pull-up bars, cardio, mats. The first gym has everything until you untick something; a new one starts empty, and the machines you add tick what they need on their own.
+
+![Home's equipment: only dumbbells, mats and a bar](guide/en/40-equipment.webp)
+
+### When something is missing
+
+Every exercise knows what it needs (from its type, equipment and name). Every routine is done in a gym: the first, or the one chosen in *Edit → Where you do it*. With more gyms, a routine has **Where:** to see how it looks elsewhere.
+
+If something is missing there, a warning at the top says how many exercises, and each one has an orange line (*Needs: Leg press*) with **two alternatives for the same muscles**, first from your exercises, then simple ones (bodyweight, dumbbells). **Use** asks:
+
+- **Only when you're at Home**: the routine stays as it is; there, you do the alternative instead (with *instead of …* next to it, and *Back to …* to remove it). Sets and reps stay; cardio minutes become one timed set.
+- **Replace it in the routine**: from now on, everywhere.
+
+*Start* and *Try it* start in the gym you're looking at. The same warning shows on *Today*, on today's routine, and on the workout's week on a computer.
+
+![A routine at Home: what's missing and the alternatives](guide/en/39-missing.webp)
 
 ## During the workout
 
@@ -332,9 +358,21 @@ In *Settings → Your body* enter your weight, height, sex and experience (all o
 
 ## History
 
-Pick an exercise at the top: you see how its load has grown, by how much, and the last result. Below are all your sessions, complete or partial.
+At the top pick what to look at: **Everything** (every session together), **Body parts** (a line per part, tap the legend to hide one), **Workouts** (each in its colour), one **Routine** or one **Exercise** (its load, how much it grew and the last result). Below, the measure: **kg lifted**, **sets** or **top weight** (for several exercises it's an index: 100 is where you started). Then the period: 2, 3, 6 months or all.
 
-![History: an exercise's progress and your sessions](guide/en/24-history.webp)
+Above the chart: sessions, breaks and the change over the last 4 weeks.
+
+![History: body parts week by week, with a break](guide/en/24-history.webp)
+
+### Breaks
+
+**Ten days or more** without training are a break (change the number in *Settings → Rest and training*). On the chart it's a grey band with the number of days, and a dashed line goes across it: the dip after it explains itself. Below, in *Breaks*, pick the reason (holiday, illness, injury, work…): it shows on the band.
+
+### Where you improved
+
+For each body part, the kg lifted in the **last 4 weeks you trained** against the 4 before, with a word on why (more sets, more weight, steady). Breaks don't count. Below are all your sessions, complete or partial.
+
+![Where you improved, and the breaks with their reason](guide/en/41-improved.webp)
 
 ### A session
 
@@ -392,9 +430,11 @@ Palestra decides name, length and exercises; Everyday decides when. To connect t
 
 ## On a computer
 
-On a wide screen the sections are in the top bar, next to the app's name, as in Ricette and Everyday. On the right are the page's actions (*New routine* · *Import*), the sync status and the gear.
+On a wide screen the sections are in the top bar, next to the app's name, as in Ricette and Everyday, with the sync status and the gear. In *Training* a **second bar** under it holds *Workouts · Routines · Exercises* and, on the right, that tab's actions (*New routine* · *Import*).
 
-Pages use the width. *Today* and *History* have two columns. In *Routines* the list and the chosen routine sit side by side. When you edit a routine, the exercise library is on the right: search and click **+** to add. Exercises are laid out in a grid.
+Pages use the width. In *Workouts* the chosen workout's **week** sits beside the list, day by day, with what's missing. In *Routines* the list and the chosen routine sit side by side. *Exercises* is in three columns. *Gym* puts the equipment to the right of the zones; *Today* and *History* have two columns. When you edit a routine, the exercise library is on the right: search and click **+** to add.
+
+![On a computer: Training's second bar and the workout's week](guide/en/desk/14-plans.webp)
 
 Use a different token for each device: phone and computer stay in step at every sync.
 

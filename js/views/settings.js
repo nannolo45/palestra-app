@@ -1,5 +1,6 @@
 // Impostazioni: a status card, then one row per section, each opening its own page (as in Ricette).
 import { state, saveSettings, setPref, pref, live, kvGet, COLLECTIONS, resetLocal } from '../store.js';
+import { gyms, gymName, mainGym, updateGym } from '../gyms.js';
 import { t, LANGS, getLang } from '../i18n.js';
 import { esc, fmtNum, dateTime } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
@@ -14,7 +15,7 @@ import { activeInfo } from '../plans.js';
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
 import { themeChoice, applyTheme } from '../theme.js';
 
-export const APP_VERSION = 'v25';
+export const APP_VERSION = 'v26';
 const VERSION = APP_VERSION;
 
 function statusCard() {
@@ -54,7 +55,7 @@ export function settingsView(sub, sub2) {
       ['increase', 'trend', t('set_increase'), `${inc.when === 'always' ? t('whenAlways') : t('whenDone')} · ${t('cat_machine').toLowerCase()} +${fmtNum(inc.steps.machine)} kg`],
       ['training', 'timer', t('set_training'), [t('restBetweenSetsShort', tr.rest), tr.vibrate ? t('vibration') : '', tr.wake ? t('screenOn') : ''].filter(Boolean).join(' · ')],
       ['body', 'user', t('set_body'), bodyPrefs() ? t('bodySub', fmtNum(bodyPrefs().kg), bodyPrefs().cm ? fmtNum(bodyPrefs().cm) : '–') : t('bodyNone')],
-      ['gym', 'pin', t('set_gym'), [pref('gymName', '') || t('yourGym'), 'kg, km/h'].join(' · ')],
+      ['gym', 'pin', t('set_gym'), [gyms().map(gymName).join(', '), 'kg, km/h'].join(' · ')],
     ]],
     [t('grpApp'), [
       ['look', 'globe', t('set_langLook'), `${lang} · ${theme}${pref('pictures', true) === false ? ` · ${t('picHidden')}` : ''}`],
@@ -173,13 +174,16 @@ const SUB = {
       <p class="muted small">${esc(t('beforeStartHint'))}</p>
       <div class="card">${toggle({ name: 'vibrate', checked: tr.vibrate, label: t('vibrateAtEnd') })}${toggle({ name: 'sound', checked: tr.sound, label: t('soundAtEnd') })}${toggle({ name: 'wake', checked: tr.wake, label: t('keepScreenOn'), hint: t('keepScreenOnHint') })}</div>
       <p class="muted small">${esc(t('trainingHint'))}</p>
+      <div class="field-head">${esc(t('pausesTitle'))}</div>
+      <div class="card">${stepper({ name: 'pauseDays', value: tr.pauseDays ?? 10, step: 1, min: 4, unit: t('daysUnit'), label: t('pauseAfter') })}</div>
+      <p class="muted small">${esc(t('pauseAfterHint'))}</p>
     </form>`;
     return page(t('set_training'), body, (view) => {
       const form = view.querySelector('[data-form=tr]');
       const save = () => {
         const start = form.querySelector('[name=start]:checked')?.value || 'overview';
         form.querySelector('[data-cd]').hidden = start !== 'countdown';
-        setPref('training', { rest: stepVal(form, 'rest') ?? 90, between: stepVal(form, 'between') ?? 120, vibrate: form.vibrate.checked, sound: form.sound.checked, wake: form.wake.checked, start, countdown: stepVal(form, 'countdown') ?? 15 });
+        setPref('training', { rest: stepVal(form, 'rest') ?? 90, between: stepVal(form, 'between') ?? 120, vibrate: form.vibrate.checked, sound: form.sound.checked, wake: form.wake.checked, start, countdown: stepVal(form, 'countdown') ?? 15, pauseDays: stepVal(form, 'pauseDays') ?? 10 });
         refreshEstimates();
       };
       bindSteppers(form, save);
@@ -214,13 +218,13 @@ const SUB = {
 
   gym() {
     const body = `<form class="stack form" data-form="gym">
-      <label class="field"><span>${esc(t('gymName'))}</span><input id="gym-name" name="gymName" value="${esc(pref('gymName', ''))}" placeholder="${esc(t('gymNamePh'))}" autocomplete="off"></label>
+      <label class="field"><span>${esc(t('gymName'))}</span><input id="gym-name" name="gymName" value="${esc(mainGym().name || pref('gymName', ''))}" placeholder="${esc(t('gymNamePh'))}" autocomplete="off"></label>
       <div class="card kv-list"><div class="kv"><span>${esc(t('units'))}</span><b>kg · km/h</b></div></div>
       <a class="btn wide" href="#/gym">${icon('pin', 18)}${esc(t('zonesAndMachines'))}</a>
     </form>`;
     return page(t('set_gym'), body, (view) => {
       const form = view.querySelector('[data-form=gym]');
-      form.gymName.addEventListener('change', () => setPref('gymName', form.gymName.value.trim()));
+      form.gymName.addEventListener('change', () => { const n = form.gymName.value.trim(); setPref('gymName', n); if (pref('gyms', null)) updateGym(mainGym().id, { name: n }); });
     });
   },
 

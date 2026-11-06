@@ -37,7 +37,7 @@ In Palestra tocca l'ingranaggio, poi *Collegamento GitHub*. Scrivi il tuo utente
 
 ### 3. Disegnare la tua palestra
 
-In *Esercizi → Palestra* aggiungi le **zone** in cui ti sposti (Ingresso e cardio, Sala macchine, Pesi liberi…) e tocca *Riordina* per metterle nell'ordine in cui le attraversi. Le schede useranno questo percorso per farti camminare meno.
+In *Palestra* aggiungi le **zone** in cui ti sposti (Ingresso e cardio, Sala macchine, Pesi liberi…) e tocca *Riordina* per metterle nell'ordine in cui le attraversi. Le schede useranno questo percorso per farti camminare meno.
 
 ![La palestra: le zone nell'ordine del tuo giro](guide/it/05-gym.webp)
 
@@ -73,15 +73,16 @@ Un **workout** raccoglie le schede della settimana, ognuna nel suo giorno. In *W
 
 ![Rendere attivo un workout: quello di prima resta salvato](guide/it/16-activate.webp)
 
-## Le cinque sezioni
+## Le quattro sezioni
 
 | Sezione | A cosa serve |
 |---|---|
 | *Oggi* | La scheda di oggi, la settimana, l'ultimo allenamento e il mese |
-| *Workout* | Le tue settimane: quali schede, in che giorni e a che ora |
-| *Schede* | Tutte le tue schede, da cercare, aprire, modificare e iniziare |
-| *Esercizi* | Gli esercizi e, in *Palestra*, le zone e le macchine |
-| *Storico* | I tuoi progressi e ogni allenamento fatto |
+| *Allenamento* | Tre linguette: **Workout** (le tue settimane: quali schede, in che giorni e a che ora), **Schede** (da cercare, aprire, modificare e iniziare) ed **Esercizi** |
+| *Palestra* | Le tue palestre: zone, macchine e attrezzatura |
+| *Storico* | I tuoi progressi, le pause e ogni allenamento fatto |
+
+In *Allenamento* passi da una linguetta all'altra toccandola o **scorrendo** a destra e a sinistra sull'elenco. Riapre l'ultima che hai guardato. Da una scheda, un workout o un esercizio, in alto **‹ Allenamento › Schede** ti riporta alla linguetta giusta.
 
 In cima a ogni pagina ci sono le sue azioni, come *Nuova scheda* e *Importa*. L'**ingranaggio** in alto a destra apre le *Impostazioni*: un elenco in tre gruppi (*Collegamenti*, *Allenamento*, *App*). Ogni riga dice com'è impostata ora e apre una pagina sola su quella cosa; *← Impostazioni* in alto torna all'elenco.
 
@@ -93,13 +94,13 @@ In *Impostazioni → Lingua e aspetto*, **Aspetto** sceglie i colori dell'app: *
 
 *Esercizi*, *Schede* e *Workout* hanno in alto gli stessi strumenti:
 
-- **Cerca** e **Filtri**. *Filtri* apre un foglio con tutto: *Raggruppa per*, *Ordina per*, i filtri (ognuno con quanti ne trova), *Colori* e *Righe* (compatte, o con dettagli e note). Sul pulsante c'è quanti filtri sono accesi; sotto la ricerca restano come etichette con la ✕ per toglierli.
-- **I gruppi**, come etichette colorate con il numero: toccane una per vedere solo quel gruppo (anche più d'una). **Tieni premuto e trascina** un'etichetta per riordinarle: l'elenco segue lo stesso ordine.
+- **Cerca** e **Filtri**. *Filtri* apre un pannello sotto la ricerca, solo quando lo tocchi, con tutto: le etichette dei gruppi, *Raggruppa per*, *Ordina per*, i filtri (ognuno con quanti ne trova), *Colori* e *Righe* (compatte, o con dettagli e note). *Fine* lo chiude. Sul pulsante c'è quanti filtri sono accesi; a pannello chiuso restano sotto la ricerca come etichette con la ✕ per toglierli.
+- **I gruppi**, nel pannello, come etichette colorate con il numero: toccane una per vedere solo quel gruppo (anche più d'una). **Tieni premuto e trascina** un'etichetta per riordinarle: l'elenco segue lo stesso ordine.
 - **Ogni gruppo si chiude** toccandone il titolo; *Chiudi tutti* li chiude insieme. Il quadratino colorato accanto al titolo cambia il colore del gruppo, che ritorna come barra a sinistra di ogni riga.
 
 Ogni workout ha il suo colore, lo stesso in *Schede* e in *Workout*. In *Workout*, gli altri workout sono righe con **⋯**: *Rendi attivo*, *Apri*, *Duplica*, *Esporta come testo*, *Elimina*. Gruppi chiusi, ordine, filtri e colori restano come li lasci, su questo dispositivo.
 
-![Le etichette dei gruppi: un tocco per filtrare, trascina per riordinare](guide/it/38-tags.webp)
+![Il pannello Filtri: le etichette dei gruppi, un tocco per filtrare, trascina per riordinare](guide/it/38-tags.webp)
 
 ## Oggi
 
@@ -195,11 +196,15 @@ Nella pagina di una scheda, **Prova com'è** apre le stesse schermate dell'allen
 
 In una scheda tocca *Duplica in un altro workout* e scegli dove. La copia è tua da cambiare: l'originale resta com'era.
 
-## Esercizi e palestra
+## Esercizi
 
-In *Esercizi* trovi tutti i tuoi esercizi, raggruppati per muscolo (o zona, o tipo: *Filtri → Raggruppa per*). Tocca l'etichetta di un muscolo per vedere solo quello, chiudi i gruppi che non ti servono; in *Filtri* scegli tipo, zona, se sono nel workout attivo, e righe compatte o con le note.
+In *Allenamento → Esercizi* trovi tutti i tuoi esercizi, raggruppati per **parte del corpo**: Petto, Schiena, Spalle, Braccia, Gambe, Core e Cardio. Dentro ogni parte ci sono i muscoli (in *Gambe*: Quadricipiti, Femorali, Glutei, Polpacci, Adduttori). *Filtri → Raggruppa per* li mette anche per muscolo, zona o tipo; in *Filtri* scegli tipo, parte del corpo, zona, se sono nel workout attivo, e righe compatte o con le note.
 
-![Esercizi: i gruppi, i filtri e la vista compatta](guide/it/07-exercises.webp)
+![Esercizi: per parte del corpo, con i muscoli dentro](guide/it/07-exercises.webp)
+
+### I muscoli
+
+Palestra li **riconosce dal nome**, in italiano, inglese o tedesco: *Chest press* va in Petto, *Lat machine* in Schiena › Dorsali, *Push down ai cavi* in Braccia › Tricipiti, *Beinpresse* in Gambe. Nella pagina dell'esercizio, sotto *Muscoli*, quelli riconosciuti hanno il bordo tratteggiato; tocca i muscoli per sceglierli tu. Il primo che scegli è il **principale** (★): decide il gruppo; gli altri contano a metà nello Storico. Un esercizio che Palestra non capisce e senza muscoli scelti finisce in **Da sistemare**, in fondo, così lo vedi.
 
 ### I tre tipi
 
@@ -227,13 +232,34 @@ I disegni vengono da free-exercise-db, di pubblico dominio; si scaricano la prim
 
 ![Abbina le immagini: un esercizio dopo l'altro](guide/it/29-match.webp)
 
-### La palestra: zone e macchine
+## Palestra
 
-In *Esercizi → Palestra* cambi le zone, il loro ordine e le macchine in ogni zona. Tocca una macchina per il numero, il nome e le regolazioni.
+Una o più palestre: quella di sempre, *Casa*, quella dell'albergo. Le vedi come linguette in alto; *+ Un'altra* ne aggiunge una, la matita ne cambia il nome (o la elimina: zone e macchine passano alla prima).
 
-### Una macchina che non c'è
+![Palestra: le zone nell'ordine del giro e le macchine di ognuna](guide/it/05-gym.webp)
 
-Dalla pagina di un esercizio tocca *Nuova macchina* (o *Altra macchina* per il cardio). Per il cardio scegli cosa misura oltre al tempo, fino a tre cose, o crea una misura tua con nome e unità.
+### Zone e macchine
+
+Le **zone** sono nell'ordine in cui le attraversi: *Riordina* le sposta, e le schede seguono questo giro. In ogni zona tocca **+** per una **macchina**: numero, nome, regolazioni. Tocca una macchina per cambiarla. Dalla pagina di un esercizio puoi aggiungerne una che non c'è (*Nuova macchina*, o *Altra macchina* per il cardio, dove scegli cosa misura oltre al tempo).
+
+### L'attrezzatura
+
+*Attrezzatura* (a destra su un computer) è cosa c'è in quella palestra, a spunta: bilanciere, rack, panche, manubri, cavi, leg press, macchine, parallele e sbarra, cardio, tappetini. La prima palestra ha tutto finché non togli qualcosa; una nuova parte vuota, e le macchine che aggiungi spuntano da sole quello che serve.
+
+![L'attrezzatura di Casa: solo manubri, tappetini e sbarra](guide/it/40-equipment.webp)
+
+### Quando manca qualcosa
+
+Ogni esercizio sa cosa gli serve (dal tipo, dall'attrezzo e dal nome). Ogni scheda si fa in una palestra: la prima, o quella scelta in *Modifica → Dove la fai*. Con più palestre, nella scheda c'è **Dove:** per vedere com'è altrove.
+
+Se lì manca qualcosa, un avviso in cima dice quanti esercizi, e ognuno ha una riga arancione (*Serve: Leg press*) con **due alternative per gli stessi muscoli**, prima tra i tuoi esercizi e poi tra quelli semplici (corpo libero, manubri). **Usa** chiede:
+
+- **Solo quando sei a Casa**: la scheda resta com'è; lì, al suo posto, fai l'alternativa (con *al posto di …* accanto, e *Torna a …* per toglierla). Serie e ripetizioni restano; i minuti di cardio diventano una serie a tempo.
+- **Sostituisci nella scheda**: da ora in poi, ovunque.
+
+*Inizia* e *Prova com'è* partono nella palestra che stai guardando. Lo stesso avviso c'è in *Oggi*, sulla scheda di oggi, e sulla settimana del workout su un computer.
+
+![Una scheda a Casa: cosa manca e le alternative](guide/it/39-missing.webp)
 
 ## Durante l'allenamento
 
@@ -332,9 +358,21 @@ In *Impostazioni → Il tuo corpo* metti peso, altezza, sesso ed esperienza (tut
 
 ## Storico
 
-Scegli un esercizio in alto: vedi come è cresciuto il carico, di quanto e l'ultima volta. Sotto ci sono tutti gli allenamenti, completi o parziali.
+In alto scegli cosa guardare: **Tutto** (ogni allenamento insieme), **Parti del corpo** (una linea per parte, tocca la legenda per nasconderne una), **Workout** (ogni workout nel suo colore), una **Scheda** o un **Esercizio** (il carico, di quanto è cresciuto e l'ultima volta). Sotto, la misura: **kg sollevati**, **serie**, o **peso massimo** (per più esercizi è un indice: 100 è da dove sei partito). Poi il periodo: 2, 3, 6 mesi o tutto.
 
-![Storico: i progressi di un esercizio e gli allenamenti](guide/it/24-history.webp)
+Sopra il grafico: gli allenamenti, le pause e com'è cambiato nelle ultime 4 settimane.
+
+![Storico: le parti del corpo settimana per settimana, con una pausa](guide/it/24-history.webp)
+
+### Le pause
+
+**Dieci giorni o più** senza allenamenti sono una pausa (il numero lo cambi in *Impostazioni → Recupero e allenamento*). Nel grafico è una fascia grigia con quanti giorni, e una linea tratteggiata la attraversa: il calo dopo si spiega da solo. Sotto, in *Pause*, scegli il motivo (vacanza, malattia, infortunio, lavoro…): compare sulla fascia.
+
+### Dove sei migliorato
+
+Per ogni parte del corpo, i kg sollevati nelle **ultime 4 settimane in cui ti sei allenato** contro le 4 prima, con una parola sul perché (più serie, più peso, stabile). Le pause non contano. Sotto ci sono tutti gli allenamenti, completi o parziali.
+
+![Dove sei migliorato, e le pause con il loro motivo](guide/it/41-improved.webp)
 
 ### Un allenamento
 
@@ -392,9 +430,11 @@ Palestra decide nome, durata ed esercizi; Everyday decide quando. Per collegarle
 
 ## Su un computer
 
-Su uno schermo largo le sezioni sono nella barra in alto, accanto al nome dell'app, come in Ricette ed Everyday. A destra ci sono le azioni della pagina (*Nuova scheda* · *Importa*), lo stato della sincronizzazione e l'ingranaggio.
+Su uno schermo largo le sezioni sono nella barra in alto, accanto al nome dell'app, come in Ricette ed Everyday, con lo stato della sincronizzazione e l'ingranaggio. In *Allenamento* sotto c'è una **seconda barra** con *Workout · Schede · Esercizi* e, a destra, le azioni di quella linguetta (*Nuova scheda* · *Importa*).
 
-Le pagine usano la larghezza. *Oggi* e *Storico* hanno due colonne. In *Schede* l'elenco e la scheda scelta stanno affiancati. Quando modifichi una scheda, a destra c'è la libreria degli esercizi: cerca e clicca **+** per aggiungere. Gli esercizi sono in una griglia.
+Le pagine usano la larghezza. In *Workout* accanto all'elenco c'è la **settimana** del workout scelto, giorno per giorno, con cosa manca. In *Schede* l'elenco e la scheda scelta stanno affiancati. *Esercizi* è in tre colonne. *Palestra* mette l'attrezzatura a destra delle zone; *Oggi* e *Storico* hanno due colonne. Quando modifichi una scheda, a destra c'è la libreria degli esercizi: cerca e clicca **+** per aggiungere.
+
+![Su un computer: la seconda barra di Allenamento e la settimana del workout](guide/it/desk/14-plans.webp)
 
 Usa un token diverso per ogni dispositivo: telefono e computer restano allineati a ogni sincronizzazione.
 

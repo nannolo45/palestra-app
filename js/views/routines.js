@@ -1,9 +1,11 @@
 // Allenamenti: the list of routines, one routine, and its editor (order, sets, automatic increase).
 import { state, get, upsert, remove, restore, uid, pref, live } from '../store.js';
+import { gyms, gymById, gymName, mainGym, routineGymId, missingIn, exerciseIn, alternatives, fitItem } from '../gyms.js';
+import { needOf } from '../body.js';
 import { t } from '../i18n.js';
 import { esc, fmtNum, restText, minText, shortDate, timeOfDay, weekdayShort } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { backLink, stepper, bindSteppers, stepVal, toggle, empty, exTag, segmented, gearLink } from '../ui/parts.js';
+import { backLink, stepper, bindSteppers, stepVal, toggle, empty, exTag, segmented, trainHead } from '../ui/parts.js';
 import { openSheet, askConfirm, toast, chooseHowToCreate } from '../ui/dialogs.js';
 import { isWide } from '../shell.js';
 import {
@@ -83,10 +85,7 @@ export function routinesView(query = {}) {
     },
     def: { group: 'workout', sort: 'order', color: 'workout', dense: true },
   });
-  const head = `<header class="page-head">
-      <div><h1>${esc(t('tab_routines'))}</h1><p class="sub">${esc(t('nRoutines', all.length))}</p></div>
-      <div class="head-actions">${gearLink()}</div>
-    </header>
+  const head = `${trainHead('routines')}
     <div class="two-actions" data-top-actions><button type="button" class="btn primary" data-action="new-routine">${icon('plus', 18)}${esc(t('newRoutine'))}</button><a class="btn" href="#/import?for=routine">${icon('book', 18)}${esc(t('importShort'))}</a></div>`;
   const listHtml = all.length ? kit.html
     : empty(t('esRoutinesTitle'), exercises().length ? t('esRoutinesText') : t('esRoutinesFirst'),
@@ -131,7 +130,15 @@ function lastText(it, ex) {
 export function routineView(id, { pane = false } = {}) {
   const r = get('routines', id);
   if (!r) return { html: empty(t('notFound'), t('notFoundText'), `<a class="btn" href="#/routines">${esc(t('tab_routines'))}</a>`) };
-  const items = (r.items || []).map((it) => ({ it, ex: get('exercises', it.exerciseId) })).filter((x) => x.ex);
+  // where it's done (v26): the scheda's gym, or another one chosen here; the items use their stand-ins there
+  const gs = gyms();
+  const gid = whereOf[r.id] && gs.some((g) => g.id === whereOf[r.id]) ? whereOf[r.id] : routineGymId(r);
+  const gym = gymById(gid);
+  const missing = new Map(missingIn(r, gid).map((m) => [m.index, m]));
+  const items = (r.items || []).map((it, ix) => {
+    const ex = exerciseIn(it, gid); const orig = get('exercises', it.exerciseId);
+    return { it: ex && orig && ex.id !== orig.id ? fitItem(it, orig, ex) : it, ix, ex, orig };
+  }).filter((x) => x.ex);
   const sets = items.reduce((a, x) => a + (x.ex.type === 'cardio' ? 1 : Number(x.it.sets) || 1), 0);
   const zones = new Set(items.map((x) => placeOf(x.ex)?.id).filter(Boolean)).size;
   const planned = plannedFor(r.id);
@@ -139,23 +146,38 @@ export function routineView(id, { pane = false } = {}) {
   const ws = plansWith(r.id);
   const a = activeInfo();
   let prevPlace = null;
-  const list = items.map(({ it, ex }, i) => {
+  altCache[r.id] = {};
+  const list = items.map(({ it, ex, ix, orig }, i) => {
     const p = placeOf(ex);
     const walk = i > 0 && p && prevPlace && p.id !== prevPlace ? `<div class="walk">${icon('arrowDown', 14)}${esc(p.name)}</div>` : '';
     if (p) prevPlace = p.id;
     const lt = lastText(it, ex);
-    return `${walk}<div class="row card-row static">
+    const miss = missing.get(ix);
+    const standIn = orig && orig.id !== ex.id;
+    let alts = '';
+    if (miss) {
+      const as = alternatives(ex, gid);
+      altCache[r.id][ix] = as;
+      alts = as.length ? `<div class="alts">${as.map((x, j) => { const n = x.ex ? x.ex.name : x.builtin.name; const need = needOf(x.ex || x.builtin); return `<div class="alt"><span><b>${esc(n)}</b><small>${esc(t('sameMuscles'))} · ${esc(t(`eqk_${need}`))}</small></span><button type="button" class="btn small" data-use="${esc(r.id)}|${ix}|${j}" data-gym="${esc(gid)}">${esc(t('use'))}</button></div>`; }).join('')}</div>`
+        : `<p class="muted small alts-none">${esc(t('noAlternative'))}</p>`;
+    }
+    return `${walk}<div class="row card-row static${miss ? ' missing' : ''}">
       <span class="num-dot">${i + 1}</span>
       ${thumbOf(ex) ? `<button type="button" class="thumb" data-viewer="${esc(ex.id)}" aria-label="${esc(t('viewPicture'))}"><img src="${esc(thumbOf(ex))}" alt="" loading="lazy"></button>` : ''}
-      <span class="row-text"><span class="row-title">${esc(ex.name)}</span><span class="row-sub">${esc(whereText(ex) || typeLabel(ex))}</span>
+      <span class="row-text"><span class="row-title">${esc(ex.name)}${standIn ? ` <span class="standin-tag">${esc(t('insteadOf', orig.name))}</span>` : ''}</span><span class="row-sub">${esc(whereText(ex) || typeLabel(ex))}</span>
+      ${miss ? `<span class="warn-line">${icon('alert', 13)}${esc(t('needsAt', t(`eqk_${miss.need}`), gymName(gym)))}</span>` : ''}
+      ${standIn ? `<button type="button" class="link-btn small" data-unalt="${esc(r.id)}|${ix}|${esc(gid)}">${esc(t('backToOrig', orig.name))}</button>` : ''}
       ${ex.notes ? `<span class="row-note">${icon('pencil', 12)}<span>${esc(ex.notes)}</span></span>` : ''}</span>
       <span class="row-end"><b>${esc(itemPlan(it, ex))}</b>${ex.type !== 'cardio' ? `<small>${esc(t('restShort', restText(it.rest ?? training().rest)))}</small>` : ''}${lt ? `<small class="last-w">${esc(`${t('lastWeight')} ${lt}`)}</small>` : ''}</span>
-    </div>`;
+    </div>${alts}`;
   }).join('');
+  const gq = gs.length > 1 ? `?gym=${encodeURIComponent(gid)}` : '';
+  const whereRow = gs.length > 1 ? `<div class="where-row" role="group" aria-label="${esc(t('whereLabel'))}"><span>${esc(t('whereLabel'))}</span>${gs.map((g) => `<button type="button" class="chip-btn${g.id === gid ? ' on' : ''}" aria-pressed="${g.id === gid}" data-where="${esc(r.id)}|${esc(g.id)}">${esc(gymName(g))}</button>`).join('')}</div>
+    ${missing.size ? `<div class="warn-box">${icon('alert', 18)}<span>${esc(t('missingN', missing.size, gymName(gym)))}</span></div>` : Array.isArray(gym.equipment) ? `<div class="ok-box">${icon('check', 16)}${esc(t('allThere', gymName(gym)))}</div>` : ''}` : '';
   const rid = encodeURIComponent(r.id);
   const bar = pane
     ? `<header class="bar pane-bar"><span></span><a class="bar-action" href="#/routine/${rid}/edit">${esc(t('edit'))}</a></header>`
-    : `<header class="bar">${backLink('#/routines', t('tab_routines'))}<a class="bar-action" href="#/routine/${rid}/edit">${esc(t('edit'))}</a></header>`;
+    : `<header class="bar">${backLink('#/routines', t('crumb', t('tab_routines')))}<a class="bar-action" href="#/routine/${rid}/edit">${esc(t('edit'))}</a></header>`;
   const html = `${bar}
     <h1 class="title">${esc(r.name)}</h1>
     <div class="stats3">
@@ -167,17 +189,60 @@ export function routineView(id, { pane = false } = {}) {
       <b>${esc(t('usedIn'))}: ${ws.length ? ws.map((p) => esc(p.id === a?.planId ? `${p.name} (${t('activeBadge').toLowerCase()})` : p.name)).join(', ') : esc(t('inNoWorkout'))}</b>
       <span>${esc(t('inEverydaySaved', routineMinutes(r)))} · ${planned.length ? esc(t('plannedOn', planned.slice(0, 3).map(plannedText).join(' · '))) : esc(t('notPlanned'))}${last ? ` · ${esc(t('lastOn', shortDate(last)))}` : ''}</span>
     </div></div>
+    ${whereRow}
     ${items.length ? `<div class="stack tight">${list}</div>` : empty(t('esItemsTitle'), t('esItemsText'), `<a class="btn primary" href="#/routine/${rid}/edit">${esc(t('addExercise'))}</a>`)}
     <button type="button" class="btn wide" data-action="duplicate-to" data-id="${esc(r.id)}">${icon('copy', 18)}${esc(t('duplicateTo'))}</button>
-    ${items.length ? `<a class="btn wide" href="#/try/${rid}">${icon('eye', 18)}${esc(t('tryIt'))}</a>` : ''}
-    ${items.length ? `<div class="${pane ? 'pane-cta' : 'sticky-cta'}"><a class="btn yellow big" href="#/start/${rid}">${icon('play', 18)}${esc(t('start'))}</a></div>` : ''}`;
+    ${items.length ? `<a class="btn wide" href="#/try/${rid}${gq}">${icon('eye', 18)}${esc(t('tryIt'))}</a>` : ''}
+    ${items.length ? `<div class="${pane ? 'pane-cta' : 'sticky-cta'}"><a class="btn yellow big" href="#/start/${rid}${gq}">${icon('play', 18)}${esc(t('start'))}</a></div>` : ''}`;
   return { html, bind: bindRoutineActions };
 }
 
 /** Buttons a routine's page has, also when it's shown in the library's side pane. */
 function bindRoutineActions(view) {
+  view.querySelectorAll('[data-where]').forEach((b) => b.addEventListener('click', () => { const [rid, g] = b.dataset.where.split('|'); whereOf[rid] = g; window.dispatchEvent(new CustomEvent('palestra:render')); }));
+  view.querySelectorAll('[data-use]').forEach((b) => b.addEventListener('click', () => { const [rid, ix, j] = b.dataset.use.split('|'); useAlternative(rid, Number(ix), altCache[rid]?.[ix]?.[Number(j)], b.dataset.gym); }));
+  view.querySelectorAll('[data-unalt]').forEach((b) => b.addEventListener('click', () => {
+    const [rid, ix, g] = b.dataset.unalt.split('|');
+    const cur = get('routines', rid);
+    const items = cur.items.map((it, i) => { if (i !== Number(ix) || !it.alt) return it; const alt = { ...it.alt }; delete alt[g]; return { ...it, alt: Object.keys(alt).length ? alt : undefined }; });
+    upsert('routines', { ...cur, items });
+  }));
   view.querySelectorAll('[data-viewer]').forEach((b) => b.addEventListener('click', () => { const ex = get('exercises', b.dataset.viewer); if (ex) openViewer(ex); }));
   view.querySelectorAll('[data-action=duplicate-to]').forEach((b) => b.addEventListener('click', () => duplicateTo(b.dataset.id)));
+}
+
+// ---- a gym without what an exercise needs (v26) ----
+
+const whereOf = {}; // routineId → the gym chosen on its page (not kept)
+const altCache = {}; // routineId → { itemIndex: alternatives shown }
+
+/** "Usa": only at that gym (the scheda stays as it is) or in the scheda for good. A suggestion becomes an exercise. */
+async function useAlternative(rid, ix, alt, gid) {
+  const r = get('routines', rid);
+  if (!r || !alt) return;
+  const g = gymById(gid);
+  const name = alt.ex ? alt.ex.name : alt.builtin.name;
+  const html = `<h2>${esc(t('useQ', name))}</h2>
+    <button type="button" class="option-btn" data-how="here"><b>${esc(t('onlyAt', gymName(g)))}</b><small>${esc(t('onlyAtHint', get('exercises', r.items[ix].exerciseId)?.name || ''))}</small></button>
+    <button type="button" class="option-btn" data-how="swap"><b>${esc(t('replaceInRoutine'))}</b><small>${esc(t('replaceHint'))}</small></button>
+    <button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button>`;
+  const how = await openSheet(html, (form, close) => form.querySelectorAll('[data-how]').forEach((b) => b.addEventListener('click', () => close(b.dataset.how))));
+  if (how !== 'here' && how !== 'swap') return;
+  let ex = alt.ex;
+  if (!ex) {
+    const b = alt.builtin;
+    ex = live('exercises').find((e) => e.name.toLowerCase() === b.name.toLowerCase())
+      || upsert('exercises', { id: uid(), name: b.name, type: b.type, ...(b.equipment ? { equipment: b.equipment } : {}), ...(b.muscles[0] === 'cardio' || b.muscles[0] === 'abs' && /plank/i.test(b.name) ? { timed: true } : {}), muscles: b.muscles[0] === 'cardio' ? [] : b.muscles.slice(), defaultRest: training().rest, notes: '', increase: { mode: 'type' } });
+  }
+  const cur = get('routines', rid);
+  const items = cur.items.map((it, i) => {
+    if (i !== ix) return it;
+    if (how === 'here') return { ...it, alt: { ...(it.alt || {}), [gid]: ex.id } };
+    return { ...fitItem(it, get('exercises', it.exerciseId), ex), ...(it.alt ? { alt: it.alt } : {}) };
+  });
+  upsert('routines', { ...cur, items });
+  refreshEstimates();
+  toast(how === 'here' ? t('usedHere', ex.name, gymName(g)) : t('replacedWith', ex.name));
 }
 
 /** "Duplica in un altro workout": a copy of the scheda, added to a workout it isn't in yet (or to a new one). */
@@ -231,6 +296,7 @@ export function routineEditView(id) {
     <h1 class="title small">${esc(t('editRoutine'))}</h1>
     <form class="stack form" data-form="routine">
       <label class="field"><span>${esc(t('name'))}</span><input id="r-name" name="name" value="${esc(r.name)}" autocomplete="off"></label>
+      ${gyms().length > 1 ? `<label class="field"><span>${esc(t('routineGym'))}</span><select name="gymId">${gyms().map((g) => `<option value="${esc(g.id)}" ${g.id === routineGymId(r) ? 'selected' : ''}>${esc(gymName(g))}</option>`).join('')}</select></label>` : ''}
       <div class="card">${toggle({ name: 'autoIncrease', checked: r.autoIncrease, label: t('autoIncrease'), hint: t('autoIncreaseHint') })}
         ${r.autoIncrease ? `<p class="card-foot">${esc(t('autoIncreaseHow'))} <a href="#/settings/increase">${esc(t('changeSteps'))}</a></p>` : ''}</div>
       <div class="field"><span>${esc(t('orderTitle'))} <small class="muted">${esc(t('dragToMove'))}</small></span></div>
@@ -247,6 +313,7 @@ export function routineEditView(id) {
       bindLibrary(view, id);
       const form = view.querySelector('[data-form=routine]');
       form.name.addEventListener('change', () => { const cur = get('routines', id); upsert('routines', { ...cur, name: form.name.value.trim() || cur.name }); });
+      form.gymId?.addEventListener('change', () => { const cur = get('routines', id); upsert('routines', { ...cur, gymId: form.gymId.value === mainGym().id ? undefined : form.gymId.value }); delete whereOf[id]; });
       form.autoIncrease.addEventListener('change', () => { const cur = get('routines', id); upsert('routines', { ...cur, autoIncrease: form.autoIncrease.checked }); });
       view.querySelector('[data-sortable=items]').addEventListener('sorted', (e) => {
         const cur = get('routines', id);

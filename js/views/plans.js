@@ -3,9 +3,11 @@ import { get, upsert, remove, restore, uid, live } from '../store.js';
 import { t } from '../i18n.js';
 import { esc, minText, shortDate } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { backLink, empty, toggle, gearLink } from '../ui/parts.js';
+import { backLink, empty, toggle, trainHead } from '../ui/parts.js';
 import { openSheet, askConfirm, toast, chooseHowToCreate } from '../ui/dialogs.js';
 import { routines, routineMinutes, lastDone } from '../data.js';
+import { isWide } from '../shell.js';
+import { gyms, gymById, gymName, routineGymId, missingIn } from '../gyms.js';
 import { listKit, colorOf } from '../ui/listkit.js';
 import {
   plans, activeInfo, isActive, isUpcoming, dateOf, activate, validTime, deactivate, savePlan, planDays, planMinutes, weekNumber, nextMonday, isoDate, weekStart, planToText,
@@ -32,8 +34,11 @@ function weekdaysText(p) {
   return ds.join(' · ');
 }
 
-export function plansView() {
+export function plansView(query = {}) {
   const all = plans();
+  const wide = isWide();
+  const sel = wide ? (all.find((p) => p.id === query.sel) || null) : null;
+  const href = (p) => (wide ? `#/plans?sel=${encodeURIComponent(p.id)}` : `#/plan/${encodeURIComponent(p.id)}`);
   const a = activeInfo();
   const active = a && all.find((p) => p.id === a.planId);
   const others = all.filter((p) => p !== active);
@@ -41,12 +46,12 @@ export function plansView() {
     const days = planDays(p).map((d) => get('routines', d.routineId).name).join(' · ');
     const meta = `${t('nDays', planDays(p).length)} · ${minText(planMinutes(p))} ${t('perWeek')}`;
     if (isAct) {
-      return `<a class="plan-card active" href="#/plan/${encodeURIComponent(p.id)}">
+      return `<a class="plan-card active${sel && sel.id === p.id ? ' selected' : ''}" href="${href(p)}">
         <span class="plan-top"><span class="badge-active">${esc(t('activeBadge'))}</span><span>${esc(sinceText(p))}</span></span>
         <span class="plan-name">${esc(p.name)}</span><span class="plan-days">${esc(days)}</span><span class="plan-meta">${esc(meta)}${weekdaysText(p) ? ` · ${esc(weekdaysText(p))}` : ''}</span></a>`;
     }
     return `<div class="card plan-card">
-      <a href="#/plan/${encodeURIComponent(p.id)}" class="plan-link"><span class="plan-name small">${esc(p.name)}</span><span class="row-sub">${esc(`${meta} · ${sinceText(p)}`)}</span></a>
+      <a href="${href(p)}" class="plan-link"><span class="plan-name small">${esc(p.name)}</span><span class="row-sub">${esc(`${meta} · ${sinceText(p)}`)}</span></a>
       ${upcoming ? `<button type="button" class="btn small" data-activate-now="${esc(p.id)}">${esc(t('activateToday'))}</button>` : `<button type="button" class="btn small" data-activate="${esc(p.id)}">${esc(t('makeActive'))}</button>`}
     </div>`;
   };
@@ -73,31 +78,38 @@ export function plansView() {
     colors: [],
     row: (p, { dense }) => {
       const meta = `${t('nDays', planDays(p).length)} · ${minText(planMinutes(p))} ${t('perWeek')} · ${sinceText(p)}`;
-      return `<div class="row list-row plan-row${dense ? ' dense' : ''}" style="--c:${colorOf(`w:${p.id}`, planKeys)}">
+      return `<div class="row list-row plan-row${dense ? ' dense' : ''}${sel && sel.id === p.id ? ' selected' : ''}" style="--c:${colorOf(`w:${p.id}`, planKeys)}">
         <span class="plan-dot" aria-hidden="true"></span>
-        <a class="row-text plain" href="#/plan/${encodeURIComponent(p.id)}"><span class="row-title">${esc(p.name)}</span><span class="row-sub">${esc(meta)}</span>
+        <a class="row-text plain" href="${href(p)}"><span class="row-title">${esc(p.name)}</span><span class="row-sub">${esc(meta)}</span>
         ${!dense ? `<span class="row-sub">${esc(planDays(p).map((d) => get('routines', d.routineId)?.name).filter(Boolean).join(' · '))}</span>` : ''}</a>
         <button type="button" class="round-btn small" data-plan-menu="${esc(p.id)}" aria-label="${esc(t('moreActions'))}" aria-haspopup="menu">${icon('dots', 18)}</button></div>`;
     },
     def: { group: 'use', sort: 'last', color: 'none', dense: true },
   });
-  const html = `<header class="page-head">
-      <div><h1>${esc(t('plansTitle'))}</h1><p class="sub">${esc(a ? t('activeIs', a.plan.name) : t('noActivePlanShort'))}</p></div>
-      <div class="head-actions">${gearLink()}</div>
-    </header>
+  const html = `${trainHead('plans')}
     <div class="two-actions" data-top-actions><button type="button" class="btn primary" data-action="new-plan">${icon('plus', 18)}${esc(t('newPlan'))}</button><a class="btn" href="#/import?for=plan">${icon('book', 18)}${esc(t('importShort'))}</a></div>
-    <p class="lead">${esc(t('plansIntro'))}</p>
-    ${all.length ? `<div class="stack">
+    <p class="lead only-narrow">${esc(t('plansIntro'))}</p>
+    ${wide && all.length ? `<div class="master-detail"><div class="md-list">${all.length ? `<div class="stack">
       ${active ? card(active, true) : `<div class="card plain-note">${esc(t('noActivePlan'))}</div>`}
       ${a && a.upcoming ? `<h2 class="section-title">${esc(t('upcomingPlan'))}</h2>${card(a.upcoming.plan, false, true)}` : ''}
       ${rest.length ? `<h2 class="section-title">${esc(t('otherPlans'))}</h2>${kit.html}` : ''}
-    </div>` : empty(t('esPlansTitle'), t('esPlansText'))}`;
+    </div>` : empty(t('esPlansTitle'), t('esPlansText'))}</div><section class="md-pane card">${weekPane(sel || active || all[0])}</section></div>` : `${all.length ? `<div class="stack">
+      ${active ? card(active, true) : `<div class="card plain-note">${esc(t('noActivePlan'))}</div>`}
+      ${a && a.upcoming ? `<h2 class="section-title">${esc(t('upcomingPlan'))}</h2>${card(a.upcoming.plan, false, true)}` : ''}
+      ${rest.length ? `<h2 class="section-title">${esc(t('otherPlans'))}</h2>${kit.html}` : ''}
+    </div>` : empty(t('esPlansTitle'), t('esPlansText'))}`}`;
   return {
     html,
     bind(view) {
       view.querySelectorAll('[data-activate]').forEach((b) => b.addEventListener('click', () => activateSheet(get('plans', b.dataset.activate))));
       kit.bind(view);
       view.querySelectorAll('[data-plan-menu]').forEach((b) => b.addEventListener('click', () => planMenu(b, b.dataset.planMenu)));
+      view.querySelectorAll('[data-pane-m]').forEach((b) => b.addEventListener('click', () => {
+        const [k, id] = b.dataset.paneM.split('|');
+        if (k === 'activate') activateSheet(get('plans', id));
+        if (k === 'duplicate') duplicatePlan(id);
+        if (k === 'export') exportPlan(id);
+      }));
       view.querySelectorAll('[data-activate-now]').forEach((b) => b.addEventListener('click', () => { activate(get('plans', b.dataset.activateNow), isoDate(Date.now())); rerender(); }));
       view.querySelector('[data-action=new-plan]').addEventListener('click', async () => {
         const how = await chooseHowToCreate({ title: t('newPlan'), emptyLabel: t('startEmpty'), emptyHint: t('startEmptyPlanHint'), importLabel: t('importFromTextOrFile'), importHint: t('importPlanHint') });
@@ -108,6 +120,29 @@ export function plansView() {
       });
     },
   };
+}
+
+/** On a computer, beside the list: the chosen workout's week, day by day, in its colour, with what's missing. */
+function weekPane(p) {
+  if (!p) return '';
+  const act = isActive(p.id);
+  const c = colorOf(`w:${p.id}`, [...plans().map((x) => `w:${x.id}`), 'w:none']);
+  const names = t('weekdayShort');
+  const days = planDays(p);
+  const cell = (d) => {
+    const r = get('routines', d.routineId);
+    const miss = missingIn(r, routineGymId(r)).length;
+    return `<a class="wk-day" href="#/routine/${encodeURIComponent(r.id)}"><strong>${esc(r.name)}</strong><span>${esc([validTime(d.time) ? d.time : '', `${routineMinutes(r)} min`].filter(Boolean).join(' · '))}</span>${miss ? `<span class="warn-line">${icon('alert', 12)}${esc(t('nMissingShort', miss))}</span>` : ''}${gyms().length > 1 ? `<small class="muted">${esc(gymName(gymById(routineGymId(r))))}</small>` : ''}</a>`;
+  };
+  const free = days.filter((d) => !Number.isInteger(d.weekday));
+  return `<div class="wk-pane" style="--c:${c}">
+    ${act ? `<span class="badge-active">${esc(t('activeBadge'))}</span>` : ''}
+    <h2 class="pane-title">${esc(p.name)}</h2>
+    <p class="muted">${esc(`${t('nDays', days.length)} · ${minText(planMinutes(p))} ${t('perWeek')} · ${sinceText(p)}`)}</p>
+    <div class="pane-acts">${act ? '' : `<button type="button" class="btn primary small" data-pane-m="activate|${esc(p.id)}">${esc(t('makeActive'))}</button>`}<a class="btn small" href="#/plan/${encodeURIComponent(p.id)}">${icon('pencil', 16)}${esc(t('edit'))}</a><button type="button" class="btn small" data-pane-m="duplicate|${esc(p.id)}">${esc(t('duplicate'))}</button><button type="button" class="btn small" data-pane-m="export|${esc(p.id)}">${esc(t('exportText'))}</button></div>
+    <div class="wk-grid">${names.map((n, w) => { const ds = days.filter((d) => d.weekday === w); return `<div class="wk-col${ds.length ? ' has' : ''}"><b>${esc(n)}</b>${ds.length ? ds.map(cell).join('') : `<span class="muted small">${esc(t('restDay'))}</span>`}</div>`; }).join('')}</div>
+    ${free.length ? `<h3 class="section-title">${esc(t('anyDayTitle'))}</h3><div class="wk-free">${free.map(cell).join('')}</div>` : ''}
+  </div>`;
 }
 
 function duplicatePlan(id) {
@@ -214,7 +249,7 @@ export function planView(id) {
       </div>
       <button type="button" class="icon-btn" data-remove-day="${i}" aria-label="${esc(t('removeX', r.name))}">${icon('close', 18)}</button>
     </div>`).join('');
-  const html = `<header class="bar">${backLink('#/plans', t('plansTitle'))}<a class="bar-action strong" href="#/plans">${esc(t('done'))}</a></header>
+  const html = `<header class="bar">${backLink('#/plans', t('crumb', t('tab_plans')))}<a class="bar-action strong" href="#/plans">${esc(t('done'))}</a></header>
     <form class="stack form" data-form="plan" autocomplete="off">
       <label class="field"><span>${esc(t('name'))}</span><input id="p-name" name="name" value="${esc(p.name)}"></label>
       <div class="card">${toggle({ name: 'active', checked: act, label: t('planActive'), hint: t('planActiveHint') })}</div>

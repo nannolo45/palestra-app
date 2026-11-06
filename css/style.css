@@ -936,3 +936,124 @@ nav.tabs { background: var(--bar); -webkit-backdrop-filter: blur(12px); backdrop
 :root.dark .kit-menu button.danger { color: #ff9d8a; }
 .kit-gh .kit-gt { flex: 1 1 auto; width: 100%; }
 .kit-meta .link-btn { font-size: 13px; min-height: 0; }
+
+/* ---- v26: Oggi · Allenamento · Palestra · Storico; Allenamento's underlined tabs ---- */
+nav.tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.train-head { padding-bottom: 6px; }
+.train-tabs { display: flex; align-items: stretch; margin: 0 -16px 14px; padding: 0 8px; border-bottom: 1px solid var(--line); }
+.train-tabs a { flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; padding: 0 6px; color: var(--ink-3); font-weight: 600; font-size: 15.5px; text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.train-tabs a small { font-size: 11.5px; font-weight: 600; background: var(--chip); color: var(--ink-3); border-radius: 8px; padding: 0 6px; line-height: 18px; }
+.train-tabs a.on { color: var(--ink); border-bottom-color: var(--yellow); }
+.train-tabs .tt-acts { display: none; }
+@media (min-width: 640px) { .train-tabs a { flex: 0 0 auto; padding: 0 16px; } }
+@media (min-width: 960px) {
+  .train-head { display: none; }
+  /* a second bar under the top one, full width, with the page's actions at the right */
+  .train-tabs { position: sticky; top: var(--top-h); z-index: 6; margin: 0 0 20px; padding: 0; height: 52px; background: var(--card); border-bottom: 0; box-shadow: 0 0 0 100vmax var(--card), 0 1px 0 100vmax var(--line); clip-path: inset(0 -100vmax -1px); }
+  .train-tabs a { padding: 0 16px; }
+  .train-tabs .tt-acts { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+  .train-tabs .tt-acts .btn { min-height: 38px; height: 38px; border-radius: 19px; padding: 0 15px; font-size: 14.5px; font-weight: 700; flex: none; }
+  .train-tabs ~ * .kit-gh, .train-tabs ~ .kit .kit-gh { top: calc(var(--top-h) + 52px); }
+  .train-tabs ~ .master-detail .md-pane { top: calc(var(--top-h) + 72px); max-height: calc(100vh - var(--top-h) - 92px); }
+}
+/* Palestra: the gyms as underlined tabs, zones and machines, the equipment */
+.gym-tabs { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 2px; margin: 0 -16px 14px; padding: 0 8px; border-bottom: 1px solid var(--line); }
+.gym-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--ink-3); font-weight: 600; text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gym-tabs a.on { color: var(--ink); border-bottom-color: var(--yellow); }
+.gym-add { display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; color: var(--ink-3); font: inherit; font-weight: 600; padding: 0 10px; min-height: 44px; cursor: pointer; }
+.gym-cols.v-zones .gym-eq, .gym-cols.v-eq .gym-zones { display: none; }
+.eq-card .card-title { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.eq-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line-soft, var(--line)); margin: 0; }
+.eq-row input { width: 20px; height: 20px; accent-color: var(--yellow); }
+@media (min-width: 960px) {
+  .gym-tabs { margin: 0 0 18px; padding: 0; }
+  .gym-cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+  .gym-cols .gym-eq, .gym-cols .gym-zones { display: block !important; }
+  .gym-eq { position: sticky; top: calc(var(--top-h) + 16px); }
+}
+/* the Filtri panel (v26): only when asked for */
+.kit-filter.open { background: var(--ink); color: var(--on-ink, #fff); border-color: var(--ink); }
+.kit-panel { padding: 4px 14px 14px; margin: 10px 0 4px; }
+.kit-panel .kit-sh:first-child { margin-top: 10px; }
+.kit-panel .kit-tags { margin-top: 0; }
+.kit-panel-foot { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+.kit-sub { display: flex; align-items: center; gap: 6px; padding: 8px 14px 4px; font-size: 12.5px; font-weight: 700; color: var(--muted); border-top: 1px solid var(--line-soft, var(--line)); }
+.kit-sub:first-child { border-top: 0; }
+.kit-sub small { font-weight: 600; background: var(--chip); border-radius: 7px; padding: 0 6px; }
+.kit-sub + .kit-item > .row { border-top: 0; }
+/* the muscles of an exercise, under their body region */
+.mus-pick { display: flex; flex-direction: column; gap: 8px; }
+.mus-reg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.mus-rn { font-size: 12px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); min-width: 74px; display: inline-flex; align-items: center; gap: 6px; }
+.mus-rn::before { content: ''; width: 9px; height: 9px; border-radius: 3px; background: var(--c); }
+.mus-chip { border: 1px solid var(--btn-line, var(--line)); background: var(--card); color: var(--ink); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; min-height: 36px; }
+.mus-chip.on { background: color-mix(in srgb, var(--c) 26%, var(--card)); border-color: var(--c); font-weight: 700; }
+.mus-chip.main::after { content: ' ★'; font-size: 11px; }
+.mus-chip.guess { border-style: dashed; border-color: var(--c); }
+.only-wide { display: none !important; } @media (min-width: 960px) { .only-wide { display: inline-flex !important; } }
+/* a scheda in a gym without something it needs */
+.where-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 10px; }
+.where-row > span { font-size: 13.5px; color: var(--muted); margin-right: 2px; }
+.warn-box { display: flex; gap: 10px; align-items: flex-start; background: #fff1e6; border: 1px solid #f3c9a6; color: #8a4a1d; border-radius: 12px; padding: 10px 12px; margin: 0 0 12px; font-size: 14.5px; }
+:root.dark .warn-box { background: #3a2a1d; border-color: #6b4a2e; color: #ffd2b0; }
+.warn-box svg { flex-shrink: 0; margin-top: 1px; }
+.ok-box { display: flex; gap: 8px; align-items: center; color: var(--green-ink, #2f8a45); font-size: 14px; margin: 0 0 12px; }
+.warn-line { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #a04a12; font-weight: 600; margin-top: 3px; }
+:root.dark .warn-line { color: #ffb48a; }
+.card-row.missing { box-shadow: inset 4px 0 0 #e8743b; }
+.alts { margin: -2px 0 6px 40px; display: flex; flex-direction: column; gap: 6px; }
+.alt { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px dashed var(--line); border-radius: 12px; padding: 8px 10px 8px 12px; }
+.alt span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.alt small { color: var(--muted); font-size: 12.5px; }
+.alts-none { margin: -2px 0 6px 40px; }
+.standin-tag { font-size: 12px; font-weight: 600; color: var(--green-ink, #2f8a45); background: color-mix(in srgb, #5BAF61 18%, transparent); border-radius: 6px; padding: 1px 6px; white-space: nowrap; }
+.link-btn.small { font-size: 13px; min-height: 0; padding: 2px 0; align-self: flex-start; }
+/* Workout on a computer: the chosen workout's week beside the list */
+.wk-pane { padding: 14px 4px 8px; }
+.wk-pane .pane-title { font-family: var(--cond); font-size: 34px; line-height: 1.05; margin: 6px 0 4px; }
+.pane-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
+.wk-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.wk-col { border: 1px solid var(--line); border-radius: 12px; padding: 8px; min-height: 96px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.wk-col > b { font-size: 11.5px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+.wk-col.has { border-color: var(--c); box-shadow: inset 0 3px 0 var(--c); }
+.wk-day { display: flex; flex-direction: column; gap: 2px; color: var(--ink); text-decoration: none; min-width: 0; }
+.wk-day strong { font-size: 14px; line-height: 1.2; overflow-wrap: anywhere; }
+.wk-day span { font-size: 12.5px; color: var(--muted); }
+.wk-day .warn-line { font-size: 11.5px; }
+.wk-free { display: flex; flex-wrap: wrap; gap: 10px; }
+.wk-free .wk-day { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.plan-card.selected, .plan-row.selected { outline: 2px solid var(--yellow); outline-offset: -2px; }
+.hero-warn { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0; padding: 8px 10px; border-radius: 10px; background: rgba(232, 116, 59, .18); color: #ffd2b0; font-size: 13.5px; text-decoration: none; }
+.hero-warn b { color: var(--yellow); }
+/* Storico (v26) */
+.dim-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.seg-mini { display: flex; flex-wrap: wrap; gap: 3px; background: var(--chip); border-radius: 10px; padding: 3px; margin: 8px 0; }
+.seg-mini button { flex: 1; min-width: 0; border: 0; background: none; color: var(--ink-3); font: inherit; font-weight: 600; font-size: 13.5px; padding: 7px 6px; border-radius: 8px; cursor: pointer; }
+.seg-mini button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+:root.dark .seg-mini button.on { background: #3a4546; }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 0 6px; }
+.kpis div { background: var(--chip); border-radius: 10px; padding: 8px 10px; }
+.kpis b { display: block; font-family: var(--cond); font-size: 24px; line-height: 1.05; }
+.kpis small { color: var(--muted); font-size: 12px; }
+.kpis .up, .imp-row .up { color: var(--green-ink, #2f8a45); } .kpis .down, .imp-row .down { color: #c0392b; }
+:root.dark .kpis .up, :root.dark .imp-row .up { color: #8fe0a0; } :root.dark .kpis .down, :root.dark .imp-row .down { color: #ff9d8a; }
+.chart.multi { display: block; margin: 6px 0 2px; }
+.chart.multi .gl { stroke: var(--line); stroke-width: 1; }
+.chart.multi .yl, .chart.multi .xl { fill: var(--muted); font-size: 10px; }
+.chart.multi .ln { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.chart.multi .bridge { fill: none; stroke-width: 1.4; stroke-dasharray: 3 4; opacity: .6; }
+.chart.multi .pause-band { fill: var(--ink); opacity: .06; }
+.chart.multi .pause-label { fill: var(--muted); font-size: 10px; }
+.chart.multi .pause-label.small { font-size: 9px; opacity: .8; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 4px 0; }
+.legend .lg { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 13.5px; padding: 4px 0; cursor: pointer; }
+.legend .lg i { width: 10px; height: 10px; border-radius: 3px; }
+.legend .lg.off { opacity: .4; text-decoration: line-through; }
+.imp-card, .hist-cols .col-side > .card { margin-top: 12px; }
+.imp-row, .pause-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line-soft, var(--line)); }
+.imp-row i { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.imp-row span, .pause-row span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.imp-row small, .pause-row small { color: var(--muted); font-size: 12.5px; }
+.imp-row b { font-family: var(--cond); font-size: 20px; }
+.pause-row select { max-width: 46%; }
+.imp-card, .pause-card { padding: 4px 16px 8px; }
