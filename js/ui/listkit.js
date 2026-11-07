@@ -6,6 +6,7 @@ import { state, saveSettings } from '../store.js';
 import { t } from '../i18n.js';
 import { esc } from './format.js';
 import { icon } from './icons.js';
+import { closeOnTapOutside } from './dialogs.js';
 
 export const PALETTE = ['#E8B400', '#2BB3A8', '#F07A4F', '#9575CD', '#5BAF61', '#4A90D9', '#E06C9F', '#B59F6A', '#8A9A99', '#D9534F'];
 
@@ -174,6 +175,7 @@ export function listKit(cfg) {
     });
     root.querySelectorAll('[data-kit-color]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); pickColor(b, b.dataset.kitColor); }));
     root.querySelectorAll('[data-kit-panel]').forEach((b) => b.addEventListener('click', () => { panels[cfg.id] = !panels[cfg.id]; rerender(); }));
+    if (panels[cfg.id]) closeOnTapOutside(root.querySelector(`#kit-panel-${cfg.id}`), '[data-kit-panel]', () => { if (panels[cfg.id]) { panels[cfg.id] = false; rerender(); } });
     root.querySelectorAll('[data-unonly]').forEach((b) => b.addEventListener('click', () => {
       st.only = { ...st.only, [st.group]: (st.only[st.group] || []).filter((x) => x !== b.dataset.unonly) };
       commit();

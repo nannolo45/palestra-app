@@ -597,7 +597,7 @@ Object.assign(en, {
 // v27: the workout builder (shapes: weekly, alternating weeks, rotation)
 Object.assign(it, {
   modeWeek: 'Settimanale', modeAB: 'Alterne A · B', modeRot: 'Rotazione', weekAB: (w) => `Settimana ${w ? 'B' : 'A'}`,
-  wbSchede: 'Schede', wbHint: 'Trascinale sui giorni, o toccane una e poi tocca il giorno.', wbHintRot: 'Trascinale nel giro, o toccane una per metterla in fondo.',
+  wbSchede: 'Schede', wbHint: 'Trascinale sui giorni, o usa il + di un giorno.', wbHintRot: 'Trascinale nel giro, o toccane una per metterla in fondo.',
   wbTapDay: (x) => `Tocca un giorno per mettere «${x}»`, restDayChip: 'Giorno di riposo', newScheda: 'Nuova scheda',
   wbTime: 'Orario', wbTimeFor: (x) => `Orario di ${x}`, noTime: 'Senza orario', anyTime: 'orario?',
   wbWeekSum: (n, m) => `${n} ${pl(n, 'allenamento', 'allenamenti')}, ${m}`, wbThisWeekIs: (w) => `questa è la settimana ${w ? 'B' : 'A'}`,
@@ -607,10 +607,16 @@ Object.assign(it, {
   dropBWeek: (n) => `La settimana B ha ${n} ${pl(n, 'scheda', 'schede')}: passando a settimanale le togli. Continuo?`,
   rotNext: 'La prossima', rotTooSoon: 'La prossima · riposo consigliato ancora', rotOrder: 'Il giro', rotMeta: (n, m) => `Rotazione · ${n} schede · ${m} a giro`,
   placedOn: (x, d) => `${x} · ${d}`, thisOneW: 'questa',
+  restBeforeX: (x) => `Recupero prima di ${x}`, restMinSec: 'minuti : secondi', supersetWord: 'Superserie', supersetNoRest: 'subito il prossimo, senza recupero',
+  typeATime: 'scrivi un tempo, es. 2:30', noSupersetCardio: 'con il cardio niente superserie: 0 = nessun recupero', likeTheOthers: (x) => `come le altre · ${x}`,
+  weekdayLong: ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'], removedX: (x) => `${x} tolta`, otherTime: 'Un altro orario', activeShort: 'Attivo',
+  addX: (x) => `Aggiungi ${x}`, noneFound: 'Nessuno con questo nome.', alreadyIn: 'già nella scheda', fromCatalogue: 'Dal catalogo: gli esercizi comuni', pickOneOrMore: 'Scegline uno o più', addN: (n) => `Aggiungi ${n}`,
+  newScheda2: 'Nuova scheda', aSchedaOn: (d) => `Una scheda ${d}`, inThisWorkout: 'In questo workout', otherSchede: 'Le altre', searchScheda: 'Cerca una scheda', noSchedaNamed: 'Nessuna scheda con questo nome.',
+  dayOn: ['a lunedì', 'a martedì', 'a mercoledì', 'a giovedì', 'a venerdì', 'a sabato', 'a domenica'], inTheLoop: 'nel giro', addToLoop: 'Scheda nel giro', restAddDay: 'riposo · aggiungi', moveTo: 'Sposta a', removeFromDay: (d) => `Togli da ${d}`, removeFromLoop: 'Togli dal giro', earlier: 'Prima', later: 'Dopo', addRest: '+ riposo', weekLetter: (w) => `settimana ${w ? 'B' : 'A'}`,
 });
 Object.assign(en, {
   modeWeek: 'Weekly', modeAB: 'Alternate A · B', modeRot: 'Rotation', weekAB: (w) => `Week ${w ? 'B' : 'A'}`,
-  wbSchede: 'Routines', wbHint: 'Drag them onto the days, or tap one and then tap the day.', wbHintRot: 'Drag them into the loop, or tap one to add it at the end.',
+  wbSchede: 'Routines', wbHint: 'Drag them onto the days, or use a day’s +.', wbHintRot: 'Drag them into the loop, or tap one to add it at the end.',
   wbTapDay: (x) => `Tap a day to put “${x}”`, restDayChip: 'Rest day', newScheda: 'New routine',
   wbTime: 'Time', wbTimeFor: (x) => `Time of ${x}`, noTime: 'No time', anyTime: 'time?',
   wbWeekSum: (n, m) => `${n} ${pl(n, 'workout', 'workouts')}, ${m}`, wbThisWeekIs: (w) => `this is week ${w ? 'B' : 'A'}`,
@@ -620,6 +626,12 @@ Object.assign(en, {
   dropBWeek: (n) => `Week B has ${n} ${pl(n, 'routine', 'routines')}: switching to weekly removes them. Go on?`,
   rotNext: 'Next', rotTooSoon: 'Next · rest suggested a bit longer', rotOrder: 'The loop', rotMeta: (n, m) => `Rotation · ${n} routines · ${m} a loop`,
   placedOn: (x, d) => `${x} · ${d}`, thisOneW: 'this one',
+  restBeforeX: (x) => `Rest before ${x}`, restMinSec: 'minutes : seconds', supersetWord: 'Superset', supersetNoRest: 'straight into the next, no rest',
+  typeATime: 'type a time, e.g. 2:30', noSupersetCardio: 'no superset with cardio: 0 = no rest', likeTheOthers: (x) => `like the others · ${x}`,
+  weekdayLong: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], removedX: (x) => `${x} removed`, otherTime: 'Another time', activeShort: 'Active',
+  addX: (x) => `Add ${x}`, noneFound: 'None with that name.', alreadyIn: 'already in the routine', fromCatalogue: 'From the catalogue: common exercises', pickOneOrMore: 'Pick one or more', addN: (n) => `Add ${n}`,
+  newScheda2: 'New routine', aSchedaOn: (d) => `A routine ${d}`, inThisWorkout: 'In this workout', otherSchede: 'Others', searchScheda: 'Search a routine', noSchedaNamed: 'No routine with that name.',
+  dayOn: ['on Monday', 'on Tuesday', 'on Wednesday', 'on Thursday', 'on Friday', 'on Saturday', 'on Sunday'], inTheLoop: 'in the loop', addToLoop: 'Routine in the loop', restAddDay: 'rest · add', moveTo: 'Move to', removeFromDay: (d) => `Remove from ${d}`, removeFromLoop: 'Remove from the loop', earlier: 'Earlier', later: 'Later', addRest: '+ rest', weekLetter: (w) => `week ${w ? 'B' : 'A'}`,
 });
 
 export const DICTS = { it, en };

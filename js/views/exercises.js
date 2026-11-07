@@ -7,7 +7,7 @@ import { icon } from '../ui/icons.js';
 import { backLink, stepper, bindSteppers, stepVal, segmented, empty, exTag, trainHead } from '../ui/parts.js';
 import { hasPicture, frameUrl } from '../pictures.js';
 import { pickPicture, machinePhotoBlock, bindPhotoInputs, missingPictures, picturesOn } from './pictures.js';
-import { askConfirm, toast } from '../ui/dialogs.js';
+import { askConfirm, toast, closeOnTapOutside } from '../ui/dialogs.js';
 import {
   exercises, places, machines, machineOf, placeOf, whereText, typeLabel, cardioKindLabel, measureLabel, training, increaseSettings, refreshEstimates,
 } from '../data.js';
@@ -124,7 +124,7 @@ function rerender() { window.dispatchEvent(new CustomEvent('palestra:render')); 
 
 // ---- the catalogue (v27) ----
 
-const C = { q: '', region: '', eq: '', limit: 60 };
+const C = { q: '', region: '', eq: '', limit: 60, open: false };
 const CAT_EQ = ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight'];
 
 function exSubTabs(on, n) {
@@ -132,17 +132,22 @@ function exSubTabs(on, n) {
 }
 let catCount = 0;
 
+const eqName = (k) => (k === 'bodyweight' ? t('type_bodyweight') : t(`eq_${k}`));
+
 function catalogView() {
   const mine = exercises();
   const lang = getLang();
+  const nOn = (C.region ? 1 : 0) + (C.eq ? 1 : 0);
   const html = `${trainHead('exercises')}
     <div class="two-actions" data-top-actions><a class="btn primary" href="#/exercise/new">${icon('plus', 18)}${esc(t('newExercise'))}</a></div>
     ${exSubTabs('cat', mine.length)}
-    <div class="cat-tools">
-      <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchCatalogue'))}</span><input id="cat-q" type="search" placeholder="${esc(t('searchCatalogue'))}" value="${esc(C.q)}" autocomplete="off"></label>
-      <div class="cat-chips" role="group" aria-label="${esc(t('gRegion'))}">${[...REGION_KEYS].map((r) => `<button type="button" class="kit-opt${C.region === r ? ' on' : ''}" aria-pressed="${C.region === r}" data-reg="${r}"><span class="dot" style="background:${regionColor(r)}"></span>${esc(regionName(r, lang))}</button>`).join('')}</div>
-      <div class="cat-chips" role="group" aria-label="${esc(t('equipment'))}">${CAT_EQ.map((k) => `<button type="button" class="kit-opt${C.eq === k ? ' on' : ''}" aria-pressed="${C.eq === k}" data-eq="${k}">${esc(k === 'bodyweight' ? t('type_bodyweight') : t(`eq_${k}`))}</button>`).join('')}</div>
-    </div>
+    <div class="kit-tools"><label class="search kit-search">${icon('search', 18)}<span class="sr">${esc(t('searchCatalogue'))}</span><input id="cat-q" type="search" placeholder="${esc(t('searchCatalogue'))}" value="${esc(C.q)}" autocomplete="off"></label>
+      <button type="button" class="kit-filter${nOn ? ' on' : ''}${C.open ? ' open' : ''}" data-cat-panel aria-expanded="${C.open}">${icon('filter', 16)}${esc(t('filtersBtn'))}${nOn ? ` <b>${nOn}</b>` : ''}</button></div>
+    ${C.open ? `<div class="kit-panel card" data-cat-box>
+      <div class="kit-sh">${esc(t('gRegion'))}</div><div class="kit-opts">${[...REGION_KEYS].map((r) => `<button type="button" class="kit-opt${C.region === r ? ' on' : ''}" aria-pressed="${C.region === r}" data-reg="${r}"><span class="dot" style="background:${regionColor(r)}"></span>${esc(regionName(r, lang))}</button>`).join('')}</div>
+      <div class="kit-sh">${esc(t('equipment'))}</div><div class="kit-opts">${CAT_EQ.map((k) => `<button type="button" class="kit-opt${C.eq === k ? ' on' : ''}" aria-pressed="${C.eq === k}" data-eq="${k}">${esc(eqName(k))}</button>`).join('')}</div>
+      <div class="kit-panel-foot"><button type="button" class="btn small" data-cat-panel>${esc(t('done'))}</button>${nOn ? `<button type="button" class="link-btn" data-cat-reset>${esc(t('clearFilters'))}</button>` : ''}</div></div>`
+    : (nOn ? `<div class="kit-ons">${C.region ? `<button type="button" class="kit-on" data-un="region"><span class="dot" style="background:${regionColor(C.region)}"></span>${esc(regionName(C.region, lang))}<span class="x" aria-hidden="true">✕</span><span class="sr">${esc(t('removeFilter'))}</span></button>` : ''}${C.eq ? `<button type="button" class="kit-on" data-un="eq">${esc(eqName(C.eq))}<span class="x" aria-hidden="true">✕</span><span class="sr">${esc(t('removeFilter'))}</span></button>` : ''}</div>` : '')}
     <div data-cat-list><p class="muted">${esc(t('catLoading'))}</p></div>`;
   return {
     html,
@@ -161,8 +166,8 @@ function catalogView() {
             const th = picturesOn() ? frameUrl({ id: c.id, n: c.n }, 0) : '';
             return `<div class="row list-row cat-row">
               ${th ? `<span class="thumb"><img src="${esc(th)}" alt="" loading="lazy"></span>` : `<span class="cat-dot" style="background:${regionColor(c.region)}"></span>`}
-              <span class="row-text"><span class="row-title">${esc(nameIn(c, lang))}</span><span class="row-sub">${esc([lang === 'it' && c.it ? c.en : '', c.muscle ? muscleName(c.muscle, lang) : regionName(c.region, lang), c.type === 'weights' ? t(`eq_${c.equipment}`) : t(`type_${c.type}`)].filter(Boolean).join(' · '))}</span></span>
-              ${yours ? `<a class="cat-have" href="#/exercise/${encodeURIComponent(yours.id)}">✓ ${esc(t('yours'))}</a>` : `<button type="button" class="btn small yellow" data-add-cat="${esc(c.id)}">+ ${esc(t('add'))}</button>`}
+              <span class="row-text"><span class="row-title">${esc(nameIn(c, lang))}</span><span class="row-sub">${esc([c.muscle ? muscleName(c.muscle, lang) : regionName(c.region, lang), c.type === 'weights' ? t(`eq_${c.equipment}`) : t(`type_${c.type}`)].filter(Boolean).join(' · '))}</span></span>
+              ${yours ? `<a class="cat-have" href="#/exercise/${encodeURIComponent(yours.id)}">✓ ${esc(t('yours'))}</a>` : `<button type="button" class="cat-plus" data-add-cat="${esc(c.id)}" aria-label="${esc(t('addX', nameIn(c, lang)))}" title="${esc(t('add'))}">${icon('plus', 18)}</button>`}
             </div>`;
           }).join('')}</div>
           ${found.length > C.limit ? `<button type="button" class="btn wide" data-more>${esc(t('showMore', found.length - C.limit))}</button>` : ''}
@@ -177,8 +182,13 @@ function catalogView() {
       };
       const q = view.querySelector('#cat-q');
       q.addEventListener('input', () => { C.q = q.value; C.limit = 60; draw(); });
-      view.querySelectorAll('[data-reg]').forEach((b) => b.addEventListener('click', () => { C.region = C.region === b.dataset.reg ? '' : b.dataset.reg; C.limit = 60; view.querySelectorAll('[data-reg]').forEach((x) => { x.classList.toggle('on', x.dataset.reg === C.region); x.setAttribute('aria-pressed', x.dataset.reg === C.region); }); draw(); }));
-      view.querySelectorAll('[data-eq]').forEach((b) => b.addEventListener('click', () => { C.eq = C.eq === b.dataset.eq ? '' : b.dataset.eq; C.limit = 60; view.querySelectorAll('[data-eq]').forEach((x) => { x.classList.toggle('on', x.dataset.eq === C.eq); x.setAttribute('aria-pressed', x.dataset.eq === C.eq); }); draw(); }));
+      const set = (patch) => { Object.assign(C, patch, { limit: 60 }); rerender(); };
+      view.querySelectorAll('[data-reg]').forEach((b) => b.addEventListener('click', () => set({ region: C.region === b.dataset.reg ? '' : b.dataset.reg })));
+      view.querySelectorAll('[data-eq]').forEach((b) => b.addEventListener('click', () => set({ eq: C.eq === b.dataset.eq ? '' : b.dataset.eq })));
+      view.querySelectorAll('[data-cat-panel]').forEach((b) => b.addEventListener('click', () => set({ open: !C.open })));
+      if (C.open) closeOnTapOutside(view.querySelector('[data-cat-box]'), '[data-cat-panel]', () => { if (C.open) { C.open = false; rerender(); } });
+      view.querySelector('[data-cat-reset]')?.addEventListener('click', () => set({ region: '', eq: '' }));
+      view.querySelectorAll('[data-un]').forEach((b) => b.addEventListener('click', () => set({ [b.dataset.un]: '' })));
       draw();
     },
   };

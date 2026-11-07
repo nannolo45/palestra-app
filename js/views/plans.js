@@ -3,7 +3,7 @@ import { get, upsert, remove, restore, uid, live } from '../store.js';
 import { t } from '../i18n.js';
 import { esc, minText, shortDate } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
-import { backLink, empty, toggle, trainHead } from '../ui/parts.js';
+import { backLink, empty, trainHead } from '../ui/parts.js';
 import { openSheet, askConfirm, toast, chooseHowToCreate } from '../ui/dialogs.js';
 import { routines, routineMinutes, lastDone } from '../data.js';
 import { isWide } from '../shell.js';
@@ -235,9 +235,8 @@ export async function activateSheet(plan) {
 // Schede are coloured tiles: drag them (or tap one, then tap the day) onto the days of the week, more than one a day;
 // two weeks that take turns (A · B); or a rotation with no fixed days, joined by circles of rest days.
 
-let picked = null; // the scheda tapped in the palette, waiting for a day
 let viewWeek = 0; // on a phone, which week of an A/B plan is shown
-let lastDrop = 0;
+let justDropped = false; // the click that follows a drop (the same press) is not a tap
 
 const routineKeys = () => routines().map((r) => `r:${r.id}`);
 const colorR = (id) => colorOf(`r:${id}`, routineKeys());
@@ -257,23 +256,22 @@ export function planView(id) {
   const act = isActive(id) || isUpcoming(id);
   const mode = planMode(p);
   const wide = isWide();
-  if (picked && !get('routines', picked)) picked = null;
   const all = (p.days || []).map((d, i) => ({ d, i, r: get('routines', d.routineId) })).filter((x) => x.r);
   const names = t('weekdayShort');
   const thisWeek = mode === 'ab' ? abWeek(p) : 0;
-  const tile = ({ d, i, r }, withTime = true) => `<div class="wb-tile" style="--c:${colorR(r.id)}" data-tile="${i}">
-      <b>${esc(r.name)}</b>
-      ${withTime ? `<button type="button" class="wb-tm${validTime(d.time) ? '' : ' none'}" data-tm="${i}" aria-label="${esc(t('wbTimeFor', r.name))}">${esc(validTime(d.time) ? d.time : t('anyTime'))}</button>` : `<small>${routineMinutes(r)} min</small>`}
-      <button type="button" class="wb-x" data-rm="${i}" aria-label="${esc(t('removeX', r.name))}">${icon('close', 14)}</button></div>`;
-  const cell = (w, wd, cls) => {
-    const xs = all.filter(({ d }) => (mode !== 'ab' || (Number(d.week) || 0) === w) && (wd === 'x' ? !Number.isInteger(d.weekday) : d.weekday === wd));
-    return { xs, html: xs.map((x) => tile(x)).join('') || `<span class="wb-rest">${esc(t('restDay'))}</span>`, cls };
+  // v28: a tile is tapped for its menu (time, move, remove); with a mouse it can also be dragged
+  const tile = ({ d, i, r }, rot = false) => `<button type="button" class="wb-tile" style="--c:${colorR(r.id)}" data-tile="${i}" aria-haspopup="dialog">
+      <b>${esc(r.name)}</b>${rot ? `<small>${routineMinutes(r)} min</small>` : `<span class="wb-tm${validTime(d.time) ? '' : ' none'}">${esc(validTime(d.time) ? d.time : `${routineMinutes(r)}′`)}</span>`}</button>`;
+  const cell = (w, wd) => {
+    const xs = all.filter(({ d }) => (mode !== 'ab' || (Number(d.week) || 0) === w) && (wd === 'x' ? !Number.isInteger(d.weekday) : d.weekday === wd))
+      .sort((x, y) => (validTime(x.d.time) ? x.d.time : '99').localeCompare(validTime(y.d.time) ? y.d.time : '99'));
+    return { xs, html: xs.map((x) => tile(x)).join('') };
   };
-  const pal = `<div class="wb-pal">
-      <div class="wb-chips">${routines().map((r) => `<button type="button" class="wb-chip${picked === r.id ? ' on' : ''}" data-chip="${esc(r.id)}" style="--c:${colorR(r.id)}"><i></i>${esc(r.name)}<small>${routineMinutes(r)}′</small></button>`).join('')}
-        ${mode === 'rotation' ? `<button type="button" class="wb-chip rest" data-restchip><i></i>${esc(t('restDayChip'))}</button>` : ''}
-        <button type="button" class="wb-chip add" data-action="add-day">${icon('plus', 14)}${esc(t('newScheda'))}</button></div>
-      <p class="wb-hint">${esc(picked && mode !== 'rotation' ? t('wbTapDay', get('routines', picked).name) : t(mode === 'rotation' ? 'wbHintRot' : 'wbHint'))}</p></div>`;
+  const addBtn = (w, wd, n) => `<button type="button" class="wb-add${n ? ' small' : ''}" data-add="${w}:${wd}" aria-label="${esc(t('aSchedaOn', t('dayOn')[wd]))}">${icon('plus', 14)}${n ? '' : `<span>${esc(t('restAddDay'))}</span>`}</button>`;
+  // on a computer, the schede beside the board, to drag in
+  const pal = wide ? `<div class="wb-pal">
+      <div class="wb-chips">${routines().map((r) => `<button type="button" class="wb-chip" data-chip="${esc(r.id)}" style="--c:${colorR(r.id)}"><i></i>${esc(r.name)}<small>${routineMinutes(r)}′</small></button>`).join('')}</div>
+      <p class="wb-hint">${esc(t(mode === 'rotation' ? 'wbHintRot' : 'wbHint'))}</p></div>` : '';
   const weeks = mode === 'ab' ? [0, 1] : [0];
   const free = all.filter(({ d }) => !Number.isInteger(d.weekday));
   const mins = (w) => all.filter(({ d }) => mode !== 'ab' || (Number(d.week) || 0) === w).reduce((a, { r }) => a + routineMinutes(r), 0);
@@ -282,27 +280,29 @@ export function planView(id) {
   if (mode === 'rotation') {
     const restSum = all.reduce((a, { d }) => a + (Number(d.restDays) || 0), 0);
     board = `<div class="wb-rot"><span class="ch-end">${esc(t('rotStart'))}</span>
-      ${all.map((x, k) => `<div class="ch-drop" data-drop="rot:${k}"></div>${tile(x, false)}
-        ${Number(x.d.restDays) > 0 ? `<div class="wb-link"><button type="button" class="wb-rd" data-rd="${x.i}">${esc(t('nRestDays', Number(x.d.restDays)))}</button></div>` : `<div class="wb-link plain"></div>`}`).join('')}
-      <div class="ch-drop" data-drop="rot:${all.length}"></div><span class="ch-end">↺ ${esc(t('rotAgain'))}</span></div>
-      <p class="wb-hint">${esc(t('rotLoop'))}</p>
+      ${all.map((x, k) => `<div class="ch-drop" data-drop="rot:${k}"></div>${tile(x, true)}
+        <div class="wb-link${Number(x.d.restDays) > 0 ? '' : ' plain'}"><button type="button" class="wb-rd" data-rd="${x.i}">${esc(Number(x.d.restDays) > 0 ? t('nRestDays', Number(x.d.restDays)) : t('addRest'))}</button></div>`).join('')}
+      <div class="ch-drop" data-drop="rot:${all.length}"></div>
+      <button type="button" class="wb-add" data-add="rot">${icon('plus', 14)}<span>${esc(t('addToLoop'))}</span></button>
+      <span class="ch-end">↺ ${esc(t('rotAgain'))}</span></div>
       <p class="wb-sum">${esc(t('rotSum', all.length, all.length + restSum))}</p>`;
   } else if (wide) {
     board = `<div class="wb-grid${mode === 'ab' ? ' ab' : ''}"><span></span>${names.map((n) => `<b class="wb-hd">${esc(n)}</b>`).join('')}
-      ${weeks.map((w) => `${mode === 'ab' ? `<b class="wb-rl">${esc(t('weekAB', w))}</b>` : '<span></span>'}${names.map((_, wd) => { const c = cell(w, wd); return `<div class="wb-day${picked ? ' pick' : ''}" data-drop="day:${w}:${wd}" data-tapday="${w}:${wd}">${c.html}</div>`; }).join('')}`).join('')}</div>`;
+      ${weeks.map((w) => `${mode === 'ab' ? `<b class="wb-rl">${esc(t('weekAB', w))}</b>` : '<span></span>'}${names.map((_, wd) => { const c = cell(w, wd); return `<div class="wb-day" data-drop="day:${w}:${wd}">${c.html}${addBtn(w, wd, c.xs.length || 1)}</div>`; }).join('')}`).join('')}</div>`;
   } else {
     const w = mode === 'ab' ? viewWeek : 0;
+    const todayWd = (new Date().getDay() + 6) % 7;
     board = `${mode === 'ab' ? `<div class="seg-mini wb-wsel" role="group">${[0, 1].map((k) => `<button type="button" class="${w === k ? 'on' : ''}" aria-pressed="${w === k}" data-wv="${k}">${esc(t('weekAB', k))}${k === thisWeek ? ` <small>(${esc(t('thisOneW'))})</small>` : ''}</button>`).join('')}</div>` : ''}
-      <div class="wb-rows">${names.map((n, wd) => { const c = cell(w, wd); return `<div class="wb-row${picked ? ' pick' : ''}${c.xs.length ? '' : ' empty'}" data-drop="day:${w}:${wd}" data-tapday="${w}:${wd}"><b>${esc(n)}</b><div class="wb-its">${c.html}</div></div>`; }).join('')}</div>`;
+      <div class="wb-rows">${names.map((n, wd) => { const c = cell(w, wd); return `<div class="wb-row${c.xs.length ? '' : ' empty'}${wd === todayWd && w === thisWeek ? ' today' : ''}" data-drop="day:${w}:${wd}"><b>${esc(n)}</b><div class="wb-its">${c.html}${addBtn(w, wd, c.xs.length)}</div></div>`; }).join('')}</div>`;
   }
   if (mode !== 'rotation') {
     board += `${free.length ? `<h3 class="section-title">${esc(t('anyDayTitle'))}</h3><div class="wb-row free" data-drop="day:${viewWeek}:x"><div class="wb-its">${free.map((x) => tile(x)).join('')}</div></div>` : ''}
       <p class="wb-sum">${weeks.map((w) => `${mode === 'ab' ? `${esc(t('weekAB', w))}: ` : ''}<b>${esc(t('wbWeekSum', count(w), minText(mins(w))))}</b>`).join(' · ')}${mode === 'ab' ? ` · ${esc(t('wbThisWeekIs', thisWeek))}` : ''}</p>`;
   }
   const html = `<header class="bar">${backLink('#/plans', t('crumb', t('tab_plans')))}<a class="bar-action strong" href="#/plans">${esc(t('done'))}</a></header>
-    <form class="stack form" data-form="plan" autocomplete="off">
-      <label class="field"><span>${esc(t('name'))}</span><input id="p-name" name="name" value="${esc(p.name)}"></label>
-      <div class="card">${toggle({ name: 'active', checked: act, label: t('planActive'), hint: t('planActiveHint') })}</div>
+    <form class="wb-top" data-form="plan" autocomplete="off">
+      <label class="wb-name"><span class="sr">${esc(t('name'))}</span><input id="p-name" name="name" value="${esc(p.name)}" aria-label="${esc(t('name'))}"></label>
+      <label class="wb-act" title="${esc(t('planActiveHint'))}"><span>${esc(t('activeShort'))}</span><input type="checkbox" class="switch" name="active" ${act ? 'checked' : ''}></label>
     </form>
     <div class="wb" data-wb>
       <div class="seg-mini wb-mode" role="radiogroup" aria-label="${esc(t('daysTitle'))}">${[['week', 'modeWeek'], ['ab', 'modeAB'], ['rotation', 'modeRot']].map(([k, l]) => `<button type="button" role="radio" aria-checked="${mode === k}" class="${mode === k ? 'on' : ''}" data-mode="${k}">${esc(t(l))}</button>`).join('')}</div>
@@ -337,13 +337,7 @@ function bindBuilder(view, id) {
   const cur = () => get('plans', id);
   const days = () => (cur().days || []).map((d) => ({ ...d }));
   const mode = () => planMode(cur());
-  const late = () => Date.now() - lastDrop < 350; // the click after a drop that ended where it began
-  const place = (routineId, w, wd) => {
-    const ds = days();
-    const prev = [...ds].reverse().find((d) => d.routineId === routineId && validTime(d.time));
-    ds.push({ routineId, weekday: wd === 'x' ? null : wd, ...(mode() === 'ab' ? { week: w } : {}), ...(prev ? { time: prev.time } : {}) });
-    saveDays(id, ds);
-  };
+  const late = () => justDropped;
   root.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', async () => {
     const to = b.dataset.mode; const from = mode();
     if (to === from) return;
@@ -356,42 +350,19 @@ function bindBuilder(view, id) {
     }
     if (to === 'ab') ds = ds.map((d) => ({ ...d, week: Number(d.week) || 0 }));
     if (to === 'rotation') ds.sort((a, c) => dayKey(a).localeCompare(dayKey(c)));
-    picked = null;
     saveDays(id, ds, to);
   }));
-  // the palette: a tap picks (or, in a rotation, adds at the end); a drag puts it where it's let go
+  root.querySelectorAll('[data-add]').forEach((b) => b.addEventListener('click', () => { if (!late()) pickScheda(id, b.dataset.add); }));
+  root.querySelectorAll('[data-wv]').forEach((b) => b.addEventListener('click', () => { viewWeek = Number(b.dataset.wv); rerender(); }));
+  root.querySelectorAll('[data-tile]').forEach((el) => {
+    // with a mouse or a pen it can be dragged to another day; a finger scrolls, and moves it from the menu
+    el.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'touch') startDrag(e, { kind: 'move', i: Number(el.dataset.tile) }, get('routines', cur().days[Number(el.dataset.tile)]?.routineId)?.name || '', root); });
+    el.addEventListener('click', () => { if (!late()) tileMenu(id, Number(el.dataset.tile)); });
+  });
   root.querySelectorAll('[data-chip]').forEach((c) => {
     c.addEventListener('pointerdown', (e) => startDrag(e, { kind: 'new', routineId: c.dataset.chip }, get('routines', c.dataset.chip)?.name || '', root));
-    c.addEventListener('click', () => {
-      if (late()) return;
-      if (mode() === 'rotation') { saveDays(id, [...days(), { routineId: c.dataset.chip, weekday: null }]); return; }
-      picked = picked === c.dataset.chip ? null : c.dataset.chip; rerender();
-    });
+    c.addEventListener('click', () => { if (!late() && mode() === 'rotation') saveDays(id, [...days(), { routineId: c.dataset.chip, weekday: null }]); });
   });
-  const restChip = root.querySelector('[data-restchip]');
-  if (restChip) {
-    restChip.addEventListener('pointerdown', (e) => startDrag(e, { kind: 'rest' }, t('restDayChip'), root));
-    restChip.addEventListener('click', () => { if (late()) return; const ds = days(); if (!ds.length) return; const l = ds[ds.length - 1]; l.restDays = Math.min(3, (Number(l.restDays) || 0) + 1); saveDays(id, ds); });
-  }
-  root.querySelector('[data-action=add-day]').addEventListener('click', () => addDay(id));
-  root.querySelectorAll('[data-tapday]').forEach((el) => el.addEventListener('click', (e) => {
-    if (!picked || late() || e.target.closest('.wb-tile')) return;
-    const [w, wd] = el.dataset.tapday.split(':').map(Number);
-    const r = picked; picked = null;
-    place(r, w, wd);
-  }));
-  root.querySelectorAll('[data-wv]').forEach((b) => b.addEventListener('click', () => { viewWeek = Number(b.dataset.wv); rerender(); }));
-  root.querySelectorAll('[data-tile]').forEach((el) => el.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.wb-x, .wb-tm')) return;
-    const i = Number(el.dataset.tile);
-    startDrag(e, { kind: 'move', i }, get('routines', cur().days[i]?.routineId)?.name || '', root);
-  }));
-  root.querySelectorAll('[data-rm]').forEach((b) => b.addEventListener('click', () => {
-    const before = cur();
-    saveDays(id, days().filter((_, i) => i !== Number(b.dataset.rm)));
-    toast(t('deleted', get('routines', before.days[Number(b.dataset.rm)]?.routineId)?.name || ''), { undo: () => { savePlan(before); rerender(); } });
-  }));
-  root.querySelectorAll('[data-tm]').forEach((b) => b.addEventListener('click', () => editTime(id, Number(b.dataset.tm))));
   root.querySelectorAll('[data-rd]').forEach((b) => b.addEventListener('click', () => {
     const ds = days(); const d = ds[Number(b.dataset.rd)];
     const n = ((Number(d.restDays) || 0) + 1) % 4;
@@ -399,14 +370,14 @@ function bindBuilder(view, id) {
     saveDays(id, ds);
   }));
   root.addEventListener('dropped', (e) => {
-    lastDrop = Date.now();
+    justDropped = true; setTimeout(() => { justDropped = false; }, 0);
     const { payload: p, target } = e.detail;
     const [k, a, b] = target.split(':');
     const ds = days();
     if (k === 'trash') { if (p.kind === 'move') saveDays(id, ds.filter((_, i) => i !== p.i)); return; }
     if (k === 'day') {
       const w = Number(a); const wd = b === 'x' ? null : Number(b);
-      if (p.kind === 'new') { place(p.routineId, w, b === 'x' ? 'x' : wd); return; }
+      if (p.kind === 'new') { placeDay(id, p.routineId, w, wd); return; }
       if (p.kind === 'move') { ds[p.i] = { ...ds[p.i], weekday: wd, ...(mode() === 'ab' ? { week: w } : {}) }; saveDays(id, ds); }
       return;
     }
@@ -414,50 +385,98 @@ function bindBuilder(view, id) {
       const at = Number(a);
       if (p.kind === 'new') ds.splice(at, 0, { routineId: p.routineId, weekday: null });
       else if (p.kind === 'move') { const [x] = ds.splice(p.i, 1); ds.splice(at > p.i ? at - 1 : at, 0, x); }
-      else if (p.kind === 'rest') { const d = ds[(at - 1 + ds.length) % ds.length]; if (!d) return; d.restDays = Math.min(3, (Number(d.restDays) || 0) + 1); }
       saveDays(id, ds);
     }
   });
 }
 
-/** The time of one day: a time, or none. */
-async function editTime(planId, i) {
-  const d = get('plans', planId).days[i];
-  const r = get('routines', d?.routineId);
-  if (!r) return;
-  const html = `<h2>${esc(t('wbTimeFor', r.name))}</h2>
-    <label class="field"><span>${esc(t('wbTime'))}</span><input type="time" name="time" value="${esc(validTime(d.time) ? d.time : '18:00')}"></label>
-    <div class="button-row"><button type="button" class="btn primary big" data-ok>${esc(t('save'))}</button><button type="button" class="btn" data-none>${esc(t('noTime'))}</button><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
-  const set = (time) => {
-    const cur = get('plans', planId);
-    saveDays(planId, cur.days.map((x, j) => { if (j !== i) return { ...x }; const n = { ...x }; if (validTime(time)) n.time = time; else delete n.time; return n; }));
-  };
-  await openSheet(html, (form, close) => {
-    form.querySelector('[data-ok]').addEventListener('click', () => { set(form.time.value); close(true); });
-    form.querySelector('[data-none]').addEventListener('click', () => { set(''); close(true); });
-  });
+function placeDay(planId, routineId, w, wd) {
+  const cur = get('plans', planId);
+  const ds = (cur.days || []).map((d) => ({ ...d }));
+  if (planMode(cur) === 'rotation') { ds.push({ routineId, weekday: null }); saveDays(planId, ds); return; }
+  const prev = [...ds].reverse().find((d) => d.routineId === routineId && validTime(d.time));
+  ds.push({ routineId, weekday: Number.isInteger(wd) ? wd : null, ...(planMode(cur) === 'ab' ? { week: w } : {}), ...(prev ? { time: prev.time } : {}) });
+  saveDays(planId, ds);
 }
 
-async function addDay(planId) {
+/** v28: the + of a day (or of the loop): the schede, this workout's first, then by workout, with a search. */
+async function pickScheda(planId, target) {
   const p = get('plans', planId);
-  const inPlan = new Set((p.days || []).map((d) => d.routineId));
-  const list = routines().filter((r) => !inPlan.has(r.id));
-  const html = `<h2>${esc(t('addRoutineToPlan'))}</h2>
-    ${list.length ? `<div class="pick-list">${list.map((r) => `<button type="button" class="row pick" data-pick="${esc(r.id)}"><span class="min-badge"><b>${routineMinutes(r)}</b><small>min</small></span><span class="row-text"><span class="row-title">${esc(r.name)}</span><span class="row-sub">${esc(t('nExercises', (r.items || []).length))}</span></span></button>`).join('')}</div>` : `<p>${esc(t('allRoutinesInPlan'))}</p>`}
-    <div class="button-row"><button type="button" class="btn" data-new>${esc(t('newRoutine'))}</button><a class="btn" href="#/import?for=routine&plan=${encodeURIComponent(planId)}" data-close>${esc(t('importShort'))}</a><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
-  await openSheet(html, (form, close) => {
-    form.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => {
-      const cur = get('plans', planId);
-      savePlan({ ...cur, days: [...(cur.days || []), { routineId: b.dataset.pick, weekday: null }] });
-      close(true);
-      rerender();
-    }));
-    form.querySelector('[data-new]').addEventListener('click', () => {
-      const r = upsert('routines', { id: uid(), name: t('newRoutineName'), items: [], autoIncrease: false, order: live('routines').length });
-      const cur = get('plans', planId);
-      savePlan({ ...cur, days: [...(cur.days || []), { routineId: r.id, weekday: null }] });
-      close(true);
-      location.hash = `#/routine/${encodeURIComponent(r.id)}/edit`;
+  const [w, wd] = target === 'rot' ? [0, null] : target.split(':').map(Number);
+  const where = target === 'rot' ? t('inTheLoop') : `${t('dayOn')[wd]}${planMode(p) === 'ab' ? ` (${t('weekLetter', w)})` : ''}`;
+  const inThis = [...new Set((p.days || []).map((d) => d.routineId))].map((rid) => get('routines', rid)).filter(Boolean);
+  const seen = new Set(inThis.map((r) => r.id));
+  const groups = [[t('inThisWorkout'), inThis]];
+  for (const o of plans().filter((x) => x.id !== planId)) {
+    const rs = [...new Set((o.days || []).map((d) => d.routineId))].map((rid) => get('routines', rid)).filter((r) => r && !seen.has(r.id));
+    rs.forEach((r) => seen.add(r.id));
+    if (rs.length) groups.push([o.name, rs]);
+  }
+  groups.push([t('otherSchede'), routines().filter((r) => !seen.has(r.id))]);
+  const body = (q) => {
+    const gs = groups.map(([g, rs]) => [g, rs.filter((r) => !q || r.name.toLowerCase().includes(q))]).filter(([, rs]) => rs.length);
+    return gs.map(([g, rs]) => `<div class="ax-gh static">${esc(g)} <small>${rs.length}</small></div><div class="ax-list">${rs.map((r) => `<button type="button" class="ax-row" data-pick="${esc(r.id)}" style="--c:${colorR(r.id)}"><span class="dot"></span><span class="tx"><b>${esc(r.name)}</b></span><span class="mn">${routineMinutes(r)} min</span></button>`).join('')}</div>`).join('')
+      || `<p class="muted">${esc(t('noSchedaNamed'))}</p>`;
+  };
+  const html = `<h2>${esc(t('aSchedaOn', where))}</h2>
+    <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchScheda'))}</span><input id="ps-q" type="search" placeholder="${esc(t('searchScheda'))}" autocomplete="off"></label>
+    <div class="ax-body" data-ps-body>${body('')}</div>
+    <div class="button-row"><button type="button" class="btn" data-new>${icon('plus', 16)}${esc(t('newScheda2'))}</button><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+  const out = await openSheet(html, (form, close) => {
+    form.querySelector('#ps-q').addEventListener('input', (e) => { form.querySelector('[data-ps-body]').innerHTML = body(e.target.value.trim().toLowerCase()); });
+    form.addEventListener('click', (e) => {
+      const r = e.target.closest('[data-pick]'); if (r) { close({ id: r.dataset.pick }); return; }
+      if (e.target.closest('[data-new]')) close({ fresh: true });
     });
   });
+  if (!out) return;
+  let rid = out.id;
+  if (out.fresh) rid = upsert('routines', { id: uid(), name: t('newRoutineName'), items: [], autoIncrease: false, order: live('routines').length }).id;
+  placeDay(planId, rid, w, wd);
+  if (out.fresh) location.hash = `#/routine/${encodeURIComponent(rid)}/edit`;
 }
+
+/** v28: a placed scheda: its time, another day, remove it (in a rotation: earlier, later, remove). */
+async function tileMenu(planId, i) {
+  const p = get('plans', planId);
+  const d = p.days[i];
+  const r = get('routines', d?.routineId);
+  if (!r) return;
+  const mode = planMode(p);
+  const names = t('weekdayLong');
+  const chip = (attr, on, label) => `<button type="button" class="kit-opt${on ? ' on' : ''}" aria-pressed="${on}" ${attr}>${esc(label)}</button>`;
+  const used = [...new Set(p.days.map((x) => x.time).filter(validTime))];
+  const times = [...new Set([...used, '07:30', '12:30', '18:00', '19:30'])].sort();
+  const html = mode === 'rotation'
+    ? `<h2>${esc(r.name)}</h2><div class="ax-list">
+      <button type="button" class="ax-row" data-m="up"><span class="tx"><b>↑ ${esc(t('earlier'))}</b></span></button><button type="button" class="ax-row" data-m="down"><span class="tx"><b>↓ ${esc(t('later'))}</b></span></button>
+      <a class="ax-row" href="#/routine/${encodeURIComponent(r.id)}" data-close><span class="tx"><b>${esc(t('open'))}</b></span></a>
+      <button type="button" class="ax-row danger" data-m="rm"><span class="tx"><b>${esc(t('removeFromLoop'))}</b></span></button></div>
+      <div class="button-row"><button type="button" class="btn ghost" data-close>${esc(t('close'))}</button></div>`
+    : `<h2>${esc(r.name)}</h2><p class="muted">${esc([Number.isInteger(d.weekday) ? names[d.weekday] : t('anyDayTitle'), mode === 'ab' ? t('weekAB', Number(d.week) || 0) : '', validTime(d.time) ? d.time : ''].filter(Boolean).join(' · '))}</p>
+      <div class="kit-sh">${esc(t('wbTime'))}</div><div class="kit-opts">${times.map((x) => chip(`data-t="${x}"`, d.time === x, x)).join('')}${chip('data-t=""', !validTime(d.time), t('noTime'))}</div>
+      <label class="wb-other-time"><span>${esc(t('otherTime'))}</span><input type="time" name="time" value="${esc(validTime(d.time) ? d.time : '')}"></label>
+      <div class="kit-sh">${esc(t('moveTo'))}</div><div class="kit-opts">${t('weekdayShort').map((n, k) => chip(`data-d="${k}"`, d.weekday === k, n)).join('')}</div>
+      ${mode === 'ab' ? `<div class="kit-opts">${[0, 1].map((k) => chip(`data-w="${k}"`, (Number(d.week) || 0) === k, t('weekAB', k))).join('')}</div>` : ''}
+      <div class="ax-list" style="margin-top:14px"><a class="ax-row" href="#/routine/${encodeURIComponent(r.id)}" data-close><span class="tx"><b>${esc(t('open'))}</b></span></a><button type="button" class="ax-row danger" data-m="rm"><span class="tx"><b>${esc(t('removeFromDay', Number.isInteger(d.weekday) ? t('weekdayShort')[d.weekday] : t('anyDayTitle')))}</b></span></button></div>
+      <div class="button-row"><button type="button" class="btn ghost" data-close>${esc(t('close'))}</button></div>`;
+  const out = await openSheet(html, (form, close) => {
+    form.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-t], [data-d], [data-w], [data-m]');
+      if (!b) return;
+      close({ t: b.dataset.t, d: b.dataset.d, w: b.dataset.w, m: b.dataset.m });
+    });
+    form.time?.addEventListener('change', () => { if (validTime(form.time.value)) close({ t: form.time.value }); });
+  });
+  if (!out) return;
+  const before = get('plans', planId);
+  const ds = before.days.map((x) => ({ ...x }));
+  const x = ds[i];
+  if (out.m === 'rm') { ds.splice(i, 1); saveDays(planId, ds); toast(t('removedX', r.name), { undo: () => { savePlan(before); rerender(); } }); return; }
+  if (out.m === 'up' || out.m === 'down') { const j = out.m === 'up' ? i - 1 : i + 1; if (j < 0 || j >= ds.length) return; [ds[i], ds[j]] = [ds[j], ds[i]]; saveDays(planId, ds); return; }
+  if (out.t != null) { if (validTime(out.t)) x.time = out.t; else delete x.time; }
+  if (out.d != null) x.weekday = Number(out.d);
+  if (out.w != null) { x.week = Number(out.w); viewWeek = x.week; }
+  saveDays(planId, ds);
+}
+

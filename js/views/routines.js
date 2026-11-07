@@ -1,11 +1,11 @@
 // Allenamenti: the list of routines, one routine, and its editor (order, sets, automatic increase).
 import { state, get, upsert, remove, restore, uid, pref, live } from '../store.js';
 import { startDrag } from '../ui/dropdrag.js';
-import { regionOf, regionColor } from '../body.js';
+import { regionOf, regionColor, regionName, REGION_KEYS } from '../body.js';
 import { gyms, gymById, gymName, mainGym, routineGymId, missingIn, exerciseIn, alternatives, fitItem } from '../gyms.js';
 import { needOf } from '../body.js';
 import { minutesExplained } from '../data.js';
-import { t } from '../i18n.js';
+import { t, getLang } from '../i18n.js';
 import { esc, fmtNum, restText, minText, shortDate, timeOfDay, weekdayShort } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { backLink, stepper, bindSteppers, stepVal, toggle, empty, exTag, segmented, trainHead } from '../ui/parts.js';
@@ -351,7 +351,64 @@ export function routineEditView(id) {
 
 // ---- the builder (v27): blocks joined by rest circles, an alternative beside a block, superserie ----
 
-const REST_STEPS = [30, 45, 60, 90, 120, 150, 180, 0];
+const mmss = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+const NEW_REST = 120; // v28: the circle a new exercise brings is 2:00
+
+/** "5" = 5:00, "45" = 0:45, "130" = 1:30, "2:30" = 2:30; null when it can't be read. */
+export function parseRest(v) {
+  const x = String(v ?? '').trim().replace(/[.,]/, ':');
+  if (!x) return null;
+  if (x.includes(':')) { const [m, sec] = x.split(':'); if (!/^\d*$/.test(m) || !/^\d*$/.test(sec)) return null; return (Number(m) || 0) * 60 + Math.min(59, Number(sec) || 0); }
+  if (!/^\d+$/.test(x)) return null;
+  const n = Number(x);
+  if (x.length <= 2) return n <= 10 ? n * 60 : n;
+  return Math.floor(n / 100) * 60 + Math.min(59, n % 100);
+}
+
+/** v28: the rest before the next exercise, typed or ±30 s; 0 is a superserie. */
+async function restSheet(routineId, i) {
+  const r = get('routines', routineId);
+  const items = r.items || [];
+  const it = items[i];
+  const next = get('exercises', items[i + 1]?.exerciseId);
+  if (!it || !next) return;
+  const between = r.restBetween ?? training().between ?? 120;
+  const cardio = get('exercises', it.exerciseId)?.type === 'cardio' || next.type === 'cardio';
+  let v = it.superset ? 0 : (it.restAfter != null && it.restAfter !== '' ? Number(it.restAfter) : between);
+  let custom = Boolean(it.superset) || (it.restAfter != null && it.restAfter !== '');
+  const html = `<h2>${esc(t('restBeforeX', next.name))}</h2>
+    <div class="rt-row"><button type="button" class="rt-b" data-step="-30">−30 s</button><input class="rt-in" data-rt inputmode="numeric" autocomplete="off" aria-label="${esc(t('restMinSec'))}"><button type="button" class="rt-b" data-step="30">+30 s</button></div>
+    <p class="rt-read" data-read></p><p class="rt-def" data-def-row></p>
+    <div class="button-row"><button type="button" class="btn primary big" data-ok>${esc(t('save'))}</button><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+  const out = await openSheet(html, (form, close) => {
+    const inp = form.querySelector('[data-rt]');
+    const show = (typing) => {
+      const ss = v === 0 && !cardio;
+      inp.classList.toggle('ss', ss);
+      if (!typing) inp.value = ss ? '⚡' : v == null ? '' : mmss(v);
+      form.querySelector('[data-read]').innerHTML = ss ? `<b>⚡ ${esc(t('supersetWord'))}</b> · ${esc(t('supersetNoRest'))}` : v == null ? esc(t('typeATime')) : v === 0 ? esc(t('noSupersetCardio')) : esc(t('restMinSec'));
+      form.querySelector('[data-def-row]').innerHTML = custom ? `<button type="button" class="link-btn" data-def>↺ ${esc(t('likeTheOthers', mmss(between)))}</button>` : `<span>${esc(t('likeTheOthers', mmss(between)))}</span>`;
+    };
+    show(false);
+    inp.addEventListener('input', () => { v = parseRest(inp.value); custom = true; show(true); });
+    inp.addEventListener('blur', () => { if (v != null) show(false); });
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); if (v != null) close({ v, custom }); } });
+    form.addEventListener('click', (e) => {
+      const st = e.target.closest('[data-step]');
+      if (st) { v = Math.max(0, Math.min(1800, (v ?? 0) + Number(st.dataset.step))); custom = true; show(false); return; }
+      if (e.target.closest('[data-def]')) { v = between; custom = false; show(false); return; }
+      if (e.target.closest('[data-ok]') && v != null) close({ v, custom });
+    });
+  });
+  if (!out) return;
+  const cur = get('routines', routineId);
+  const list = cur.items.map((x) => ({ ...x }));
+  const x = list[i];
+  delete x.superset; delete x.restAfter;
+  if (out.custom) { if (out.v === 0 && !cardio) x.superset = true; else x.restAfter = out.v; }
+  upsert('routines', { ...cur, items: list });
+  refreshEstimates();
+}
 const restLabel = (s) => (s === 0 ? '⚡' : restText(s));
 
 function chainHtml(r) {
@@ -413,20 +470,7 @@ function bindChain(view, id) {
   root.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => removeItem(id, Number(b.dataset.del))));
   root.querySelectorAll('[data-unalt]').forEach((b) => b.addEventListener('click', () => { const items = cur().items.map((x, i) => (i === Number(b.dataset.unalt) ? (({ alternative, ...y }) => y)(x) : x)); save(items); }));
   root.querySelectorAll('[data-alt-pick]').forEach((b) => b.addEventListener('click', () => pickAlternative(id, Number(b.dataset.altPick))));
-  root.querySelectorAll('[data-rest]').forEach((b) => b.addEventListener('click', () => {
-    const i = Number(b.dataset.rest);
-    const items = cur().items.map((x) => ({ ...x }));
-    const it = items[i];
-    const between = cur().restBetween ?? training().between ?? 120;
-    const nowS = it.superset ? 0 : (it.restAfter ?? between);
-    const nextS = REST_STEPS[(REST_STEPS.indexOf(nowS) + 1) % REST_STEPS.length] ?? 60;
-    const nxEx = items[i + 1] && get('exercises', items[i + 1].exerciseId);
-    const thisEx = get('exercises', it.exerciseId);
-    if (nextS === 0 && (thisEx?.type === 'cardio' || nxEx?.type === 'cardio')) { it.superset = false; it.restAfter = REST_STEPS[0]; }
-    else if (nextS === 0) { it.superset = true; delete it.restAfter; }
-    else { delete it.superset; it.restAfter = nextS; }
-    save(items);
-  }));
+  root.querySelectorAll('[data-rest]').forEach((b) => b.addEventListener('click', () => restSheet(id, Number(b.dataset.rest))));
   root.addEventListener('tapped', (e) => { if (e.detail.editOnTap) editItem(id, e.detail.i); });
   root.addEventListener('dropped', (e) => {
     const { payload: p, target } = e.detail;
@@ -533,30 +577,67 @@ function defaultItem(ex) {
   return { exerciseId: ex.id, sets: 3, reps: 10, weight: 20, rest: ex.defaultRest ?? training().rest };
 }
 
+// v28: «Aggiungi esercizio» is a list by body part, with search, groups that close, and more than one at a time
+const addClosed = new Set();
+const lastOfEx = (id) => { const ss = live('sessions').filter((x) => x.end && (x.sets || []).some((y) => y.exerciseId === id)).sort((a, b) => b.start - a.start)[0]; return ss ? ss.sets.filter((y) => y.exerciseId === id) : null; };
+function lastShort(ex) {
+  const l = lastOfEx(ex.id);
+  if (!l || !l.length) return '';
+  if (ex.type === 'cardio') return t('lastTimeShort', `${Math.round((l[0].seconds || 0) / 60)} min`);
+  const w = Math.max(...l.map((y) => y.weight || 0));
+  return t('lastTimeShort', `${l.length} × ${l[0].reps ?? `${l[0].seconds} s`}${w ? ` · ${fmtNum(w)} kg` : ''}`);
+}
+
 async function addItem(routineId) {
   const list = exercises();
+  const inR = new Set((get('routines', routineId)?.items || []).map((x) => x.exerciseId));
+  const sel = [];
+  const keys = [...REGION_KEYS, 'unsorted'];
+  const body = (q) => {
+    const norm = (x) => String(x || '').toLowerCase();
+    const groups = keys.map((k) => [k, list.filter((ex) => regionOf(ex) === k && (!q || norm(ex.name).includes(q) || norm(whereText(ex)).includes(q)))]).filter(([, xs]) => xs.length);
+    if (!groups.length) return `<p class="muted">${esc(t('noneFound'))}</p>`;
+    return groups.map(([k, xs]) => {
+      const closed = !q && addClosed.has(k);
+      return `<button type="button" class="ax-gh${closed ? ' closed' : ''}" data-ax-g="${k}" aria-expanded="${!closed}" style="--c:${regionColor(k)}"><i></i>${esc(regionName(k, getLang()))}<small>${xs.length}</small>${icon('chevronDown', 16, 'class="chev"')}</button>
+        ${closed ? '' : `<div class="ax-list">${xs.map((ex) => `<button type="button" class="ax-row${sel.includes(ex.id) ? ' sel' : ''}" data-pick="${esc(ex.id)}" aria-pressed="${sel.includes(ex.id)}" style="--c:${regionColor(k)}"><span class="dot"></span>
+          <span class="tx"><b>${esc(ex.name)}${inR.has(ex.id) ? ` <em>· ${esc(t('alreadyIn'))}</em>` : ''}</b><small>${esc([whereText(ex) || typeLabel(ex), lastShort(ex)].filter(Boolean).join(' · '))}</small></span><span class="ck">${icon('check', 14)}</span></button>`).join('')}</div>`}`;
+    }).join('');
+  };
   const html = `<h2>${esc(t('addExercise'))}</h2>
-    ${list.length ? `<div class="pick-list">${list.map((ex) => `<button type="button" class="row pick" data-pick="${esc(ex.id)}">
-      ${exTag(ex, machineOf(ex)?.number || (ex.type === 'cardio' ? '' : ''))}<span class="row-text"><span class="row-title">${esc(ex.name)}</span><span class="row-sub">${esc([typeLabel(ex), whereText(ex)].filter(Boolean).join(' · '))}</span></span>
-    </button>`).join('')}</div>` : `<p>${esc(t('noExercisesYet'))}</p>`}
-    <div class="button-row"><a class="btn" href="#/exercise/new?then=${encodeURIComponent(routineId)}" data-close>${esc(t('newExercise'))}</a><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
-  await openSheet(html, (form, close) => {
-    form.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => {
-      const ex = get('exercises', b.dataset.pick);
-      const r = get('routines', routineId);
-      upsert('routines', { ...r, items: [...(r.items || []), defaultItem(ex)] });
-      refreshEstimates();
-      close(true);
-    }));
+    <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchExercises'))}</span><input id="ax-q" type="search" placeholder="${esc(t('searchExercisePh'))}" autocomplete="off"></label>
+    <div class="ax-body" data-ax-body>${list.length ? body('') : `<p>${esc(t('noExercisesYet'))}</p>`}</div>
+    <div class="ax-links"><a href="#/exercises?cat=1" data-close>${esc(t('fromCatalogue'))} ›</a><a href="#/exercise/new?then=${encodeURIComponent(routineId)}" data-close>＋ ${esc(t('newExercise'))}</a></div>
+    <div class="button-row ax-foot"><button type="button" class="btn primary big" data-ax-ok disabled>${esc(t('pickOneOrMore'))}</button><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+  const ok = await openSheet(html, (form, close) => {
+    let q = '';
+    const draw = () => {
+      form.querySelector('[data-ax-body]').innerHTML = body(q);
+      const b = form.querySelector('[data-ax-ok]');
+      b.disabled = !sel.length; b.textContent = sel.length ? t('addN', sel.length) : t('pickOneOrMore');
+    };
+    form.querySelector('#ax-q').addEventListener('input', (e) => { q = e.target.value.trim().toLowerCase(); draw(); });
+    form.addEventListener('click', (e) => {
+      const g = e.target.closest('[data-ax-g]');
+      if (g) { addClosed.has(g.dataset.axG) ? addClosed.delete(g.dataset.axG) : addClosed.add(g.dataset.axG); draw(); return; }
+      const r = e.target.closest('[data-pick]');
+      if (r) { const id = r.dataset.pick; const k = sel.indexOf(id); if (k >= 0) sel.splice(k, 1); else sel.push(id); draw(); return; }
+      if (e.target.closest('[data-ax-ok]') && sel.length) close(true);
+    });
   });
+  if (ok) for (const id of sel) addExerciseToRoutine(routineId, id);
 }
 
 export function addExerciseToRoutine(routineId, exId, at = null) {
   const r = get('routines', routineId);
   const ex = get('exercises', exId);
   if (!r || !ex) return;
-  const items = [...(r.items || [])];
-  items.splice(at == null ? items.length : at, 0, defaultItem(ex));
+  const items = (r.items || []).map((x) => ({ ...x }));
+  const k = at == null ? items.length : at;
+  // the new circles are 2:00: the one before it and, when it goes in the middle, the one after it
+  const prev = items[k - 1];
+  if (prev && !prev.superset && (prev.restAfter == null || prev.restAfter === '')) prev.restAfter = NEW_REST;
+  items.splice(k, 0, { ...defaultItem(ex), ...(k < items.length ? { restAfter: NEW_REST } : {}) });
   upsert('routines', { ...r, items });
   refreshEstimates();
 }

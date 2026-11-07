@@ -1241,3 +1241,71 @@ body.no-select { -webkit-user-select: none; user-select: none; }
 .wb-link.plain { height: 12px; }
 .wb-rd { margin-left: -14px; border: 2px dashed var(--muted); border-radius: 14px; background: var(--card); color: var(--ink-3); font: inherit; font-size: 12px; font-weight: 600; padding: 3px 10px; cursor: pointer; }
 .dragging .wb-row, .dragging .wb-day { border-color: var(--line-strong, #9aa6a6); }
+/* ---- v28: the rest before the next exercise, typed or ±30 s ---- */
+.rt-row { display: grid; grid-template-columns: minmax(56px, 72px) minmax(0, 1fr) minmax(56px, 72px); gap: 8px; align-items: stretch; margin: 6px 0 0; }
+.rt-b { border: 0; border-radius: 14px; background: var(--chip); color: var(--ink); font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; min-height: 60px; padding: 0 4px; }
+.rt-in { width: 100%; min-width: 0; font-family: var(--cond); font-weight: 700; font-size: clamp(36px, 11vw, 52px); line-height: 1.1; text-align: center; background: var(--card); color: var(--ink); border: 2px solid var(--line); border-radius: 16px; padding: 4px 0; outline: none; }
+.rt-in:focus { border-color: var(--yellow); }
+.rt-in.ss { color: #a07a00; border-color: var(--yellow); background: rgba(255, 210, 63, .12); }
+:root.dark .rt-in.ss { color: var(--yellow); }
+.rt-read { text-align: center; color: var(--muted); margin: 8px 0 2px; font-size: 14px; }
+.rt-read b { color: #a07a00; }
+:root.dark .rt-read b { color: var(--yellow); }
+.rt-def { text-align: center; margin: 2px 0 10px; font-size: 13.5px; color: var(--muted); }
+.rt-def .link-btn { font-size: 13.5px; }
+/* ---- v28: «Aggiungi esercizio» by body part ---- */
+.ax-body { margin-top: 6px; }
+.ax-gh { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 12px 2px 6px; cursor: pointer; }
+.ax-gh i { width: 9px; height: 9px; border-radius: 3px; background: var(--c); flex: none; }
+.ax-gh small { font-weight: 600; letter-spacing: 0; }
+.ax-gh .chev { margin-left: auto; transition: transform .15s; }
+.ax-gh.closed .chev { transform: rotate(-90deg); }
+.ax-list { background: var(--card); border: 1px solid var(--line); border-radius: var(--r, 14px); overflow: hidden; }
+.ax-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 6px 12px; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.ax-row + .ax-row { border-top: 1px solid var(--line-soft, var(--line)); }
+.ax-row .dot { width: 8px; height: 8px; border-radius: 4px; background: var(--c); flex: none; }
+.ax-row .tx { flex: 1; min-width: 0; line-height: 1.2; }
+.ax-row .tx b { display: block; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ax-row .tx em { font-style: normal; font-weight: 500; font-size: 12.5px; color: var(--muted); }
+.ax-row .tx small { display: block; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ax-row .ck { flex: none; width: 26px; height: 26px; border-radius: 13px; border: 1.5px solid var(--line-strong); display: flex; align-items: center; justify-content: center; color: transparent; }
+.ax-row.sel .ck { background: var(--yellow); border-color: var(--yellow); color: #151a1b; }
+.ax-links { display: flex; flex-direction: column; gap: 8px; margin: 14px 2px 4px; }
+.ax-links a { color: var(--gold-2, #7A5A00); font-weight: 600; font-size: 14.5px; text-decoration: none; }
+:root.dark .ax-links a { color: var(--yellow); }
+.ax-foot { position: sticky; bottom: 0; background: var(--bg); padding-top: 10px; margin-bottom: -4px; }
+/* ---- v28: the catalogue's rows ---- */
+.cat-row { min-height: 54px; padding-top: 6px; padding-bottom: 6px; }
+.cat-row .row-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-row .thumb { width: 40px; height: 40px; }
+.cat-plus { flex: none; width: 36px; height: 36px; border-radius: 18px; border: 0; background: var(--yellow); color: #151a1b; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+/* ---- v28: the workout builder, days first ---- */
+.wb-top { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; }
+.wb-name { flex: 1; min-width: 0; }
+.wb-name input { width: 100%; min-width: 0; border: 0; border-bottom: 1.5px dashed var(--line-strong); background: none; color: var(--ink); font-family: var(--cond); font-weight: 700; font-size: 26px; line-height: 1.15; padding: 2px 0; border-radius: 0; outline: none; }
+.wb-name input:focus { border-bottom-color: var(--yellow); }
+.wb-act { flex: none; display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); cursor: pointer; }
+.wb-rows { gap: 0; }
+.wb-row { border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 6px 0; min-height: 46px; grid-template-columns: 40px minmax(0, 1fr); }
+.wb-row.empty { min-height: 40px; }
+.wb-row.today > b { color: var(--gold-2, #7A5A00); }
+:root.dark .wb-row.today > b { color: var(--yellow); }
+.wb-row .wb-its { flex-direction: column; align-items: stretch; flex-wrap: nowrap; }
+.wb-row.hot { border-radius: 10px; }
+button.wb-tile { border: 0; font: inherit; color: var(--ink); text-align: left; min-height: 40px; padding: 4px 8px 4px 10px; touch-action: auto; flex: none; width: 100%; }
+@media (pointer: fine) { button.wb-tile { touch-action: none; } }
+.wb-tile .wb-tm { background: var(--card); padding: 2px 6px; border-radius: 6px; font-size: 12.5px; font-weight: 700; }
+.wb-tile .wb-tm.none { font-weight: 500; color: var(--muted); background: none; }
+.wb-add { display: flex; align-items: center; gap: 6px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 13.5px; padding: 4px 2px; cursor: pointer; min-height: 30px; }
+.wb-add.small { min-height: 24px; padding: 0 2px; opacity: .8; }
+.wb-day .wb-add { justify-content: center; margin-top: auto; }
+.wb-day button.wb-tile { width: auto; }
+.wb-rot .wb-add { margin: 4px 0; }
+.wb-link.plain .wb-rd { border-style: solid; border-color: var(--line); color: var(--muted); font-weight: 500; }
+.wb-link.plain { height: 30px; }
+.ax-gh.static { cursor: default; }
+.ax-row .mn { flex: none; font-size: 13px; color: var(--muted); }
+.ax-row.danger b { color: var(--danger, #c0392b); }
+a.ax-row { text-decoration: none; }
+.wb-other-time { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; font-size: 14px; color: var(--muted); }
+.wb-other-time input { width: auto; }

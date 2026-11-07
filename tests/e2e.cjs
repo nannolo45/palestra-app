@@ -244,10 +244,13 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('#r-name');
   await page.fill('#r-name', 'Gambe');
   await page.press('#r-name', 'Tab');
-  for (const name of ['Leg press', 'Tapis roulant', 'Plank']) {
-    await page.click('[data-action=add-item]');
-    await page.click(`#modal .pick:has-text("${name}")`);
-  }
+  // v28: one sheet, several at once, in the order they were ticked
+  await page.click('[data-action=add-item]');
+  await page.waitForSelector('#modal[open] .ax-row');
+  for (const name of ['Leg press', 'Tapis roulant', 'Plank']) await page.click(`#modal .ax-row:has-text("${name}")`);
+  check((await page.textContent('#modal [data-ax-ok]')).includes('3'), 'Aggiungi 3');
+  await page.click('#modal [data-ax-ok]');
+  await page.waitForTimeout(200);
   await page.check('[name=autoIncrease]');
   // edit leg press: 2 sets of 10 at 100 kg, rest 60
   await page.click('[data-edit-item="0"]');
@@ -617,14 +620,14 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check((await page.$$('.wb-tile')).length === 3, 'three scheda tiles on the days');
   await dragTo('.wb-tile[data-tile="2"]', '.wb-row[data-drop="day:0:5"]');
   check((await page.textContent('.wb-row[data-drop="day:0:5"]')).includes('Gambe'), 'dropped on Saturday');
-  await page.click('.wb-row[data-drop="day:0:5"] [data-tm]');
+  await page.click('.wb-row[data-drop="day:0:5"] .wb-tile');
   await page.waitForSelector('#modal[open] [name=time]');
   await page.fill('#modal [name=time]', '10:30');
-  await page.click('#modal [data-ok]');
+  await page.dispatchEvent('#modal [name=time]', 'change');
   await page.waitForTimeout(200);
   check((await page.textContent('.wb-row[data-drop="day:0:5"] .wb-tm')) === '10:30', 'the time is on the tile');
   // make it active from Monday
-  await page.click('.toggle-row:has([name=active])');
+  await page.click('.wb-act');
   await page.waitForSelector('#modal[open] .option');
   await shot('21-activate', { fullPage: true });
   await page.click('#modal [value=ok]');
@@ -761,7 +764,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await overflowAt('new machine sheet');
   await page.keyboard.press('Escape');
   await go(`#/plan/${ids.p}`);
-  await page.click('[data-action=add-day]');
+  await page.click('[data-add="0:1"]');
   await overflowAt('add routine sheet');
   await page.keyboard.press('Escape');
   await go(`#/start/${ids.r}`);
@@ -1002,10 +1005,16 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('.sub-tabs');
   await page.waitForTimeout(800);
   const catRows = (await page.$$('.cat-row')).length;
+  check(!(await page.$('[data-cat-box]')) && Boolean(await page.$('[data-cat-panel]')), 'Catalogo: the filters start closed');
+  await page.click('[data-cat-panel]'); await page.waitForSelector('[data-cat-box]');
+  await page.click('[data-reg=legs]'); await page.waitForTimeout(400);
+  await page.click('[data-cat-list] p.muted'); await page.waitForTimeout(300);
+  check(!(await page.$('[data-cat-box]')) && Boolean(await page.$('.kit-on[data-un=region]')), 'a tap outside closes Filtri; the filter stays as a tag');
+  await page.click('.kit-on[data-un=region]'); await page.waitForTimeout(400);
   check(catRows > 20 || Boolean(await page.textContent('#view').then((x) => x.includes('offline'))), `Catalogo: the common list (${catRows} rows)`);
   if (catRows) {
     const nEx = await page.evaluate(async () => (await import('/js/store.js')).live('exercises').length);
-    await page.fill('.cat-tools input[type=search]', 'hip thrust');
+    await page.fill('#cat-q', 'hip thrust');
     await page.waitForTimeout(300);
     const add = await page.$('.cat-row [data-add-cat]');
     if (add) { await add.click(); await page.waitForTimeout(300); check((await page.evaluate(async () => (await import('/js/store.js')).live('exercises').length)) === nEx + 1, '+ Aggiungi makes it yours'); }
@@ -1016,8 +1025,27 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await go(`#/routine/${wr}/edit`);
   await page.waitForSelector('[data-chain]');
   let tries = 0;
-  while (!(await page.$('.ch-link.ss')) && tries++ < 9) { await page.click('[data-rest="0"]'); await page.waitForTimeout(120); }
-  check(Boolean(await page.$('.ch-link.ss')), 'tapping the rest circle reaches ⚡ superset');
+  await page.click('[data-rest="0"]');
+  await page.waitForSelector('#modal[open] [data-rt]');
+  check(!(await page.evaluate(() => { const i = document.querySelector('#modal [data-rt]'); return i.selectionStart !== i.selectionEnd && document.activeElement === i; })), 'the time is not selected on its own');
+  await overflowAt('rest sheet');
+  await page.fill('#modal [data-rt]', '5');
+  await page.click('#modal [data-ok]');
+  await page.waitForTimeout(200);
+  check((await page.textContent('[data-rest="0"]')).includes('5'), 'typed 5: five minutes');
+  await page.click('[data-rest="0"]');
+  await page.waitForSelector('#modal[open] [data-rt]');
+  while (tries++ < 12 && !(await page.$('#modal .rt-in.ss'))) await page.click('#modal [data-step="-30"]');
+  check((await page.inputValue('#modal [data-rt]')) === '⚡', 'down to zero: the superserie sign');
+  await page.click('#modal [data-ok]');
+  await page.waitForTimeout(200);
+  check(Boolean(await page.$('.ch-link.ss')), '⚡ superserie saved');
+  // a tap outside a sheet closes it
+  await page.click('[data-action=add-item]');
+  await page.waitForSelector('#modal[open]');
+  await page.mouse.click(10, 10);
+  await page.waitForTimeout(200);
+  check(!(await page.$('#modal[open]')), 'a tap outside the sheet closes it');
   const nBlk = (await page.$$('.blk[data-blk]:not(.alt)')).length;
   await dragTo('.blk-grip[data-grip="1"]', '[data-drop="alt:0"]');
   check((await page.$$('.blk.alt')).length >= 1 && (await page.$$('.blk[data-blk]:not(.alt)')).length === nBlk - 1, 'dragged onto "oppure": the alternative of the first');
@@ -1032,10 +1060,11 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.click('[data-mode=ab]');
   await page.waitForTimeout(200);
   await page.click('[data-wv="1"]');
-  await page.click('.wb-chip[data-chip]');
-  await page.waitForTimeout(150);
-  check(Boolean(await page.$('.wb-row.pick')), 'tap a scheda: the days wait for a tap');
-  await page.click('.wb-row[data-drop="day:1:3"]');
+  check(!(await page.$('.wb-chip')), 'on a phone no wall of schede: the days come first');
+  await page.click('[data-add="1:3"]');
+  await page.waitForSelector('#modal[open] [data-pick]');
+  await overflowAt('scheda picker');
+  await page.click('#modal [data-pick]');
   await page.waitForTimeout(200);
   check((await page.$$('.wb-row[data-drop="day:1:3"] .wb-tile')).length === 1, 'placed on Thursday of week B');
   await overflowAt('workout builder A · B');
@@ -1044,12 +1073,12 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.click('[data-mode=rotation]');
   await page.waitForTimeout(200);
   check(Boolean(await page.$('.wb-rot')) && (await page.$$('.wb-rot .wb-tile')).length >= 3, 'Rotazione: the schede in a loop');
-  await page.click('[data-restchip]');
-  await page.waitForTimeout(200);
-  check((await page.$$('.wb-rd')).length === 1, 'Giorno di riposo adds a rest circle');
   await page.click('.wb-rd');
   await page.waitForTimeout(200);
-  check((await page.textContent('.wb-rd')).includes('2'), 'tapping the circle makes it 2 days');
+  check((await page.$$('.wb-link:not(.plain)')).length === 1, '+ riposo adds a rest day');
+  await page.click('.wb-link:not(.plain) .wb-rd');
+  await page.waitForTimeout(200);
+  check((await page.textContent('.wb-link:not(.plain) .wb-rd')).includes('2'), 'tapping it again makes it 2 days');
   const apRot = await page.evaluate(async () => (await import('/js/store.js')).pref('activePlan', null));
   check(apRot.mode === 'rotation' && apRot.days.every((d) => d.weekday === null), 'a rotation: Everyday gets the schede with no fixed day');
   await overflowAt('workout builder rotation');

@@ -52,6 +52,8 @@ export function toast(msg, { undo = null, ms } = {}) {
  * Open the shared sheet (#modal) with a form. bind(form, close) wires it up; the promise resolves when it closes.
  * The form's submit is prevented: call close() yourself after saving.
  */
+const outside = (el, e) => { const r = el.getBoundingClientRect(); return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom; };
+
 export function openSheet(html, bind = () => {}) {
   const el = document.getElementById('modal');
   el.innerHTML = `<form class="sheet-form" novalidate>${html}</form>`;
@@ -61,6 +63,9 @@ export function openSheet(html, bind = () => {}) {
     form.addEventListener('submit', (e) => e.preventDefault());
     form.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => close(null)));
     el.addEventListener('cancel', () => resolve(null), { once: true });
+    // v28: a tap outside the sheet (on the dark backdrop) closes it, like Esc
+    el.onpointerdown = (e) => { el._downOut = e.target === el && outside(el, e); };
+    el.onclick = (e) => { if (e.target === el && el._downOut && outside(el, e)) close(null); el._downOut = false; };
     if (el.open) el.close();
     el.showModal();
     bind(form, close);
@@ -80,4 +85,16 @@ export function chooseHowToCreate({ title, emptyLabel, emptyHint, importLabel, i
   return openSheet(html, (form, close) => {
     form.querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => close(b.dataset.choice)));
   });
+}
+
+/** v28: a panel that opens in the page (Filtri) closes on a tap outside it; the buttons that toggle it are left alone. */
+export function closeOnTapOutside(el, keep, onClose) {
+  if (!el) return;
+  const off = (e) => {
+    if (!el.isConnected) { document.removeEventListener('click', off, true); return; }
+    if (el.contains(e.target) || e.target.closest?.(keep) || e.target.closest?.('dialog, .kit-menu')) return;
+    document.removeEventListener('click', off, true);
+    setTimeout(onClose, 0); // after this tap is handled, so a tap on a row still does what it does
+  };
+  setTimeout(() => document.addEventListener('click', off, true), 0);
 }
