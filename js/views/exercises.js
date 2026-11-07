@@ -15,7 +15,8 @@ import { CARDIO_KIND_KEYS, EQUIPMENT, measuresFor, defaultTargets, increaseCateg
 import { newMachineSheet } from './gym.js';
 import { addExerciseToRoutine } from './routines.js';
 import { listKit } from '../ui/listkit.js';
-import { activeInfo, planDays } from '../plans.js';
+import { loadCatalog, catalogReady, searchCatalog, nameIn, exerciseFrom, yoursFor } from '../catalog.js';
+import { activeInfo, allDays } from '../plans.js';
 
 
 function tagLabel(ex) {
@@ -59,12 +60,13 @@ function settingsText(ex) {
   return machineOf(ex)?.settings || '';
 }
 
-export function exercisesView() {
+export function exercisesView(query = {}) {
+  if (query.cat) return catalogView();
   const all = exercises();
   const ps = places();
   const a = activeInfo();
   const inActive = new Set();
-  if (a) for (const d of planDays(a.plan)) for (const it of get('routines', d.routineId)?.items || []) inActive.add(it.exerciseId);
+  if (a) for (const d of allDays(a.plan)) for (const it of get('routines', d.routineId)?.items || []) inActive.add(it.exerciseId);
   const lang = getLang();
   // v25 grouped by the first muscle word; v26 groups by body region, with the muscles inside
   const saved = (state.settings.lists || {}).ex;
@@ -112,12 +114,75 @@ export function exercisesView() {
   });
   const html = `${trainHead('exercises')}
     <div class="two-actions" data-top-actions><a class="btn primary" href="#/exercise/new">${icon('plus', 18)}${esc(t('newExercise'))}</a>${picturesOn() ? `<a class="btn only-wide" href="#/pictures">${icon('image', 18)}${esc(t('picTitle'))}</a>` : ''}</div>
+    ${exSubTabs('mine', all.length)}
     ${missingPictures().length ? `<a class="card pic-prompt" href="#/pictures">${icon('image', 20)}<span><b>${esc(t('picMatchTitle'))}</b><small>${esc(t('picMatchText', missingPictures().length))}</small></span>${icon('chevron', 18, 'class="chev"')}</a>` : ''}
     ${all.length ? kit.html : empty(t('esExercisesTitle'), t('esExercisesText'), `<a class="btn primary" href="#/exercise/new">${esc(t('newExercise'))}</a>`)}`;
   return { html, bind: kit.bind };
 }
 
 function rerender() { window.dispatchEvent(new CustomEvent('palestra:render')); }
+
+// ---- the catalogue (v27) ----
+
+const C = { q: '', region: '', eq: '', limit: 60 };
+const CAT_EQ = ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight'];
+
+function exSubTabs(on, n) {
+  return `<nav class="sub-tabs" aria-label="${esc(t('tab_exercises'))}"><a href="#/exercises" class="${on === 'mine' ? 'on' : ''}">${esc(t('myExercises'))} <small>${n}</small></a><a href="#/exercises?cat=1" class="${on === 'cat' ? 'on' : ''}" data-cat-tab>${esc(t('catalogue'))}${catalogReady() ? ` <small>${catCount}</small>` : ''}</a></nav>`;
+}
+let catCount = 0;
+
+function catalogView() {
+  const mine = exercises();
+  const lang = getLang();
+  const html = `${trainHead('exercises')}
+    <div class="two-actions" data-top-actions><a class="btn primary" href="#/exercise/new">${icon('plus', 18)}${esc(t('newExercise'))}</a></div>
+    ${exSubTabs('cat', mine.length)}
+    <div class="cat-tools">
+      <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchCatalogue'))}</span><input id="cat-q" type="search" placeholder="${esc(t('searchCatalogue'))}" value="${esc(C.q)}" autocomplete="off"></label>
+      <div class="cat-chips" role="group" aria-label="${esc(t('gRegion'))}">${[...REGION_KEYS].map((r) => `<button type="button" class="kit-opt${C.region === r ? ' on' : ''}" aria-pressed="${C.region === r}" data-reg="${r}"><span class="dot" style="background:${regionColor(r)}"></span>${esc(regionName(r, lang))}</button>`).join('')}</div>
+      <div class="cat-chips" role="group" aria-label="${esc(t('equipment'))}">${CAT_EQ.map((k) => `<button type="button" class="kit-opt${C.eq === k ? ' on' : ''}" aria-pressed="${C.eq === k}" data-eq="${k}">${esc(k === 'bodyweight' ? t('type_bodyweight') : t(`eq_${k}`))}</button>`).join('')}</div>
+    </div>
+    <div data-cat-list><p class="muted">${esc(t('catLoading'))}</p></div>`;
+  return {
+    html,
+    bind(view) {
+      const box = view.querySelector('[data-cat-list]');
+      const draw = async () => {
+        let list;
+        try { list = await loadCatalog(); } catch { box.innerHTML = `<p class="muted">${esc(t('catOffline'))}</p>`; return; }
+        catCount = list.length;
+        const tab = view.querySelector('[data-cat-tab]'); if (tab && !tab.querySelector('small')) tab.insertAdjacentHTML('beforeend', ` <small>${list.length}</small>`);
+        const mineNow = exercises();
+        const found = searchCatalog(list, C.q, { region: C.region, equipment: C.eq });
+        box.innerHTML = `<p class="muted small">${esc(t('nFound', found.length))}</p>
+          <div class="card list">${found.slice(0, C.limit).map((c) => {
+            const yours = yoursFor(c, mineNow);
+            const th = picturesOn() ? frameUrl({ id: c.id, n: c.n }, 0) : '';
+            return `<div class="row list-row cat-row">
+              ${th ? `<span class="thumb"><img src="${esc(th)}" alt="" loading="lazy"></span>` : `<span class="cat-dot" style="background:${regionColor(c.region)}"></span>`}
+              <span class="row-text"><span class="row-title">${esc(nameIn(c, lang))}</span><span class="row-sub">${esc([lang === 'it' && c.it ? c.en : '', c.muscle ? muscleName(c.muscle, lang) : regionName(c.region, lang), c.type === 'weights' ? t(`eq_${c.equipment}`) : t(`type_${c.type}`)].filter(Boolean).join(' · '))}</span></span>
+              ${yours ? `<a class="cat-have" href="#/exercise/${encodeURIComponent(yours.id)}">✓ ${esc(t('yours'))}</a>` : `<button type="button" class="btn small yellow" data-add-cat="${esc(c.id)}">+ ${esc(t('add'))}</button>`}
+            </div>`;
+          }).join('')}</div>
+          ${found.length > C.limit ? `<button type="button" class="btn wide" data-more>${esc(t('showMore', found.length - C.limit))}</button>` : ''}
+          <a class="card new-box" href="#/exercise/new${C.q ? `?name=${encodeURIComponent(C.q)}` : ''}">${icon('plus', 18)}<span>${C.q && !found.length ? t('createNamed', esc(C.q)) : esc(t('notThereCreate'))}</span></a>`;
+        box.querySelector('[data-more]')?.addEventListener('click', () => { C.limit += 60; draw(); });
+        box.querySelectorAll('[data-add-cat]').forEach((b) => b.addEventListener('click', () => {
+          const c = list.find((x) => x.id === b.dataset.addCat);
+          const ex = upsert('exercises', { id: uid(), ...exerciseFrom(c, lang, training().rest) });
+          toast(t('addedToYours', ex.name));
+          draw();
+        }));
+      };
+      const q = view.querySelector('#cat-q');
+      q.addEventListener('input', () => { C.q = q.value; C.limit = 60; draw(); });
+      view.querySelectorAll('[data-reg]').forEach((b) => b.addEventListener('click', () => { C.region = C.region === b.dataset.reg ? '' : b.dataset.reg; C.limit = 60; view.querySelectorAll('[data-reg]').forEach((x) => { x.classList.toggle('on', x.dataset.reg === C.region); x.setAttribute('aria-pressed', x.dataset.reg === C.region); }); draw(); }));
+      view.querySelectorAll('[data-eq]').forEach((b) => b.addEventListener('click', () => { C.eq = C.eq === b.dataset.eq ? '' : b.dataset.eq; C.limit = 60; view.querySelectorAll('[data-eq]').forEach((x) => { x.classList.toggle('on', x.dataset.eq === C.eq); x.setAttribute('aria-pressed', x.dataset.eq === C.eq); }); draw(); }));
+      draw();
+    },
+  };
+}
 
 // ---- the card ----
 
@@ -136,6 +201,7 @@ export function exerciseView(id, query = {}) {
     // muscles as keys (v26); words from before that don't match a muscle are dropped when saving
     draft.muscles = [...new Set((draft.muscles || []).map(muscleFromWord).filter(Boolean))];
     if (query.type && id === 'new') draft.type = query.type;
+    if (query.name && id === 'new') draft.name = String(query.name);
   }
   const ex = draft;
   const isNew = Boolean(ex._new);

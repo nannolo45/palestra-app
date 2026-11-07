@@ -4,7 +4,9 @@ import { state, load, onChange, COLLECTIONS } from './store.js';
 import { t, getLang } from './i18n.js';
 import { route, renderTabs, setActiveTab, paint, placeTopActions, paintNavSync } from './shell.js';
 import { syncNow, isConfigured, isSyncing } from './sync.js';
-import { isDragging } from './sortable.js';
+import { isDragging as isSorting } from './sortable.js';
+import { isDropDragging } from './ui/dropdrag.js';
+const isDragging = () => isSorting() || isDropDragging();
 import { routinesView, routineView, routineEditView } from './views/routines.js';
 import { todayView } from './views/today.js';
 import { exercisesView, exerciseView } from './views/exercises.js';
@@ -13,8 +15,9 @@ import { historyView, sessionView } from './views/history.js';
 import { settingsView } from './views/settings.js';
 import { plansView, planView } from './views/plans.js';
 import { importView } from './views/import.js';
-import { initWorkout, startView, workoutView, hasActive, activeWorkout, leaveWorkoutScreens, tryView } from './views/workout.js';
+import { initWorkout, startView, workoutView, hasActive, activeWorkout, leaveWorkoutScreens, tryView, miniBar, miniTick } from './views/workout.js';
 import { refreshEstimates } from './data.js';
+import { refreshActiveWeek } from './plans.js';
 import { applyTheme, setWorkoutMode } from './theme.js';
 import { loadPhotos } from './photos.js';
 import { picturesView } from './views/pictures.js';
@@ -30,7 +33,7 @@ function viewFor(r) {
     case 'today': return todayView();
     case 'routines': return routinesView(r.query);
     case 'routine': return r.sub === 'edit' ? routineEditView(r.id) : routineView(r.id);
-    case 'exercises': return exercisesView();
+    case 'exercises': return exercisesView(r.query);
     case 'pictures': return picturesView();
     case 'exercise': return exerciseView(r.id, r.query);
     case 'gym': return gymView(r.query);
@@ -48,10 +51,8 @@ function viewFor(r) {
 }
 
 function resumeBanner(r) {
-  if (!hasActive() || r.name === 'workout' || r.name === 'start') return '';
-  const w = activeWorkout();
-  const name = state.routines.find((x) => x.id === w.routineId)?.name || '';
-  return `<a class="resume-banner" href="#/workout">${icon('play', 16)}<span>${esc(t('workoutInProgressShort', name))}</span><b>${esc(t('resume'))}</b></a>`;
+  if (!hasActive() || r.name === 'workout' || r.name === 'start' || r.name === 'try') return '';
+  return miniBar();
 }
 
 export function render() {
@@ -88,7 +89,7 @@ function renderIfSafe() {
 setInterval(() => { if (pending) renderIfSafe(); }, 800);
 
 // Clocks in workout mode tick without redrawing the page.
-setInterval(() => { if (current?.tick) current.tick($('#view')); }, 250);
+setInterval(() => { if (current?.tick) current.tick($('#view')); else miniTick(); }, 250);
 
 let syncTimer = null;
 function scheduleSync(ms = 4000) {
@@ -178,9 +179,11 @@ async function init() {
   // the desktop layout changes the markup (sidebar, master-detail), so redraw when crossing 960px
   try { matchMedia('(min-width: 960px)').addEventListener('change', () => render()); } catch { /* old browsers */ }
   window.addEventListener('online', () => syncNow());
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && isConfigured() && !hasActive()) syncNow(); });
+  // an A/B workout: on a new week, Everyday gets that week's days
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refreshActiveWeek(); if (isConfigured() && !hasActive()) syncNow(); } });
   // A workout left running: go back to it.
   if (hasActive() && !location.hash.startsWith('#/workout') && !location.hash.startsWith('#/start')) location.hash = '#/workout';
+  refreshActiveWeek();
   render();
   refreshEstimates();
   registerSW();

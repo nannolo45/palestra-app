@@ -1,13 +1,13 @@
 // Offline support, as in Ricette. Each app version is cached as a whole; a new version is downloaded in the
 // background and takes over when the user taps "Aggiorna" (or the next time the app starts with no workout open).
-const VERSION = 'palestra-v26'; // keep in step with APP_VERSION in js/views/settings.js
+const VERSION = 'palestra-v27'; // keep in step with APP_VERSION in js/views/settings.js
 // Exercise drawings from free-exercise-db are kept in a cache of their own that survives app updates.
 const PICTURES = 'palestra-pictures';
 const PICTURE_HOST = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
   'js/app.js', 'js/store.js', 'js/sync.js', 'js/i18n.js', 'js/shell.js', 'js/sortable.js', 'js/model.js', 'js/workout.js', 'js/data.js', 'js/theme.js', 'js/importer.js', 'js/plans.js', 'js/pictures.js', 'js/photos.js', 'lib/exercise-pictures.json',
-  'js/ui/format.js', 'js/ui/dialogs.js', 'js/ui/icons.js', 'js/ui/parts.js', 'js/ui/listkit.js', 'js/body.js', 'js/gyms.js', 'js/stats.js',
+  'js/ui/format.js', 'js/ui/dialogs.js', 'js/ui/icons.js', 'js/ui/parts.js', 'js/ui/listkit.js', 'js/body.js', 'js/gyms.js', 'js/stats.js', 'js/sound.js', 'js/catalog.js', 'js/catalog-it.js', 'js/ui/dropdrag.js',
   'js/views/routines.js', 'js/views/exercises.js', 'js/views/gym.js', 'js/views/history.js', 'js/views/settings.js', 'js/views/workout.js', 'js/views/plans.js', 'js/views/import.js', 'js/views/today.js', 'js/views/pictures.js', 'guide-it.html', 'guide-en.html',
   'fonts/Barlow-Regular.woff', 'fonts/Barlow-Medium.woff', 'fonts/Barlow-SemiBold.woff', 'fonts/Barlow-Bold.woff', 'fonts/BarlowCondensed-SemiBold.woff', 'fonts/BarlowCondensed-Bold.woff',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/icon-maskable-192.png', 'icons/icon-maskable-512.png',

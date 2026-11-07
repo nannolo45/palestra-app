@@ -114,6 +114,7 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 <p><img class="ph" loading="lazy" alt="Ready?: the whole routine before starting" src="guide/en/32-ready.webp" /><img class="dk" loading="lazy" alt="Ready?: the whole routine before starting" src="guide/en/desk/32-ready.webp" /></p>
 <h3 id="move-to-tomorrow">Move to tomorrow</h3>
 <p>Can't make it today? Tap <em>Move to tomorrow</em>. The routine moves to tomorrow for this week only, and the list of days shows it. <em>Back to today</em> undoes it. If you use Everyday, the block moves there too at the next sync: at the same time if it's free, otherwise in the first free slot tomorrow.</p>
+<p>With a <strong>rotation</strong> workout there are no days: Today shows <em>Next</em>, and if the rest you set after the last routine isn't over it says so (<em>rest suggested a bit longer</em>). With <strong>alternating weeks</strong> <em>This week</em> says whether it's A or B.</p>
 <p><img class="ph" loading="lazy" alt="After &quot;Move to tomorrow&quot;: the routine has moved, and you can put it back" src="guide/en/02-moved.webp" /><img class="dk" loading="lazy" alt="After &quot;Move to tomorrow&quot;: the routine has moved, and you can put it back" src="guide/en/desk/02-moved.webp" /></p>
 <h3 id="the-week-and-the-month">The week and the month</h3>
 <p>Below are the week's routines: the ones done, the next one and the ones left. Then the <strong>active workout</strong> with <em>Change</em>, your last session and a square for each day of the month, yellow when you trained.</p>
@@ -121,24 +122,57 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 <p>A workout is your week: the routines you do, each on its day. The <strong>active</strong> one is in yellow at the top; the others stay saved with their history, for when you need them (a deload week, for instance).</p>
 <p><img class="ph" loading="lazy" alt="Your workouts: the active one at the top" src="guide/en/14-plans.webp" /><img class="dk" loading="lazy" alt="Your workouts: the active one at the top" src="guide/en/desk/14-plans.webp" /></p>
 <h3 id="create-a-workout">Create a workout</h3>
-<p>Tap <em>New workout</em>, then <em>Add routine</em> for each one. Drag a routine by its handle to change the order. <em>Import</em>, next to <em>Add routine</em>, adds routines written as text.</p>
-<p><img class="ph" loading="lazy" alt="A workout: its routines, days and times" src="guide/en/15-plan.webp" /><img class="dk" loading="lazy" alt="A workout: its routines, days and times" src="guide/en/desk/15-plan.webp" /></p>
+<p>Tap <em>New workout</em>. At the top are your routines as coloured tiles: <strong>drag one onto a day</strong>, or tap it and then tap the day. A day can hold more than one (morning and evening). To move one, drag it to another day; to remove it tap ✕ or drag it to the bin that appears at the bottom. <em>New routine</em> makes one (or imports it from text).</p>
+<p><img class="ph" loading="lazy" alt="A workout: routines on the days, with the time" src="guide/en/15-plan.webp" /><img class="dk" loading="lazy" alt="A workout: routines on the days, with the time" src="guide/en/desk/15-plan.webp" /></p>
 <h3 id="days-and-times">Days and times</h3>
-<p>For each routine tap the weekday (M T W T F S S) and, if you like, pick a <em>Time</em>. With a time Everyday puts it in your plan by itself; without one, you choose when in Everyday each week.</p>
+<p>The tile shows the time (or <em>time?</em>): tap it to pick one, or <em>No time</em>. With a time Everyday puts it in your plan by itself; without one, you choose when in Everyday each week. On a computer the week is a grid of seven columns.</p>
+<h3 id="alternating-weeks-and-rotation">Alternating weeks and rotation</h3>
+<p>Above the tiles pick the shape of the workout:</p>
+<table>
+<thead>
+<tr>
+<th>Shape</th>
+<th>How it works</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>Weekly</em></td>
+<td>Every week the same</td>
+</tr>
+<tr>
+<td><em>Alternate A · B</em></td>
+<td>Two weeks that take turns: on a phone pick <em>Week A</em> or <em>B</em> and fill it in; the current one says <em>(this one)</em>. Counted from when the workout became active</td>
+</tr>
+<tr>
+<td><em>Rotation</em></td>
+<td>No fixed days: each time you go you do <strong>the next one</strong>, after the last it starts again. Drag routines into the loop to order them; <em>Rest day</em> adds a circle after a routine (tap it: 1, 2, 3 days or gone). If you go sooner, <em>Today</em> tells you</td>
+</tr>
+</tbody>
+</table>
+<p><img class="ph" loading="lazy" alt="Alternating weeks: week B, with Thursday's routine" src="guide/en/45-plan-ab.webp" /><img class="dk" loading="lazy" alt="Alternating weeks: week B, with Thursday's routine" src="guide/en/desk/45-plan-ab.webp" /></p>
+<p><img class="ph" loading="lazy" alt="Rotation: the routines in order, with a rest day" src="guide/en/46-plan-rotation.webp" /><img class="dk" loading="lazy" alt="Rotation: the routines in order, with a rest day" src="guide/en/desk/46-plan-rotation.webp" /></p>
+<p>Each week Everyday gets that week's days (A or B); with a rotation it gets the routines with no day, and you put them in your plan. <em>Export .txt</em> keeps the shape, and importing finds it again.</p>
 <h3 id="change-the-active-workout">Change the active workout</h3>
 <p>In <em>Workouts</em> tap <strong>⋯</strong> on another workout, then <em>Make active</em>. Mid-week, choose <em>From Monday</em> to finish the week with the old one, or <em>From today</em>. The old workout stays saved.</p>
 <h3 id="export-and-duplicate">Export and duplicate</h3>
 <p><em>Export .txt</em> saves the workout as text, to send to someone or import again. <em>Duplicate</em> makes a copy to change without touching the original.</p>
 <h2 id="routines">Routines</h2>
-<p>A routine is a sequence of exercises you repeat, like "Legs". Palestra works out its <strong>estimated length</strong> from the sets and rests, and corrects it with your real times after a few sessions.</p>
+<p>A routine is a sequence of exercises you repeat, like "Legs". Palestra works out its <strong>estimated length</strong> from the sets and rests, and corrects it with how long you really took: the last six times, the newest counting most. Tap the minutes at the top of a routine to see the sums, session by session.</p>
 <p><img class="ph" loading="lazy" alt="Your routines, with the workout each one is in" src="guide/en/10-routines.webp" /><img class="dk" loading="lazy" alt="Your routines, with the workout each one is in" src="guide/en/desk/10-routines.webp" /></p>
 <h3 id="find-a-routine">Find a routine</h3>
 <p>They're grouped by workout, each with its colour. Type in the search, tap a workout's tag, or open <em>Filters</em> (workout, state, length). With <em>Rows → With details and notes</em> you see under each routine which workouts it's in.</p>
 <h3 id="inside-a-routine">Inside a routine</h3>
 <p>At the top: the estimated length, the sets and the zones. Then the exercises in the order you do them, with arrows where you change zone. On the right of each exercise is <strong>last time</strong>: the weight, minutes or reps from your last session.</p>
 <p><img class="ph" loading="lazy" alt="A routine: today's plan and, underneath, last time" src="guide/en/11-routine.webp" /><img class="dk" loading="lazy" alt="A routine: today's plan and, underneath, last time" src="guide/en/desk/11-routine.webp" /></p>
+<p><img class="ph" loading="lazy" alt="The estimated minutes: how long you took the last times" src="guide/en/44-minutes.webp" /><img class="dk" loading="lazy" alt="The estimated minutes: how long you took the last times" src="guide/en/desk/44-minutes.webp" /></p>
 <h3 id="edit-a-routine">Edit a routine</h3>
-<p>Tap <em>Edit</em>.</p>
+<p>Tap <em>Edit</em>. The exercises are <strong>blocks</strong> one under the other, joined by circles: each circle is the rest before the next one.</p>
+<ul>
+<li><strong>Drag</strong> a block by its handle (⋮⋮) to change the order; on a computer drag it from anywhere, and drag in from the list on the right too.</li>
+<li><strong>Tap the circle</strong> to change the rest (30 s, 45 s, 1, 1:30, 2, 2:30, 3 min). After 3 min comes <strong>⚡ superset</strong>: the two exercises are done back to back, no rest between, round after round.</li>
+<li><strong>+ or</strong>, beside a block: the <strong>alternative</strong>, for when the machine is busy or missing. You can also drag another block onto it. During a workout it's the first suggestion of <em>I did another exercise</em>.</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -157,7 +191,7 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 </tr>
 <tr>
 <td>Order</td>
-<td>Drag by the handle; <em>Sort by walking route</em> follows your way round the gym</td>
+<td>Drag by the handle (or the ↑ ↓ arrows on the handle, from a keyboard)</td>
 </tr>
 <tr>
 <td>An exercise</td>
@@ -195,6 +229,9 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 <h2 id="exercises">Exercises</h2>
 <p><em>Training → Exercises</em> lists all your exercises, grouped by <strong>body part</strong>: Chest, Back, Shoulders, Arms, Legs, Core and Cardio. Inside each part are the muscles (in <em>Legs</em>: Quads, Hamstrings, Glutes, Calves, Adductors). <em>Filters → Group by</em> also lists them by muscle, zone or type; in <em>Filters</em> pick type, body part, zone, whether they're in the active workout, and compact rows or rows with notes.</p>
 <p><img class="ph" loading="lazy" alt="Exercises: by body part, with the muscles inside" src="guide/en/07-exercises.webp" /><img class="dk" loading="lazy" alt="Exercises: by body part, with the muscles inside" src="guide/en/desk/07-exercises.webp" /></p>
+<h3 id="the-catalogue">The catalogue</h3>
+<p>At the top, <em>Mine · Catalogue</em>. The <strong>catalogue</strong> has about 750 common exercises, with a drawing and the muscles. Search, filter by body part or equipment, and tap <strong>+ Add</strong>: it becomes yours, with muscles, equipment and drawing already set. The ones you have say <em>✓ yours</em>. Not there? <em>Create "…"</em> at the bottom makes a new one with that name.</p>
+<p><img class="ph" loading="lazy" alt="The catalogue: search and add" src="guide/en/43-catalogue.webp" /><img class="dk" loading="lazy" alt="The catalogue: search and add" src="guide/en/desk/43-catalogue.webp" /></p>
 <h3 id="the-muscles">The muscles</h3>
 <p>Palestra <strong>recognises them from the name</strong>, in English, Italian or German: <em>Chest press</em> goes to Chest, <em>Lat pulldown</em> to Back › Lats, <em>Cable pushdown</em> to Arms › Triceps, <em>Beinpresse</em> to Legs. On the exercise's page, under <em>Muscles</em>, the recognised ones have a dashed border; tap muscles to choose them yourself. The first one you pick is the <strong>main</strong> one (★): it decides the group; the others count half in History. An exercise Palestra can't place, with no muscles chosen, goes to <strong>To sort out</strong>, at the bottom, so you see it.</p>
 <h3 id="the-three-types">The three types</h3>
@@ -280,8 +317,17 @@ html.desk .desk-only{background:var(--card);border-radius:14px;padding:2px 16px}
 <p>Next to the machine there's a small picture: your photo, or the exercise's drawing. Tap it to see it full screen; <em>Machine</em> and <em>Exercise</em> switch between them, and tapping the drawing shows the other position.</p>
 <p><img class="ph" loading="lazy" alt="Full screen: your photo of the machine or the drawing" src="guide/en/30-viewer.webp" /><img class="dk" loading="lazy" alt="Full screen: your photo of the machine or the drawing" src="guide/en/desk/30-viewer.webp" /></p>
 <h3 id="rest">Rest</h3>
-<p>A countdown starts, and you see how long you actually rested. <em>+30 s</em> adds time, <em>Skip</em> moves straight on. At zero the phone vibrates and <em>Skip</em> turns into a yellow <em>Done</em>. Tapped <em>Done</em> too early, or got a number wrong? <em>Redo the set</em> reopens it with the values you had entered. Underneath is what's next and where to go.</p>
+<p>A countdown starts, and you see how long you actually rested. <em>+30 s</em> adds time (once the time is up it counts 30 seconds from now), <em>Skip</em> moves straight on. At zero it rings, the phone vibrates and <em>Skip</em> turns into a yellow <em>Done</em>. Tapped <em>Done</em> too early, or got a number wrong? <em>Redo the set</em> reopens it with the values you had entered. Underneath is what's next and where to go.</p>
 <p><img class="ph" loading="lazy" alt="Rest: the time left and what comes next" src="guide/en/21-rest.webp" /><img class="dk" loading="lazy" alt="Rest: the time left and what comes next" src="guide/en/desk/21-rest.webp" /></p>
+<h3 id="the-sound-when-the-rest-ends">The sound when the rest ends</h3>
+<p>In <em>Settings → Training</em>, <strong>Sound when the rest ends</strong>: <em>Bell</em>, <em>Three beeps</em>, <em>Gong</em> or <em>None</em>, the volume and <em>Try</em>. You can have a tick in the last 3 seconds, and a second ring after 30 seconds if you don't tap anything. The sound works after your first tap in the workout (browsers want it that way).</p>
+<p><img class="ph" loading="lazy" alt="The sound when the rest ends" src="guide/en/42-alarm.webp" /><img class="dk" loading="lazy" alt="The sound when the rest ends" src="guide/en/desk/42-alarm.webp" /></p>
+<h3 id="leave-without-finishing">Leave without finishing</h3>
+<p>The <strong>⌄</strong> arrow at the top left <strong>minimises</strong> the workout: you go back where you were in the app and the workout goes on. A bar stays at the bottom with the routine and the rest counting down; when the rest is over it turns yellow and rings. Tap <strong>Back</strong> to go in again. To really finish there's <strong>×</strong> at the top right.</p>
+<p><img class="ph" loading="lazy" alt="Minimised workout: the bar with the rest, over Today" src="guide/en/48-live.webp" /><img class="dk" loading="lazy" alt="Minimised workout: the bar with the rest, over Today" src="guide/en/desk/48-live.webp" /></p>
+<h3 id="i-did-another-exercise">I did another exercise</h3>
+<p>The machine is busy and you did something else? Under the name tap <strong>I did another exercise</strong>. At the top is the routine's alternative (if it has one), then similar exercises for the same muscles, with last time's numbers; underneath you can search all of yours. The sets left become that one's, marked <em>instead of …</em>. At the end you choose: just today, at this gym (if you have more than one), or from now on in the routine.</p>
+<p><img class="ph" loading="lazy" alt="What did you do: the alternative and similar ones" src="guide/en/47-other.webp" /><img class="dk" loading="lazy" alt="What did you do: the alternative and similar ones" src="guide/en/desk/47-other.webp" /></p>
 <h3 id="cardio">Cardio</h3>
 <p>For cardio you see the time left and the targets, which you can change with − and +. If you like, enter the distance from the display. Tap <em>Finish</em> when you're done.</p>
 <p><img class="ph" loading="lazy" alt="Cardio: the time left and the targets" src="guide/en/22-cardio.webp" /><img class="dk" loading="lazy" alt="Cardio: the time left and the targets" src="guide/en/desk/22-cardio.webp" /></p>

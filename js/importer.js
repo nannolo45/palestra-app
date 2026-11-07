@@ -128,7 +128,7 @@ export function parseText(text) {
   const data = { format: 'palestra-import', version: 1, exercises: [], routines: [] };
   const issues = [];
   const exByKey = new Map();
-  let routine = null; let lastEx = null; let planName = ''; let planNote = '';
+  let routine = null; let lastEx = null; let planName = ''; let planNote = ''; let planMode = ''; let seq = 0;
   const lines = String(text).replace(/\r/g, '').split('\n');
   const oldStyle = lines.some((l) => /^\s*(giorno|day)\s*\d*\s*:/i.test(l)) && !lines.some((l) => /^\s*(workout|plan|piano)\s*:/i.test(l));
   const planRe = oldStyle ? /^(scheda|plan|piano)\s*:\s*(.+)$/i : /^(workout|plan|piano)\s*:\s*(.+)$/i;
@@ -138,17 +138,28 @@ export function parseText(text) {
     if (!line || line.startsWith('#')) return;
     let m = line.match(planRe);
     if (m) { planName = m[2].trim(); return; }
+    // "Modo: settimane alterne" / "rotazione" (v27)
+    m = line.match(/^(modo|mode)\s*:\s*(.+)$/i);
+    if (m && !routine) { planMode = /altern|a\s*[·/-]\s*b|ab\b/i.test(m[2]) ? 'ab' : /rotaz|rotation|giro/i.test(m[2]) ? 'rotation' : ''; return; }
     m = line.match(/^(note?|nota)\s*:\s*(.*)$/i);
     if (m && !routine) { planNote = m[2].trim(); return; }
     m = line.match(dayRe);
     if (m) {
       // "SCHEDA: Gambe @ ven 18:00": weekday and time are optional
       const [name, when = ''] = m[2].split('@');
-      routine = { name: name.trim(), items: [], autoIncrease: true };
+      const day = { _seq: seq++ };
       const wd = WEEKDAY_WORDS.findIndex((re) => re.test(when));
-      if (wd >= 0) routine._weekday = wd;
+      if (wd >= 0) day._weekday = wd;
       const tm = when.match(/(\d{1,2})[:.](\d{2})/);
-      if (tm && Number(tm[1]) < 24 && Number(tm[2]) < 60) routine._time = `${tm[1].padStart(2, '0')}:${tm[2]}`;
+      if (tm && Number(tm[1]) < 24 && Number(tm[2]) < 60) day._time = `${tm[1].padStart(2, '0')}:${tm[2]}`;
+      const wk = when.match(/(?:^|\s)(?:sett(?:imana)?\s*|week\s*)?([AB])(?=\s|$)/);
+      if (wk) day._week = wk[1] === 'B' ? 1 : 0;
+      const rd = when.match(/(?:riposo|rest)\s*(\d)/i);
+      if (rd) day._restDays = Math.min(3, Number(rd[1]));
+      // the same scheda on another day (exported plans write its exercises once): one more day for it
+      const again = data.routines.find((r) => r.name.toLowerCase() === name.trim().toLowerCase());
+      if (again) { again._more = [...(again._more || []), day]; routine = again; lastEx = null; return; }
+      routine = { name: name.trim(), items: [], autoIncrease: true, ...day };
       data.routines.push(routine); lastEx = null; return;
     }
     m = line.match(/^[-–•*]\s*(.+)$/);
@@ -201,7 +212,7 @@ export function parseText(text) {
   });
   data.routines = data.routines.filter((r) => r.items.length);
   if (!data.routines.length) return { error: 'importNothing', issues };
-  if (planName || data.routines.length > 1) data.plan = { name: planName || data.routines.map((r) => r.name).join(' · '), note: planNote };
+  if (planName || data.routines.length > 1 || data.routines.some((r) => r._more)) data.plan = { name: planName || data.routines.map((r) => r.name).join(' · '), note: planNote, ...(planMode ? { mode: planMode } : {}) };
   return { data, issues };
 }
 
@@ -287,13 +298,23 @@ export function runImport(data, { asPlan = true } = {}) {
   if (asPlan && data.plan) {
     const given = data.routines.some((r) => Number.isInteger(r._weekday ?? r.weekday));
     const weekdays = defaultWeekdays(created.length);
-    const days = created.map((routineId, i) => {
-      const r = data.routines[i];
+    const mode = data.plan.mode === 'ab' || data.plan.mode === 'rotation' ? data.plan.mode : null;
+    const dayOf = (routineId, r, i, seqFallback) => {
       const wd = r._weekday ?? r.weekday;
       const time = r._time ?? r.time;
-      return { routineId, weekday: Number.isInteger(wd) ? wd : given ? null : weekdays[i], ...(typeof time === 'string' && /^\d{2}:\d{2}$/.test(time) ? { time } : {}) };
-    });
-    const p = upsert('plans', { id: uid(), name: String(data.plan.name || '').trim() || 'Workout', note: data.plan.note || '', days }, { silent: true });
+      return {
+        routineId, weekday: mode === 'rotation' ? null : Number.isInteger(wd) ? wd : given ? null : weekdays[i] ?? null,
+        ...(typeof time === 'string' && /^\d{2}:\d{2}$/.test(time) ? { time } : {}),
+        ...(mode === 'ab' ? { week: Number(r._week ?? r.week) === 1 ? 1 : 0 } : {}),
+        ...(mode === 'rotation' && Number(r._restDays ?? r.restDays) > 0 ? { restDays: Number(r._restDays ?? r.restDays) } : {}),
+        _seq: r._seq ?? seqFallback,
+      };
+    };
+    const days = created.flatMap((routineId, i) => {
+      const r = data.routines[i];
+      return [dayOf(routineId, r, i, i), ...(r._more || []).map((m) => dayOf(routineId, m, i, i))];
+    }).sort((a, b) => a._seq - b._seq).map(({ _seq, ...d }) => d);
+    const p = upsert('plans', { id: uid(), name: String(data.plan.name || '').trim() || 'Workout', note: data.plan.note || '', ...(mode ? { mode } : {}), days }, { silent: true });
     planId = p.id;
   }
   return { ...plan, created, planId };

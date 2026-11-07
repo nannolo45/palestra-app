@@ -1,7 +1,10 @@
 // Allenamenti: the list of routines, one routine, and its editor (order, sets, automatic increase).
 import { state, get, upsert, remove, restore, uid, pref, live } from '../store.js';
+import { startDrag } from '../ui/dropdrag.js';
+import { regionOf, regionColor } from '../body.js';
 import { gyms, gymById, gymName, mainGym, routineGymId, missingIn, exerciseIn, alternatives, fitItem } from '../gyms.js';
 import { needOf } from '../body.js';
+import { minutesExplained } from '../data.js';
 import { t } from '../i18n.js';
 import { esc, fmtNum, restText, minText, shortDate, timeOfDay, weekdayShort } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
@@ -13,7 +16,7 @@ import {
 } from '../data.js';
 import { plannedAhead, measuresFor, defaultTargets, setsText, setsOf, setPlan, itemFromRows, variedSets, suggestWeight } from '../model.js';
 import { thumbOf, openViewer } from './pictures.js';
-import { activeInfo, planDays, plans, plansWith, savePlan } from '../plans.js';
+import { activeInfo, allDays, plans, plansWith, savePlan } from '../plans.js';
 import { listKit, colorOf } from '../ui/listkit.js';
 
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
@@ -41,7 +44,7 @@ function plannedText(p) {
 export function routinesView(query = {}) {
   const all = routines();
   const a = activeInfo();
-  const activeIds = new Set(a ? planDays(a.plan).map((d) => d.routineId) : []);
+  const activeIds = new Set(a ? allDays(a.plan).map((d) => d.routineId) : []);
   const ps = plans();
   const wide = isWide();
   const wKey = (r) => { const ws = plansWith(r.id); return ws.length ? ws.map((p) => `w:${p.id}`) : ['w:none']; };
@@ -181,7 +184,7 @@ export function routineView(id, { pane = false } = {}) {
   const html = `${bar}
     <h1 class="title">${esc(r.name)}</h1>
     <div class="stats3">
-      <div class="stat"><b>${routineMinutes(r)} min</b><span>${esc(t('estimated'))}</span></div>
+      <button type="button" class="stat tap" data-explain="${esc(r.id)}"><b>${routineMinutes(r)} min</b><span>${esc(t('estimated'))} ${icon('info', 13)}</span></button>
       <div class="stat"><b>${sets}</b><span>${esc(t('setsWord'))}</span></div>
       <div class="stat"><b>${zones}</b><span>${esc(t('zonesWord'))}</span></div>
     </div>
@@ -198,7 +201,23 @@ export function routineView(id, { pane = false } = {}) {
 }
 
 /** Buttons a routine's page has, also when it's shown in the library's side pane. */
+/** Tapping "min stimati": the estimate from the scheda, and how long it really took you the last times. */
+async function explainMinutes(r) {
+  const x = minutesExplained(r);
+  const d = (ts) => new Date(ts).toLocaleDateString(document.documentElement.lang || 'it', { weekday: 'short', day: 'numeric', month: 'short' });
+  const html = `<h2>${x.minutes} min</h2>
+    ${x.rows.length ? `<p class="muted">${esc(t('fromScheda', x.base))}</p>
+      <table class="mini-table"><thead><tr><th>${esc(t('whenWord'))}</th><th>${esc(t('tookWord'))}</th><th>${esc(t('estStar'))}</th><th>${esc(t('weightWord'))}</th></tr></thead>
+      <tbody>${x.rows.map((y) => `<tr><td>${esc(d(y.start))}</td><td><b>${y.minutes}</b> min</td><td>${y.est}</td><td><span class="wbar" style="width:${Math.round(y.weight * 56)}px"></span> ${Math.round(y.weight * 100)}%</td></tr>`).join('')}</tbody></table>
+      <p class="muted small">${esc(t('estStarHint'))}</p>
+      <p class="note-box">${esc(x.ratio < 1 ? t('youTakeLess', Math.round((1 - x.ratio) * 100)) : x.ratio > 1 ? t('youTakeMore', Math.round((x.ratio - 1) * 100)) : t('youTakeSame'))}${x.rows.length < 3 ? ` ${esc(t('fewTimes'))}` : ''} ${esc(`${x.base} × ${fmtNum(Math.round(x.ratio * 100) / 100)} = ${x.minutes} min`)}</p>`
+    : `<p class="muted">${esc(t('neverTimed', x.base))}</p>`}
+    <div class="button-row"><button type="button" class="btn primary" data-close>${esc(t('okBtn'))}</button></div>`;
+  await openSheet(html, () => {});
+}
+
 function bindRoutineActions(view) {
+  view.querySelectorAll('[data-explain]').forEach((b) => b.addEventListener('click', () => explainMinutes(get('routines', b.dataset.explain))));
   view.querySelectorAll('[data-where]').forEach((b) => b.addEventListener('click', () => { const [rid, g] = b.dataset.where.split('|'); whereOf[rid] = g; window.dispatchEvent(new CustomEvent('palestra:render')); }));
   view.querySelectorAll('[data-use]').forEach((b) => b.addEventListener('click', () => { const [rid, ix, j] = b.dataset.use.split('|'); useAlternative(rid, Number(ix), altCache[rid]?.[ix]?.[Number(j)], b.dataset.gym); }));
   view.querySelectorAll('[data-unalt]').forEach((b) => b.addEventListener('click', () => {
@@ -251,7 +270,7 @@ async function duplicateTo(routineId) {
   if (!r) return;
   const targets = plans().filter((p) => !(p.days || []).some((d) => d.routineId === routineId));
   const html = `<h2>${esc(t('duplicateToTitle', r.name))}</h2>
-    ${targets.length ? `<div class="pick-list">${targets.map((p) => `<button type="button" class="row pick" data-pick="${esc(p.id)}"><span class="row-text"><span class="row-title">${esc(p.name)}</span><span class="row-sub">${esc(t('nRoutines', planDays(p).length))}</span></span></button>`).join('')}</div>` : ''}
+    ${targets.length ? `<div class="pick-list">${targets.map((p) => `<button type="button" class="row pick" data-pick="${esc(p.id)}"><span class="row-text"><span class="row-title">${esc(p.name)}</span><span class="row-sub">${esc(t('nRoutines', allDays(p).length))}</span></span></button>`).join('')}</div>` : ''}
     <button type="button" class="option-btn" data-new><b>${esc(t('newWorkoutWith'))}</b></button>
     <button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button>`;
   await openSheet(html, (form, close) => {
@@ -280,18 +299,7 @@ async function duplicateTo(routineId) {
 export function routineEditView(id) {
   const r = get('routines', id);
   if (!r) return { html: empty(t('notFound'), t('notFoundText')) };
-  const rows = (r.items || []).map((it, i) => {
-    const ex = get('exercises', it.exerciseId);
-    if (!ex) return '';
-    const inc = !r.autoIncrease ? '' : (ex.increase?.mode === 'off' ? `<span class="chip muted">${esc(t('excluded'))}</span>`
-      : (ex.type === 'bodyweight' && it.seconds) ? `<span class="chip muted">${esc(t('timed'))}</span>` : '');
-    return `<div class="row card-row edit-row" data-sort-key="${i}">
-      <button type="button" class="drag-handle" aria-label="${esc(t('moveItem', ex.name))}">${icon('grip', 20)}</button>
-      <button type="button" class="row-text plain" data-edit-item="${i}">
-        <span class="row-title">${esc(ex.name)}</span><span class="row-sub">${esc(itemPlan(it, ex))}${ex.type !== 'cardio' ? ` · ${esc(t('restShort', restText(it.rest ?? training().rest)))}` : ''}</span>
-      </button>${inc}
-    </div>`;
-  }).join('');
+  const chain = chainHtml(r);
   const html = `<header class="bar">${backLink(`#/routine/${encodeURIComponent(r.id)}`, r.name)}<a class="bar-action strong" href="#/routine/${encodeURIComponent(r.id)}">${esc(t('done'))}</a></header>
     <h1 class="title small">${esc(t('editRoutine'))}</h1>
     <form class="stack form" data-form="routine">
@@ -299,9 +307,9 @@ export function routineEditView(id) {
       ${gyms().length > 1 ? `<label class="field"><span>${esc(t('routineGym'))}</span><select name="gymId">${gyms().map((g) => `<option value="${esc(g.id)}" ${g.id === routineGymId(r) ? 'selected' : ''}>${esc(gymName(g))}</option>`).join('')}</select></label>` : ''}
       <div class="card">${toggle({ name: 'autoIncrease', checked: r.autoIncrease, label: t('autoIncrease'), hint: t('autoIncreaseHint') })}
         ${r.autoIncrease ? `<p class="card-foot">${esc(t('autoIncreaseHow'))} <a href="#/settings/increase">${esc(t('changeSteps'))}</a></p>` : ''}</div>
-      <div class="field"><span>${esc(t('orderTitle'))} <small class="muted">${esc(t('dragToMove'))}</small></span></div>
+      <div class="field"><span>${esc(t('orderTitle'))} <small class="muted">${esc(isWide() ? t('chainHintWide') : t('chainHint'))}</small></span></div>
     </form>
-    <div class="stack tight" data-sortable="items">${rows}</div>
+    ${chain}
     ${(r.items || []).length > 2 ? `<button type="button" class="btn wide" data-action="by-route">${icon('pin', 18)}${esc(t('sortByRoute'))}</button>` : ''}
     <div class="two-actions"><button type="button" class="btn dashed" data-action="add-item">${icon('plus', 18)}${esc(t('addExercise'))}</button><a class="btn" href="#/import?for=routine&into=${encodeURIComponent(r.id)}">${icon('book', 18)}${esc(t('importShort'))}</a></div>
     <button type="button" class="btn danger-text wide" data-action="delete">${esc(t('deleteRoutine'))}</button>`;
@@ -315,13 +323,7 @@ export function routineEditView(id) {
       form.name.addEventListener('change', () => { const cur = get('routines', id); upsert('routines', { ...cur, name: form.name.value.trim() || cur.name }); });
       form.gymId?.addEventListener('change', () => { const cur = get('routines', id); upsert('routines', { ...cur, gymId: form.gymId.value === mainGym().id ? undefined : form.gymId.value }); delete whereOf[id]; });
       form.autoIncrease.addEventListener('change', () => { const cur = get('routines', id); upsert('routines', { ...cur, autoIncrease: form.autoIncrease.checked }); });
-      view.querySelector('[data-sortable=items]').addEventListener('sorted', (e) => {
-        const cur = get('routines', id);
-        const items = e.detail.keys.map((k) => cur.items[Number(k)]);
-        upsert('routines', { ...cur, items });
-        refreshEstimates();
-      });
-      view.querySelectorAll('[data-edit-item]').forEach((b) => b.addEventListener('click', () => editItem(id, Number(b.dataset.editItem))));
+      bindChain(view, id);
       view.querySelector('[data-action=add-item]').addEventListener('click', () => addItem(id));
       view.querySelector('[data-action=by-route]')?.addEventListener('click', () => {
         const cur = get('routines', id);
@@ -347,13 +349,149 @@ export function routineEditView(id) {
   };
 }
 
+// ---- the builder (v27): blocks joined by rest circles, an alternative beside a block, superserie ----
+
+const REST_STEPS = [30, 45, 60, 90, 120, 150, 180, 0];
+const restLabel = (s) => (s === 0 ? '⚡' : restText(s));
+
+function chainHtml(r) {
+  const items = r.items || [];
+  const between = r.restBetween ?? training().between ?? 120;
+  const lane = (it, i) => {
+    const ex = get('exercises', it.exerciseId);
+    if (!ex) return '';
+    const c = regionColor(regionOf(ex));
+    const alt = it.alternative && get('exercises', it.alternative);
+    const inc = r.autoIncrease && ex.increase?.mode === 'off' ? ` · ${t('excluded')}` : '';
+    return `<div class="ch-lane">
+      <div class="blk" style="--c:${c}" data-blk="${i}">
+        <button type="button" class="blk-grip" data-grip="${i}" aria-label="${esc(t('moveItem', ex.name))}">${icon('grip', 16)}</button>
+        <button type="button" class="blk-body" data-edit-item="${i}"><b>${esc(ex.name)}</b><small>${esc(itemPlan(it, ex))}${ex.type !== 'cardio' ? ` · ${esc(t('setRestShort', restText(it.rest ?? training().rest)))}` : ''}${esc(inc)}</small></button>
+        <button type="button" class="blk-x" data-del="${i}" aria-label="${esc(t('removeFromRoutine', ex.name))}">${icon('close', 14)}</button>
+      </div>
+      ${alt ? `<span class="alt-link" aria-hidden="true"><span>${esc(t('orWord'))}</span></span><div class="blk alt" style="--c:${c}"><button type="button" class="blk-body" data-alt-pick="${i}"><b>${esc(alt.name)}</b><small>${esc(t('alternativeWord'))}</small></button><button type="button" class="blk-x" data-unalt="${i}" aria-label="${esc(t('removeAlt', alt.name))}">${icon('close', 14)}</button></div>`
+    : `<button type="button" class="altslot" data-drop="alt:${i}" data-alt-pick="${i}" title="${esc(t('addAlternative'))}" aria-label="${esc(t('addAlternativeFor', ex.name))}">${icon('plus', 14)}<span>${esc(t('orWord'))}</span></button>`}
+    </div>`;
+  };
+  return `<div class="chain" data-chain>
+    <div class="ch-end">${esc(t('chainStart'))}</div><div class="ch-drop" data-drop="ins:0"></div>
+    ${items.map((it, i) => {
+      const ss = it.superset && i < items.length - 1;
+      const ra = it.restAfter != null && it.restAfter !== '' ? Number(it.restAfter) : null;
+      const link = i < items.length - 1 ? `<div class="ch-link${ss ? ' ss' : ''}"><button type="button" class="rc" data-rest="${i}" aria-label="${esc(ss ? t('supersetLabel') : t('restBefore', restText(ra ?? between)))}">${ss ? '⚡' : `${esc(restText(ra ?? between))}`}</button><span class="lt">${esc(ss ? t('supersetLabel') : ra == null ? t('restDefault') : t('restTap'))}</span></div>` : '';
+      return `${lane(it, i)}${link}<div class="ch-drop" data-drop="ins:${i + 1}"></div>`;
+    }).join('')}
+    <div class="ch-end">${esc(t('chainEnd'))}</div>
+    <div class="ch-trash" data-drop="trash">${icon('trash', 16)}${esc(t('dragHereToRemove'))}</div>
+  </div>`;
+}
+
+function bindChain(view, id) {
+  const root = view.querySelector('[data-chain]');
+  if (!root) return;
+  const cur = () => get('routines', id);
+  const save = (items) => { upsert('routines', { ...cur(), items }); refreshEstimates(); };
+  root.querySelectorAll('[data-grip]').forEach((g) => g.addEventListener('pointerdown', (e) => { const i = Number(g.dataset.grip); startDrag(e, { kind: 'move', i }, get('exercises', cur().items[i].exerciseId)?.name || '', root); }));
+  // from the keyboard: arrows on the handle move the block up or down
+  root.querySelectorAll('[data-grip]').forEach((g) => g.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    const i = Number(g.dataset.grip); const j = i + (e.key === 'ArrowUp' ? -1 : 1);
+    const items = cur().items.map((x) => ({ ...x }));
+    if (j < 0 || j >= items.length) return;
+    [items[i], items[j]] = [items[j], items[i]];
+    save(items);
+    requestAnimationFrame(() => document.querySelector(`[data-grip="${j}"]`)?.focus());
+  }));
+  // with a mouse the whole block can be dragged
+  root.querySelectorAll('[data-blk]').forEach((b) => b.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.target.closest('.blk-x, .blk-grip')) return;
+    const i = Number(b.dataset.blk); startDrag(e, { kind: 'move', i, editOnTap: true }, get('exercises', cur().items[i].exerciseId)?.name || '', root);
+  }));
+  // with a mouse the press on the block is a drag or a tap (below); keyboard and touch open it with a click
+  root.querySelectorAll('[data-edit-item]').forEach((b) => b.addEventListener('click', (e) => { if (e.pointerType !== 'mouse') editItem(id, Number(b.dataset.editItem)); }));
+  root.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => removeItem(id, Number(b.dataset.del))));
+  root.querySelectorAll('[data-unalt]').forEach((b) => b.addEventListener('click', () => { const items = cur().items.map((x, i) => (i === Number(b.dataset.unalt) ? (({ alternative, ...y }) => y)(x) : x)); save(items); }));
+  root.querySelectorAll('[data-alt-pick]').forEach((b) => b.addEventListener('click', () => pickAlternative(id, Number(b.dataset.altPick))));
+  root.querySelectorAll('[data-rest]').forEach((b) => b.addEventListener('click', () => {
+    const i = Number(b.dataset.rest);
+    const items = cur().items.map((x) => ({ ...x }));
+    const it = items[i];
+    const between = cur().restBetween ?? training().between ?? 120;
+    const nowS = it.superset ? 0 : (it.restAfter ?? between);
+    const nextS = REST_STEPS[(REST_STEPS.indexOf(nowS) + 1) % REST_STEPS.length] ?? 60;
+    const nxEx = items[i + 1] && get('exercises', items[i + 1].exerciseId);
+    const thisEx = get('exercises', it.exerciseId);
+    if (nextS === 0 && (thisEx?.type === 'cardio' || nxEx?.type === 'cardio')) { it.superset = false; it.restAfter = REST_STEPS[0]; }
+    else if (nextS === 0) { it.superset = true; delete it.restAfter; }
+    else { delete it.superset; it.restAfter = nextS; }
+    save(items);
+  }));
+  root.addEventListener('tapped', (e) => { if (e.detail.editOnTap) editItem(id, e.detail.i); });
+  root.addEventListener('dropped', (e) => {
+    const { payload: p, target } = e.detail;
+    const [k, v] = target.split(':'); const at = Number(v);
+    const items = cur().items.map((x) => ({ ...x }));
+    if (k === 'trash') { if (p.kind === 'move') removeItem(id, p.i); return; }
+    if (k === 'alt') {
+      const exId = p.kind === 'new' ? p.exerciseId : items[p.i].exerciseId;
+      if (items[at].exerciseId === exId) return;
+      items[at].alternative = exId;
+      if (p.kind === 'move') items.splice(p.i, 1);
+      save(items); toast(t('altSet', get('exercises', exId)?.name || ''));
+      return;
+    }
+    if (k === 'ins') {
+      if (p.kind === 'new') { addExerciseToRoutine(id, p.exerciseId, at); return; }
+      const [x] = items.splice(p.i, 1);
+      items.splice(at > p.i ? at - 1 : at, 0, x);
+      save(items);
+    }
+  });
+}
+
+async function removeItem(id, i) {
+  const r = get('routines', id);
+  const before = r.items;
+  const ex = get('exercises', r.items[i]?.exerciseId);
+  upsert('routines', { ...r, items: r.items.filter((_, j) => j !== i) });
+  refreshEstimates();
+  toast(t('removedFrom', ex?.name || ''), { undo: () => { upsert('routines', { ...get('routines', id), items: before }); refreshEstimates(); } });
+}
+
+/** "oppure": the exercise to do instead, offered first when that one is busy or missing. */
+async function pickAlternative(id, i) {
+  const r = get('routines', id);
+  const it = r.items[i];
+  const ex = get('exercises', it.exerciseId);
+  if (!ex) return;
+  const sugg = alternatives(ex, routineGymId(r), 3).filter((x) => x.ex);
+  const list = exercises().filter((e) => e.id !== ex.id && (e.type === 'cardio') === (ex.type === 'cardio')).sort((a, b) => a.name.localeCompare(b.name));
+  const html = `<h2>${esc(t('alternativeFor', ex.name))}</h2><p class="muted small">${esc(t('alternativeHint'))}</p>
+    ${sugg.length ? `<div class="pick-list">${sugg.map((x) => `<button type="button" class="row pick" data-pick="${esc(x.ex.id)}"><span class="row-text"><span class="row-title">${esc(x.ex.name)}</span><span class="row-sub">${esc(t('sameMuscles'))}</span></span></button>`).join('')}</div>` : ''}
+    <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchExercises'))}</span><input id="alt-q" type="search" placeholder="${esc(t('searchAllYours'))}" autocomplete="off"></label>
+    <div class="pick-list" data-list hidden>${list.map((e) => `<button type="button" class="row pick" data-pick="${esc(e.id)}"><span class="row-text"><span class="row-title">${esc(e.name)}</span><span class="row-sub">${esc(whereText(e) || typeLabel(e))}</span></span></button>`).join('')}</div>
+    ${it.alternative ? `<button type="button" class="btn danger-text wide" data-none>${esc(t('noAlternative2'))}</button>` : ''}
+    <div class="button-row"><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+  const got = await openSheet(html, (form, close) => {
+    const box = form.querySelector('[data-list]');
+    form.querySelector('#alt-q').addEventListener('input', (e) => { const q = e.target.value.trim().toLowerCase(); box.hidden = !q; box.querySelectorAll('[data-pick]').forEach((b) => { b.hidden = q && !b.textContent.toLowerCase().includes(q); }); });
+    form.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => close(b.dataset.pick)));
+    form.querySelector('[data-none]')?.addEventListener('click', () => close('-'));
+  });
+  if (!got) return;
+  const cur = get('routines', id);
+  const items = cur.items.map((x, j) => (j !== i ? x : got === '-' ? (({ alternative, ...y }) => y)(x) : { ...x, alternative: got }));
+  upsert('routines', { ...cur, items });
+}
+
 // ---- desktop: the exercise library beside the editor ----
 
 let libQuery = '';
 
 function libraryPanel(r) {
   const inR = new Set((r.items || []).map((it) => it.exerciseId));
-  const rows = exercises().map((ex) => `<div class="row lib-ex${inR.has(ex.id) ? ' is-in' : ''}" data-name="${esc(ex.name.toLowerCase())}">
+  const rows = exercises().map((ex) => `<div class="row lib-ex${inR.has(ex.id) ? ' is-in' : ''}" data-name="${esc(ex.name.toLowerCase())}" data-lib-drag="${esc(ex.id)}">
       <span class="swatch sw-${esc(ex.type)}" aria-hidden="true"></span><span class="row-text"><span class="row-title">${esc(ex.name)}</span><span class="row-sub">${esc([typeLabel(ex), whereText(ex)].filter(Boolean).join(' · '))}</span></span>
       <button type="button" class="icon-btn" data-lib-add="${esc(ex.id)}" aria-label="${esc(t('addToRoutine', ex.name))}">${icon(inR.has(ex.id) ? 'check' : 'plus', 18)}</button>
     </div>`).join('');
@@ -373,6 +511,11 @@ function bindLibrary(view, routineId) {
   };
   q.addEventListener('input', apply);
   apply();
+  const chain = view.querySelector('[data-chain]');
+  view.querySelectorAll('[data-lib-drag]').forEach((row) => row.addEventListener('pointerdown', (e) => {
+    if (!chain || e.target.closest('[data-lib-add]')) return;
+    startDrag(e, { kind: 'new', exerciseId: row.dataset.libDrag }, get('exercises', row.dataset.libDrag)?.name || '', chain);
+  }));
   view.querySelectorAll('[data-lib-add]').forEach((b) => b.addEventListener('click', () => {
     addExerciseToRoutine(routineId, b.dataset.libAdd);
     toast(t('added', get('exercises', b.dataset.libAdd)?.name || ''));
@@ -383,7 +526,7 @@ function bindLibrary(view, routineId) {
 function defaultItem(ex) {
   for (const r of routines()) {
     const it = (r.items || []).find((x) => x.exerciseId === ex.id);
-    if (it) return { ...it, targets: it.targets ? { ...it.targets } : undefined };
+    if (it) { const { alternative, superset, restAfter, alt, ...rest } = it; return { ...rest, targets: it.targets ? { ...it.targets } : undefined }; }
   }
   if (ex.type === 'cardio') return { exerciseId: ex.id, targets: { ...defaultTargets(ex.cardio?.kind || 'treadmill', machineOf(ex)), ...(ex.cardio?.targets || {}) } };
   if (ex.type === 'bodyweight') return { exerciseId: ex.id, sets: 3, ...(ex.timed ? { seconds: 45 } : { reps: 12 }), rest: ex.defaultRest ?? 60 };
@@ -408,11 +551,13 @@ async function addItem(routineId) {
   });
 }
 
-export function addExerciseToRoutine(routineId, exId) {
+export function addExerciseToRoutine(routineId, exId, at = null) {
   const r = get('routines', routineId);
   const ex = get('exercises', exId);
   if (!r || !ex) return;
-  upsert('routines', { ...r, items: [...(r.items || []), defaultItem(ex)] });
+  const items = [...(r.items || [])];
+  items.splice(at == null ? items.length : at, 0, defaultItem(ex));
+  upsert('routines', { ...r, items });
   refreshEstimates();
 }
 

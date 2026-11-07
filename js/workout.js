@@ -8,12 +8,13 @@ import { setsOf, setPlan, variedSets } from './model.js';
  * that set (sessions: the finished ones, newest wins).
  */
 export function buildSteps(routine, exercises, sessions = []) {
-  const steps = [];
+  const perItem = [];
   (routine.items || []).forEach((it, itemIndex) => {
     const ex = exercises.find((e) => e.id === it.exerciseId && !e.deleted);
     if (!ex) return;
+    const after = it.restAfter != null && it.restAfter !== '' ? { restAfter: Number(it.restAfter) } : {};
     if (ex.type === 'cardio') {
-      steps.push({ itemIndex, exerciseId: ex.id, kind: 'cardio', n: 1, of: 1, plan: { targets: { ...(it.targets || {}) } } });
+      perItem.push({ itemIndex, it, steps: [{ itemIndex, exerciseId: ex.id, kind: 'cardio', n: 1, of: 1, plan: { targets: { ...(it.targets || {}) } }, ...after }] });
       return;
     }
     const sets = setsOf(it);
@@ -22,6 +23,7 @@ export function buildSteps(routine, exercises, sessions = []) {
       const s = [...sessions].filter((x) => !x.deleted && x.end && (x.sets || []).some((y) => y.exerciseId === ex.id)).sort((a, b) => b.start - a.start)[0];
       if (s) last = s.sets.filter((y) => y.exerciseId === ex.id);
     }
+    const steps = [];
     for (let n = 1; n <= sets; n++) {
       const sp = setPlan(it, n);
       let reps = sp.reps;
@@ -32,10 +34,23 @@ export function buildSteps(routine, exercises, sessions = []) {
           reps, seconds: sp.seconds, weight: ex.type === 'weights' ? sp.weight || 0 : null, rest: it.rest,
           ...(sp.repsMax ? { repsMin: sp.reps, repsMax: sp.repsMax } : {}), ...(sp.failure ? { failure: true } : {}), ...(variedSets(it) ? { varied: true } : {}),
         },
+        ...after,
       });
     }
+    perItem.push({ itemIndex, it, steps, cardio: false });
   });
-  return steps;
+  // superserie (v27): an item joined to the next one without rest; their sets take turns (A1, B1, rest, A2, B2…)
+  const out = [];
+  for (let i = 0; i < perItem.length; i++) {
+    const group = [perItem[i]];
+    while (perItem[i].it.superset && perItem[i + 1] && perItem[i].steps[0].kind === 'set' && perItem[i + 1].steps[0].kind === 'set') { i++; group.push(perItem[i]); }
+    if (group.length === 1) { out.push(...group[0].steps); continue; }
+    const g = group[0].itemIndex;
+    const rounds = Math.max(...group.map((x) => x.steps.length));
+    const rest = group[0].it.rest;
+    for (let n = 0; n < rounds; n++) for (const x of group) if (x.steps[n]) out.push({ ...x.steps[n], group: g, plan: { ...x.steps[n].plan, rest } });
+  }
+  return out;
 }
 
 /** Milliseconds between two moments, minus the pauses inside them. */
@@ -113,8 +128,12 @@ export function completeStep(w, values = {}, now = Date.now()) {
   // the last step: a last "rest" where you can add a set or an exercise, or finish
   if (!nxt && step.kind === 'cardio') return { ...w, steps, log, breakdown, idx: w.idx + 1, phase: 'done', phaseStart: now };
   if (!nxt) return { ...w, steps, log, breakdown, phase: 'rest', phaseStart: now, restPlanned: 0, restKind: 'end' };
-  const sameExercise = nxt.itemIndex === step.itemIndex;
-  const restPlanned = sameExercise ? (step.plan.rest ?? w.defaultRest) : w.between;
+  // in a superserie, straight on to the other exercise of the round
+  if (step.group != null && nxt.group === step.group && nxt.n === step.n && nxt.itemIndex !== step.itemIndex) {
+    return { ...w, steps, log: log.map((x, i) => (i === log.length - 1 ? { ...x, restTaken: 0, restPlanned: 0 } : x)), breakdown, idx: w.idx + 1, phase: 'work', phaseStart: now, restPlanned: 0, restKind: null };
+  }
+  const sameExercise = nxt.itemIndex === step.itemIndex || (step.group != null && nxt.group === step.group);
+  const restPlanned = sameExercise ? (step.plan.rest ?? w.defaultRest) : (step.restAfter ?? w.between);
   return { ...w, steps, log, breakdown, phase: 'rest', phaseStart: now, restPlanned, restKind: sameExercise ? 'set' : 'between' };
 }
 
@@ -129,8 +148,11 @@ export function endRest(w, now = Date.now()) {
   return { ...w, log, breakdown, idx: w.idx + 1, phase: 'work', phaseStart: now, restPlanned: 0, restKind: null };
 }
 
-export function addRest(w, sec = 30) {
-  return w.phase === 'rest' ? { ...w, restPlanned: w.restPlanned + sec } : w;
+/** +30 s: added to the rest that's still going; when it's already over, 30 s from now (v27). */
+export function addRest(w, sec = 30, now = Date.now()) {
+  if (w.phase !== 'rest') return w;
+  const left = restLeft(w, now);
+  return { ...w, restPlanned: left > 0 ? w.restPlanned + sec : phaseSec(w, now) + sec };
 }
 
 /** Skip the current set without logging it. */
@@ -170,7 +192,7 @@ export function back(w, now = Date.now()) {
 export function afterLastSet(w) {
   if (w.phase !== 'rest' || isPaused(w)) return false;
   const s = current(w); const nx = w.steps[w.idx + 1];
-  return Boolean(s && s.kind === 'set' && (!nx || nx.itemIndex !== s.itemIndex));
+  return Boolean(s && s.kind === 'set' && (!nx || (nx.itemIndex !== s.itemIndex && (s.group == null || nx.group !== s.group))));
 }
 
 /** One more set of the exercise just done, right after, from its numbers. */
@@ -208,6 +230,22 @@ export function addExercise(w, ex, plan) {
   const steps = [...w.steps];
   steps.splice(w.idx + 1, 0, step);
   return { ...w, steps, restKind: 'between', restPlanned: Math.max(w.restPlanned, w.between) };
+}
+
+/**
+ * "Ho fatto un altro esercizio" (v27): the sets of this item not done yet become sets of another exercise, starting
+ * from plan ({ reps|seconds, weight }). The scheda stays as it is; the summary asks what to do with it.
+ */
+export function swapExercise(w, itemIndex, ex, plan = {}) {
+  if (!ex) return w;
+  const steps = w.steps.map((s) => {
+    if (s.itemIndex !== itemIndex || s.kind !== 'set' || isLogged(w, s)) return s;
+    return {
+      ...s, exerciseId: ex.id, swappedFrom: s.swappedFrom || s.exerciseId,
+      plan: { ...s.plan, ...(plan.seconds != null ? { seconds: plan.seconds, reps: null } : plan.reps != null ? { reps: plan.reps, seconds: null } : {}), weight: ex.type === 'weights' ? plan.weight ?? s.plan.weight ?? 0 : null, varied: false },
+    };
+  });
+  return { ...w, steps };
 }
 
 /** Is this step in the log already (done, not skipped)? */

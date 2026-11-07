@@ -12,7 +12,7 @@ import { routines, exercises, routineMinutes, sessions, placeOf, lastDone } from
 import { plannedAhead } from '../model.js';
 import { routineGymId, missingIn, gymName, gymById } from '../gyms.js';
 import {
-  activeInfo, weekStatus, weekNumber, planMinutes, outsidePlan, plans, todayDay, effectiveWeekday, isMoved, moveToTomorrow, undoMove, dateOf,
+  activeInfo, weekStatus, weekNumber, planMode, abWeek, planMinutes, outsidePlan, plans, todayDay, effectiveWeekday, isMoved, moveToTomorrow, undoMove, dateOf,
 } from '../plans.js';
 
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
@@ -81,7 +81,8 @@ function todayHero(a, status, planned) {
   const first = (r.items || []).map((it) => get('exercises', it.exerciseId)).find(Boolean);
   const firstPlace = first && placeOf(first);
   const when = block ? `${weekdayShort(block.at)} ${timeOfDay(block.at)}` : '';
-  const eyebrow = td ? (td.day.time ? t('todayAt', td.day.time) : t('todayRoutine')) : t('nextOn', when || (Number.isInteger(effectiveWeekday(pick.day)) ? t('weekdayShort')[effectiveWeekday(pick.day)] : '')).replace(/ · $/, '');
+  const rot = status.rotation;
+  const eyebrow = rot ? t(td?.tooSoon ? 'rotTooSoon' : 'rotNext') : td ? (td.day.time ? t('todayAt', td.day.time) : t('todayRoutine')) : t('nextOn', when || (Number.isInteger(effectiveWeekday(pick.day)) ? t('weekdayShort')[effectiveWeekday(pick.day)] : '')).replace(/ · $/, '');
   const moved = isMoved(r.id);
   return `<section class="today-hero" aria-label="${esc(t('today'))}">
       <div class="hero-top"><span class="eyebrow">${esc(eyebrow)}</span>${block ? `<span>${esc(t('inEveryday'))}</span>` : ''}</div>
@@ -90,7 +91,7 @@ function todayHero(a, status, planned) {
       ${missWarn(r)}
       <div class="hero-actions">
         <a class="btn yellow big" href="${startHref(r.id, block)}">${icon('play', 18)}${esc(t('start'))}</a>
-        ${td ? `<button type="button" class="btn on-dark" data-move="${esc(r.id)}">${esc(t('moveToTomorrow'))}</button>` : ''}
+        ${td && !rot ? `<button type="button" class="btn on-dark" data-move="${esc(r.id)}">${esc(t('moveToTomorrow'))}</button>` : ''}
         ${moved ? `<button type="button" class="btn on-dark ghost" data-unmove="${esc(r.id)}">${esc(t('moveUndo'))}</button>` : ''}
       </div>
     </section>`;
@@ -108,7 +109,8 @@ function withPlan(a) {
   const status = weekStatus(plan);
   const planned = plannedAhead(pref('planned', []));
   const letters = t('weekdayLetters');
-  const onDays = new Set(plan.days.map((d) => effectiveWeekday(d)).filter(Number.isInteger));
+  const onDays = new Set(status.days.map((x) => effectiveWeekday(x.day)).filter(Number.isInteger));
+  const rot = status.rotation;
   const rows = status.days.map((x, i) => `<a class="row card-row day-home${x.done ? ' is-done' : ''}" href="#/routine/${encodeURIComponent(x.routine.id)}">
       <span class="day-letter">${esc(String.fromCharCode(65 + i))}</span>
       <span class="row-text"><span class="row-title">${esc(x.routine.name)}</span><span class="row-sub">${esc(`${t('nExercises', (x.routine.items || []).length)} · ${x.minutes} min`)}</span></span>
@@ -116,13 +118,13 @@ function withPlan(a) {
     </a>`).join('');
   const outside = outsidePlan(plan);
   const main = `${todayHero(a, status, planned)}
-    <h2 class="section-title">${esc(t('thisWeek'))}</h2>
+    <h2 class="section-title">${esc(rot ? t('rotOrder') : planMode(plan) === 'ab' ? `${t('thisWeek')} · ${t('weekAB', abWeek(plan))}` : t('thisWeek'))}</h2>
     <div class="stack tight">${rows}</div>`;
   const side = `<a class="plan-hero light" href="#/plans">
       <span class="plan-top"><span class="badge-active yellow">${esc(t('activeBadgeLong'))}</span><span class="change">${esc(t('change'))}${icon('chevron', 16)}</span></span>
       <span class="plan-hero-name">${esc(plan.name)}</span>
-      <span class="plan-hero-meta"><span>${esc(t('weekStatus', weekNumber(a.from), status.doneCount, status.days.length, minText(planMinutes(plan))))}</span>
-        <span class="wd-chips" aria-hidden="true">${letters.map((l, w) => `<i class="${onDays.has(w) ? 'on' : ''}">${esc(l)}</i>`).join('')}</span></span>
+      <span class="plan-hero-meta"><span>${esc(rot ? t('rotMeta', status.days.length, minText(planMinutes(plan))) : t('weekStatus', weekNumber(a.from), status.doneCount, status.days.length, minText(planMinutes(plan))))}</span>
+        ${rot ? '' : `<span class="wd-chips" aria-hidden="true">${letters.map((l, w) => `<i class="${onDays.has(w) ? 'on' : ''}">${esc(l)}</i>`).join('')}</span>`}</span>
     </a>
     ${lastSessionCard()}
     <h2 class="section-title">${esc(t('monthBox', ''))}</h2>${monthCard()}

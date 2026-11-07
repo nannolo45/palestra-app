@@ -1,5 +1,6 @@
 // Impostazioni: a status card, then one row per section, each opening its own page (as in Ricette).
 import { state, saveSettings, setPref, pref, live, kvGet, COLLECTIONS, resetLocal } from '../store.js';
+import { SOUNDS, alarmOf, playSound, unlockAudio } from '../sound.js';
 import { gyms, gymName, mainGym, updateGym } from '../gyms.js';
 import { t, LANGS, getLang } from '../i18n.js';
 import { esc, fmtNum, dateTime } from '../ui/format.js';
@@ -15,7 +16,7 @@ import { activeInfo } from '../plans.js';
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
 import { themeChoice, applyTheme } from '../theme.js';
 
-export const APP_VERSION = 'v26';
+export const APP_VERSION = 'v27';
 const VERSION = APP_VERSION;
 
 function statusCard() {
@@ -172,7 +173,16 @@ const SUB = {
       ${segmented({ name: 'start', value: tr.start === 'countdown' ? 'countdown' : 'overview', options: [['overview', t('startOverview')], ['countdown', t('startCountdown')]], label: t('beforeStart') })}
       <div class="card" data-cd ${tr.start === 'countdown' ? '' : 'hidden'}>${stepper({ name: 'countdown', value: tr.countdown ?? 15, step: 5, min: 5, unit: 's', label: t('countdownSecs') })}</div>
       <p class="muted small">${esc(t('beforeStartHint'))}</p>
-      <div class="card">${toggle({ name: 'vibrate', checked: tr.vibrate, label: t('vibrateAtEnd') })}${toggle({ name: 'sound', checked: tr.sound, label: t('soundAtEnd') })}${toggle({ name: 'wake', checked: tr.wake, label: t('keepScreenOn'), hint: t('keepScreenOnHint') })}</div>
+      <div class="field-head">${esc(t('alarmTitle'))}</div>
+      ${segmented({ name: 'alarm', value: alarmOf(tr), options: SOUNDS.map((k) => [k, t(`snd_${k}`)]), label: t('alarmTitle') })}
+      <div class="card stack-rows">
+        <label class="vol-row"><span>${esc(t('volume'))}</span><input type="range" name="volume" min="10" max="100" step="10" value="${esc(tr.volume ?? 80)}"><button type="button" class="btn small" data-action="test-sound">${icon('play', 14)}${esc(t('tryIt2'))}</button></label>
+        ${toggle({ name: 'tick', checked: tr.tick !== false, label: t('tickLast3') })}
+        ${toggle({ name: 'alarmAgain', checked: tr.alarmAgain !== false, label: t('alarmAgain') })}
+        ${toggle({ name: 'vibrate', checked: tr.vibrate, label: t('vibrateAtEnd') })}
+        ${toggle({ name: 'wake', checked: tr.wake, label: t('keepScreenOn'), hint: t('keepScreenOnHint') })}
+      </div>
+      <p class="muted small">${esc(t('alarmLimit'))}</p>
       <p class="muted small">${esc(t('trainingHint'))}</p>
       <div class="field-head">${esc(t('pausesTitle'))}</div>
       <div class="card">${stepper({ name: 'pauseDays', value: tr.pauseDays ?? 10, step: 1, min: 4, unit: t('daysUnit'), label: t('pauseAfter') })}</div>
@@ -183,12 +193,15 @@ const SUB = {
       const save = () => {
         const start = form.querySelector('[name=start]:checked')?.value || 'overview';
         form.querySelector('[data-cd]').hidden = start !== 'countdown';
-        setPref('training', { rest: stepVal(form, 'rest') ?? 90, between: stepVal(form, 'between') ?? 120, vibrate: form.vibrate.checked, sound: form.sound.checked, wake: form.wake.checked, start, countdown: stepVal(form, 'countdown') ?? 15, pauseDays: stepVal(form, 'pauseDays') ?? 10 });
+        setPref('training', { rest: stepVal(form, 'rest') ?? 90, between: stepVal(form, 'between') ?? 120, vibrate: form.vibrate.checked, alarm: form.querySelector('[name=alarm]:checked')?.value || 'bell', volume: Number(form.volume.value) || 80, tick: form.tick.checked, alarmAgain: form.alarmAgain.checked, wake: form.wake.checked, start, countdown: stepVal(form, 'countdown') ?? 15, pauseDays: stepVal(form, 'pauseDays') ?? 10 });
         refreshEstimates();
       };
       bindSteppers(form, save);
       form.querySelectorAll('[name=start]').forEach((x) => x.addEventListener('change', save));
       form.querySelectorAll('input[type=checkbox]').forEach((x) => x.addEventListener('change', save));
+      form.querySelectorAll('[name=alarm]').forEach((x) => x.addEventListener('change', () => { save(); unlockAudio(); playSound(x.value, form.volume.value); }));
+      form.volume.addEventListener('change', save);
+      form.querySelector('[data-action=test-sound]').addEventListener('click', () => { unlockAudio(); playSound(form.querySelector('[name=alarm]:checked')?.value || 'bell', form.volume.value); });
     });
   },
 

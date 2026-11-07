@@ -70,7 +70,7 @@ export const DEFAULT_INCREASE = {
   when: 'done', // 'done': only after a complete session; 'always': every week
   steps: { machine: 2.5, barbell: 2.5, dumbbell: 1, cable: 2.5, bodyweight: 1, cardio: 1 },
 };
-export const DEFAULT_TRAINING = { rest: 90, between: 120, vibrate: true, sound: false, wake: true, start: 'overview', countdown: 15, pauseDays: 10 };
+export const DEFAULT_TRAINING = { rest: 90, between: 120, vibrate: true, sound: false, alarm: 'bell', volume: 80, tick: true, alarmAgain: true, wake: true, start: 'overview', countdown: 15, pauseDays: 10 };
 
 // ---- one set's plan (v24): sets that differ (item.perSet), rep ranges (item.repsMax), to failure (item.failure) ----
 
@@ -219,6 +219,8 @@ export function estMinutes(routine, exercises = [], sessions = [], training = DE
   let secs = 0;
   items.forEach((it, i) => {
     const ex = exercises.find((e) => e.id === it.exerciseId);
+    const joined = it.superset && items[i + 1] && ex.type !== 'cardio';
+    const prevJoined = i > 0 && items[i - 1].superset && ex.type !== 'cardio';
     if (ex.type === 'cardio') secs += (Number(it.targets?.duration) || 10) * 60;
     else {
       const sets = setsOf(it);
@@ -227,11 +229,45 @@ export function estMinutes(routine, exercises = [], sessions = [], training = DE
         const p = setPlan(it, n);
         work += p.seconds != null ? p.seconds : ((p.repsMax ? (p.reps + p.repsMax) / 2 : p.reps) || 10) * secPerRep(ex.id, sessions);
       }
-      secs += work + (sets - 1) * (it.rest ?? training.rest ?? 90);
+      // a superserie rests once per round, after its last exercise
+      const restOf = prevJoined ? (items.slice(0, i).reverse().find((x, k, arr) => !arr[k + 1] || !arr[k + 1].superset)?.rest ?? it.rest) : it.rest;
+      secs += work + (joined ? 0 : (sets - 1) * (restOf ?? training.rest ?? 90));
     }
-    if (i < items.length - 1) secs += between;
+    if (i < items.length - 1 && !joined) secs += it.restAfter != null && it.restAfter !== '' ? Number(it.restAfter) : between;
   });
   return Math.max(1, Math.ceil(secs / 60));
+}
+
+/**
+ * How long a scheda really takes you (v27): for each of its last complete sessions, the minutes it took against the
+ * estimate for what was done that day (the sets really done), so a changed scheda doesn't throw it off. The newest
+ * counts 1, the one before 0.7, then 0.49…; with one or two sessions the plain estimate still counts too.
+ * Returns { ratio, rows: [{ start, minutes, est, weight }] }; ratio 1 with no sessions.
+ */
+export function durationFromHistory(routineId, sessions = [], exercises = [], training = DEFAULT_TRAINING, max = 6) {
+  const done = sessions.filter((s) => !s.deleted && s.end && s.routineId === routineId && s.outcome !== 'partial' && !s.trial && Number(s.minutes) > 0)
+    .sort((a, b) => b.start - a.start).slice(0, max);
+  const rows = [];
+  for (const s of done) {
+    const items = [];
+    for (const x of s.sets || []) {
+      let it = items[items.length - 1];
+      if (!it || it.exerciseId !== x.exerciseId) { it = { exerciseId: x.exerciseId, perSet: [], rests: [] }; items.push(it); }
+      if (x.targets) it.targets = { duration: x.targets.duration };
+      else it.perSet.push(x.seconds != null ? { seconds: x.seconds } : { reps: x.reps || 10 });
+      if (x.restPlanned) it.rests.push(x.restPlanned);
+    }
+    const r = { items: items.map((it) => (it.targets ? { exerciseId: it.exerciseId, targets: it.targets } : { exerciseId: it.exerciseId, sets: it.perSet.length, perSet: it.perSet, rest: it.rests.length ? Math.round(it.rests.reduce((a, b) => a + b, 0) / it.rests.length) : undefined })) };
+    const est = estMinutes(r, exercises, sessions, training);
+    if (est > 0) rows.push({ start: s.start, minutes: Number(s.minutes), est });
+  }
+  if (!rows.length) return { ratio: 1, rows };
+  let sw = 0; let sum = 0;
+  rows.forEach((x, i) => { x.weight = 0.7 ** i; sw += x.weight; sum += x.weight * (x.minutes / x.est); });
+  const k = rows.length >= 3 ? 0 : rows.length === 2 ? 0.5 : 1;
+  rows.forEach((x) => { x.weight /= sw; });
+  const ratio = Math.min(3, Math.max(0.3, (sum + k) / (sw + k)));
+  return { ratio, rows };
 }
 
 // ---- weeks ----

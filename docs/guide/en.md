@@ -120,6 +120,8 @@ Rather have it start on its own? In *Settings → Training → Before starting* 
 
 Can't make it today? Tap *Move to tomorrow*. The routine moves to tomorrow for this week only, and the list of days shows it. *Back to today* undoes it. If you use Everyday, the block moves there too at the next sync: at the same time if it's free, otherwise in the first free slot tomorrow.
 
+With a **rotation** workout there are no days: Today shows *Next*, and if the rest you set after the last routine isn't over it says so (*rest suggested a bit longer*). With **alternating weeks** *This week* says whether it's A or B.
+
 ![After "Move to tomorrow": the routine has moved, and you can put it back](guide/en/02-moved.webp)
 
 ### The week and the month
@@ -134,13 +136,29 @@ A workout is your week: the routines you do, each on its day. The **active** one
 
 ### Create a workout
 
-Tap *New workout*, then *Add routine* for each one. Drag a routine by its handle to change the order. *Import*, next to *Add routine*, adds routines written as text.
+Tap *New workout*. At the top are your routines as coloured tiles: **drag one onto a day**, or tap it and then tap the day. A day can hold more than one (morning and evening). To move one, drag it to another day; to remove it tap ✕ or drag it to the bin that appears at the bottom. *New routine* makes one (or imports it from text).
 
-![A workout: its routines, days and times](guide/en/15-plan.webp)
+![A workout: routines on the days, with the time](guide/en/15-plan.webp)
 
 ### Days and times
 
-For each routine tap the weekday (M T W T F S S) and, if you like, pick a *Time*. With a time Everyday puts it in your plan by itself; without one, you choose when in Everyday each week.
+The tile shows the time (or *time?*): tap it to pick one, or *No time*. With a time Everyday puts it in your plan by itself; without one, you choose when in Everyday each week. On a computer the week is a grid of seven columns.
+
+### Alternating weeks and rotation
+
+Above the tiles pick the shape of the workout:
+
+| Shape | How it works |
+|---|---|
+| *Weekly* | Every week the same |
+| *Alternate A · B* | Two weeks that take turns: on a phone pick *Week A* or *B* and fill it in; the current one says *(this one)*. Counted from when the workout became active |
+| *Rotation* | No fixed days: each time you go you do **the next one**, after the last it starts again. Drag routines into the loop to order them; *Rest day* adds a circle after a routine (tap it: 1, 2, 3 days or gone). If you go sooner, *Today* tells you |
+
+![Alternating weeks: week B, with Thursday's routine](guide/en/45-plan-ab.webp)
+
+![Rotation: the routines in order, with a rest day](guide/en/46-plan-rotation.webp)
+
+Each week Everyday gets that week's days (A or B); with a rotation it gets the routines with no day, and you put them in your plan. *Export .txt* keeps the shape, and importing finds it again.
 
 ### Change the active workout
 
@@ -152,7 +170,7 @@ In *Workouts* tap **⋯** on another workout, then *Make active*. Mid-week, choo
 
 ## Routines
 
-A routine is a sequence of exercises you repeat, like "Legs". Palestra works out its **estimated length** from the sets and rests, and corrects it with your real times after a few sessions.
+A routine is a sequence of exercises you repeat, like "Legs". Palestra works out its **estimated length** from the sets and rests, and corrects it with how long you really took: the last six times, the newest counting most. Tap the minutes at the top of a routine to see the sums, session by session.
 
 ![Your routines, with the workout each one is in](guide/en/10-routines.webp)
 
@@ -166,15 +184,21 @@ At the top: the estimated length, the sets and the zones. Then the exercises in 
 
 ![A routine: today's plan and, underneath, last time](guide/en/11-routine.webp)
 
+![The estimated minutes: how long you took the last times](guide/en/44-minutes.webp)
+
 ### Edit a routine
 
-Tap *Edit*.
+Tap *Edit*. The exercises are **blocks** one under the other, joined by circles: each circle is the rest before the next one.
+
+- **Drag** a block by its handle (⋮⋮) to change the order; on a computer drag it from anywhere, and drag in from the list on the right too.
+- **Tap the circle** to change the rest (30 s, 45 s, 1, 1:30, 2, 2:30, 3 min). After 3 min comes **⚡ superset**: the two exercises are done back to back, no rest between, round after round.
+- **+ or**, beside a block: the **alternative**, for when the machine is busy or missing. You can also drag another block onto it. During a workout it's the first suggestion of *I did another exercise*.
 
 | Part | What you set |
 |---|---|
 | Name | How you see it here and in Everyday |
 | *Automatic increase* | Whether Palestra offers to raise your weights each week |
-| Order | Drag by the handle; *Sort by walking route* follows your way round the gym |
+| Order | Drag by the handle (or the ↑ ↓ arrows on the handle, from a keyboard) |
 | An exercise | Tap it: sets, reps or seconds, weight, rest, or *Remove from routine* |
 | *Equal sets / Different sets* | With *different* each set has its own reps and weight (pyramids, drop sets, a warm-up); *Another set* adds one |
 | *Rep range* | E.g. 8–12 instead of a fixed number: the weight goes up when you reach 12 in every set |
@@ -201,6 +225,12 @@ In a routine tap *Duplicate into another workout* and choose where. The copy is 
 *Training → Exercises* lists all your exercises, grouped by **body part**: Chest, Back, Shoulders, Arms, Legs, Core and Cardio. Inside each part are the muscles (in *Legs*: Quads, Hamstrings, Glutes, Calves, Adductors). *Filters → Group by* also lists them by muscle, zone or type; in *Filters* pick type, body part, zone, whether they're in the active workout, and compact rows or rows with notes.
 
 ![Exercises: by body part, with the muscles inside](guide/en/07-exercises.webp)
+
+### The catalogue
+
+At the top, *Mine · Catalogue*. The **catalogue** has about 750 common exercises, with a drawing and the muscles. Search, filter by body part or equipment, and tap **+ Add**: it becomes yours, with muscles, equipment and drawing already set. The ones you have say *✓ yours*. Not there? *Create "…"* at the bottom makes a new one with that name.
+
+![The catalogue: search and add](guide/en/43-catalogue.webp)
 
 ### The muscles
 
@@ -313,9 +343,27 @@ Next to the machine there's a small picture: your photo, or the exercise's drawi
 
 ### Rest
 
-A countdown starts, and you see how long you actually rested. *+30 s* adds time, *Skip* moves straight on. At zero the phone vibrates and *Skip* turns into a yellow *Done*. Tapped *Done* too early, or got a number wrong? *Redo the set* reopens it with the values you had entered. Underneath is what's next and where to go.
+A countdown starts, and you see how long you actually rested. *+30 s* adds time (once the time is up it counts 30 seconds from now), *Skip* moves straight on. At zero it rings, the phone vibrates and *Skip* turns into a yellow *Done*. Tapped *Done* too early, or got a number wrong? *Redo the set* reopens it with the values you had entered. Underneath is what's next and where to go.
 
 ![Rest: the time left and what comes next](guide/en/21-rest.webp)
+
+### The sound when the rest ends
+
+In *Settings → Training*, **Sound when the rest ends**: *Bell*, *Three beeps*, *Gong* or *None*, the volume and *Try*. You can have a tick in the last 3 seconds, and a second ring after 30 seconds if you don't tap anything. The sound works after your first tap in the workout (browsers want it that way).
+
+![The sound when the rest ends](guide/en/42-alarm.webp)
+
+### Leave without finishing
+
+The **⌄** arrow at the top left **minimises** the workout: you go back where you were in the app and the workout goes on. A bar stays at the bottom with the routine and the rest counting down; when the rest is over it turns yellow and rings. Tap **Back** to go in again. To really finish there's **×** at the top right.
+
+![Minimised workout: the bar with the rest, over Today](guide/en/48-live.webp)
+
+### I did another exercise
+
+The machine is busy and you did something else? Under the name tap **I did another exercise**. At the top is the routine's alternative (if it has one), then similar exercises for the same muscles, with last time's numbers; underneath you can search all of yours. The sets left become that one's, marked *instead of …*. At the end you choose: just today, at this gym (if you have more than one), or from now on in the routine.
+
+![What did you do: the alternative and similar ones](guide/en/47-other.webp)
 
 ### Cardio
 

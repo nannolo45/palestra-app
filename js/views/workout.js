@@ -1,7 +1,7 @@
 // Start workout mode: the weekly increase, the set, the rest timer, cardio, pause, and the summary.
 // Dark, big, screen kept on, works offline. All timing comes from timestamps (see workout.js).
-import { state, get, upsert, live, pref, setPref } from '../store.js';
-import { routineIn, routineGymId } from '../gyms.js';
+import { state, get, upsert, live, pref, setPref, uid } from '../store.js';
+import { routineIn, routineGymId, alternatives, gyms, gymName, gymById, fitItem } from '../gyms.js';
 import { t } from '../i18n.js';
 import { esc, fmtNum, clock, num, timeOfDay, minText } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
@@ -12,6 +12,7 @@ import { increaseProposals, applyIncrease, measuresFor, totalWeight, lastResult,
 import * as W from '../workout.js';
 import { breakdownBar, setText } from './history.js';
 import { syncNow } from '../sync.js';
+import { playSound, unlockAudio, alarmOf } from '../sound.js';
 import { thumbOf, openViewer } from './pictures.js';
 
 let active = null; // the workout in progress
@@ -23,6 +24,8 @@ let wakeLock = null;
 let vibratedFor = null;
 let peek = null;
 let peekMove = null; // the arrow keys, on a computer
+let lastOutside = null; // the page to go to with Riduci
+window.addEventListener('hashchange', (e) => { const h = new URL(e.newURL).hash; if (h && !/^#\/(workout|start|try)/.test(h)) lastOutside = h; });
 document.addEventListener('keydown', (e) => {
   if (!peekMove || !document.querySelector('.w-screen') || e.target.closest?.('input, textarea, select, dialog')) return;
   if (e.key === 'ArrowLeft') peekMove(-1);
@@ -163,7 +166,7 @@ function begin(routine, blockId) {
   const gym = pendingStart?.gym || routineGymId(routine);
   pendingStart = null;
   summaryId = null;
-  const w = W.newWorkout(routineIn(routine, gym), live('exercises'), { blockId, training: training(), sessions: live('sessions') });
+  const w = { ...W.newWorkout(routineIn(routine, gym), live('exercises'), { blockId, training: training(), sessions: live('sessions') }), gymId: gym };
   commit(w).then(() => { location.replace('#/workout'); });
 }
 
@@ -216,7 +219,7 @@ function readyView(r) {
     dark: true,
     html,
     bind(view) {
-      view.querySelector('[data-action=go]').addEventListener('click', go);
+      view.querySelector('[data-action=go]').addEventListener('click', () => { unlockAudio(); go(); });
       view.querySelector('[data-action=more15]')?.addEventListener('click', () => { pendingStart.until += 15000; });
     },
     tick(view) {
@@ -266,9 +269,9 @@ export function workoutView() {
   if (peek != null && (peek === pos || peek < 0 || peek >= exIndexes.length || paused)) peek = null;
   const looking = peek != null;
   const head = `${trial ? `<div class="trial-strip"><span>${esc(t('trialStrip'))}</span><button type="button" data-action="exit-trial">${esc(t('exit'))}</button></div>` : ''}<header class="w-head">
-      <button type="button" class="w-icon" data-action="end" aria-label="${esc(t('endWorkout'))}">${icon('close')}</button>
+      ${trial ? `<button type="button" class="w-icon" data-action="end" aria-label="${esc(t('endWorkout'))}">${icon('close')}</button>` : `<button type="button" class="w-icon" data-action="minimise" aria-label="${esc(t('minimise'))}" title="${esc(t('minimise'))}">${icon('chevronDown', 24)}</button>`}
       <div class="w-head-mid"><span class="w-small">${looking ? esc(t('pvPrefix')) : ''}${esc(t('exNofM', r?.name || '', (looking ? peek : pos) + 1, exIndexes.length))}</span><span class="w-clock" data-live="elapsed">${trial ? '—:—' : clock(W.elapsedSec(active))}</span></div>
-      <button type="button" class="w-icon filled" data-action="pause" aria-label="${esc(paused ? t('resume') : t('pauseWorkout'))}">${icon(paused ? 'play' : 'pause', 18)}</button>
+      <span class="w-head-r">${trial ? '' : `<button type="button" class="w-icon" data-action="end" aria-label="${esc(t('endWorkout'))}" title="${esc(t('endWorkout'))}">${icon('close', 20)}</button>`}<button type="button" class="w-icon filled" data-action="pause" aria-label="${esc(paused ? t('resume') : t('pauseWorkout'))}">${icon(paused ? 'play' : 'pause', 18)}</button></span>
     </header>
     <div class="w-progress" aria-hidden="true">${exIndexes.map((ix, i) => `<span class="${i < pos ? 'done' : i === pos ? 'now' : ''}${looking && i === peek ? ' view' : ''}"></span>`).join('')}</div>`;
   let body;
@@ -279,7 +282,7 @@ export function workoutView() {
   else body = setBody(step, ex);
   return {
     dark: true,
-    html: `<div class="w-screen${looking ? ' peeking' : ''}">${head}${body}${paused ? '' : edges(exIndexes.length, looking ? peek : pos)}</div>`,
+    html: `<div class="w-screen fit${looking ? ' peeking' : ''}">${head}${body}${paused ? '' : edges(exIndexes.length, looking ? peek : pos)}</div>`,
     bind(view) {
       bindSteppers(view, (name, v) => {
         if (name === 'weight') { const h = view.querySelector('[data-wt-hint]'); if (h) h.textContent = weightTexts(ex, v).hint; }
@@ -289,9 +292,12 @@ export function workoutView() {
       view.querySelectorAll('[data-action=pause]').forEach((b) => b.addEventListener('click', () => commit(paused ? W.resume(active) : W.pause(active))));
       view.querySelector('[data-action=end]').addEventListener('click', () => (active?.trial ? exitTrial() : endEarly()));
       view.querySelector('[data-action=exit-trial]')?.addEventListener('click', exitTrial);
+      view.querySelector('[data-action=minimise]')?.addEventListener('click', () => { location.hash = lastOutside || '#/today'; });
+      view.addEventListener('pointerdown', unlockAudio, { once: true });
       view.querySelector('[data-action=add-set]')?.addEventListener('click', () => commit(W.addSet(active)));
       view.querySelector('[data-action=undo-set]')?.addEventListener('click', () => commit(W.removeAddedSet(active)));
       view.querySelector('[data-action=add-ex]')?.addEventListener('click', pickExtraExercise);
+      view.querySelector('[data-action=other]')?.addEventListener('click', () => pickOtherExercise(step, ex));
       view.querySelector('[data-action=use-sug]')?.addEventListener('click', (e) => {
         const box = view.querySelector('[data-stepper=weight] input');
         if (box) { box.value = fmtNum(Number(e.currentTarget.dataset.kg)); box.dispatchEvent(new Event('change')); }
@@ -320,6 +326,7 @@ export function workoutView() {
       view.querySelector('[data-action=back]')?.addEventListener('click', () => { vibratedFor = null; commit(W.back(active)); });
       view.querySelector('[data-action=skip-set]')?.addEventListener('click', () => commit(W.skipStep(active)));
       view.querySelector('[data-action=viewer]')?.addEventListener('click', () => openViewer(ex));
+      view.querySelectorAll('[data-action=note]').forEach((b) => b.addEventListener('click', () => b.classList.toggle('clamp')));
       view.querySelector('[data-action=add30]')?.addEventListener('click', () => commit(W.addRest(active, 30)));
       view.querySelector('[data-action=end-rest]')?.addEventListener('click', () => commit(W.endRest(active)));
       if (!active.trial) keepAwake();
@@ -339,13 +346,14 @@ function setBody(step, ex) {
   const range = step.plan.repsMax ? t('repsGoal', step.plan.repsMin, step.plan.repsMax) : '';
   const lastReps = step.plan.repsMax && prev ? prev.session.sets.filter((x) => x.exerciseId === ex.id).map((x) => x.reps).filter((x) => x != null) : [];
   return `<main class="w-main">
-      <div><h1 class="w-ex">${esc(ex.name)}${step.added != null ? `<span class="w-tag add">${esc(t('tagAdded'))}</span>` : ''}</h1>
-        <div class="w-setline"><span>${esc(t('setNofM', step.n, step.of))}</span>${step.extra ? `<span class="w-tag">${esc(t('tagExtra'))}</span>` : ''}<span class="dots" aria-hidden="true">${Array.from({ length: step.of }, (_, i) => `<i class="${i + 1 < step.n ? 'done' : i + 1 === step.n ? 'now' : ''}${i >= planned && step.added == null ? ' extra' : ''}"></i>`).join('')}</span></div>
+      <div>${step.swappedFrom ? `<span class="w-instead">${icon('swap', 14)}${esc(t('insteadOf', state.exercises.find((e) => e.id === step.swappedFrom)?.name || ''))}</span>` : ''}<h1 class="w-ex">${esc(ex.name)}${step.added != null ? `<span class="w-tag add">${esc(t('tagAdded'))}</span>` : ''}</h1>
+        <div class="w-setline"><span>${esc(t('setNofM', step.n, step.of))}</span>${step.extra ? `<span class="w-tag">${esc(t('tagExtra'))}</span>` : ''}<span class="dots" aria-hidden="true">${Array.from({ length: step.of }, (_, i) => `<i class="${i + 1 < step.n ? 'done' : i + 1 === step.n ? 'now' : ''}${i >= planned && step.added == null ? ' extra' : ''}"></i>`).join('')}</span>${step.plan.failure ? `<span class="fail-tag">${esc(t('toFailure'))}</span>` : ''}</div>
+        ${!active.trial && step.kind === 'set' && !active.log.some((x) => x.item === step.itemIndex) ? `<button type="button" class="w-other" data-action="other">${icon('swap', 16)}${esc(step.swappedFrom ? t('didAnotherAgain') : t('didAnother'))}</button>` : ''}
         ${step.plan.varied ? `<div class="w-planline">${active.steps.filter((x) => x.itemIndex === step.itemIndex).map((x) => `<span class="${x.n < step.n ? 'done' : x.n === step.n ? 'now' : ''}">${esc(`${x.plan.reps ?? `${x.plan.seconds} s`}${x.plan.weight ? ` × ${fmtNum(x.plan.weight)} kg` : ''}`)}</span>`).join('')}</div>` : ''}</div>
       <div class="w-grid2">
         ${step.plan.seconds != null
     ? `<div class="w-card stepcard">${stepper({ name: 'seconds', value: step.plan.seconds, step: 5, min: 0, label: t('seconds'), big: true })}<span class="w-extra" data-extra></span></div>`
-    : `<div class="w-card stepcard${step.plan.failure ? ' failure' : ''}">${step.plan.failure ? `<span class="fail-tag">${esc(t('toFailure'))}</span>` : ''}${stepper({ name: 'reps', value: step.plan.reps, step: 1, min: 0, label: t('reps'), big: true })}<span class="w-extra" data-extra></span></div>`}
+    : `<div class="w-card stepcard">${stepper({ name: 'reps', value: step.plan.reps, step: 1, min: 0, label: t('reps'), big: true })}<span class="w-extra" data-extra></span></div>`}
         ${step.plan.weight != null ? `<div class="w-card stepcard">${stepper({ name: 'weight', value: step.plan.weight, step: ex.equipment === 'dumbbell' ? 1 : 2.5, min: 0, label: weightTexts(ex).label, big: true })}</div>` : ''}
       </div>
       ${step.plan.weight != null && weightMode(ex) !== 'plain' ? `<p class="w-small w-wthint" data-wt-hint>${esc(weightTexts(ex, step.plan.weight).hint)}</p>` : ''}
@@ -354,7 +362,7 @@ function setBody(step, ex) {
       ${step.plan.weight === 0 ? `<p class="w-small">${esc(t('weightFirstTime'))}${!bodyPrefs() && !active.trial ? ` <a href="#/settings/body">${esc(t('sugSetBody'))}</a>` : ''}</p>` : ''}
       ${step.extra ? `<p class="w-small">${esc(t('extraSetHint'))}</p>` : step.added != null ? `<p class="w-small">${esc(t('addedExHint'))}</p>` : ''}
       ${machineCard(ex)}
-      ${ex.notes ? `<section class="w-note" aria-label="${esc(t('notes'))}">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
+      ${ex.notes ? `<button type="button" class="w-note clamp" aria-label="${esc(t('notes'))}" data-action="note">${icon('pencil', 18)}<p>${esc(ex.notes)}</p></button>` : ''}
       <p class="w-small">${esc([lastSet ? t('setDone', lastSet.n, setText(ex, lastSet)) : '', prevText].filter(Boolean).join(' · '))}</p>
     </main>
     <div class="w-foot">
@@ -399,6 +407,52 @@ async function pickExtraExercise() {
   toast(t('addedEx', ex.name));
 }
 
+/** "Ho fatto un altro esercizio": the scheda's alternative first, then the same muscles, then any of yours. */
+async function pickOtherExercise(step, ex) {
+  const r = state.routines.find((x) => x.id === active.routineId);
+  const it = r?.items?.[step.itemIndex] || {};
+  const orig = step.swappedFrom ? state.exercises.find((e) => e.id === step.swappedFrom) : ex;
+  const gid = active.gymId || routineGymId(r);
+  const sugg = [];
+  const alt = it.alternative && get('exercises', it.alternative);
+  if (alt && alt.id !== ex.id) sugg.push({ ex: alt, why: t('schedaAlternative') });
+  for (const a of alternatives(orig, gid, 4)) {
+    const n = a.ex ? a.ex.name : a.builtin.name;
+    if (sugg.some((x) => (x.ex ? x.ex.name : x.builtin.name) === n) || (a.ex && a.ex.id === ex.id)) continue;
+    sugg.push({ ...a, why: t('sameMuscles') });
+  }
+  const mine = live('exercises').filter((e) => e.type !== 'cardio' && e.id !== ex.id).sort((a, b) => String(a.name).localeCompare(b.name));
+  const lastOf = (id) => { const s = [...live('sessions')].filter((x) => x.end && (x.sets || []).some((y) => y.exerciseId === id)).sort((a, b) => b.start - a.start)[0]; return s ? s.sets.filter((y) => y.exerciseId === id) : null; };
+  const lastText = (e) => { const l = lastOf(e.id); return l ? t('lastTimeShort', `${l.length} × ${l[0].reps ?? `${l[0].seconds} s`}${l[0].weight ? ` · ${fmtNum(Math.max(...l.map((y) => y.weight || 0)))} kg` : ''}`) : ''; };
+  const html = `<h2>${esc(t('whatDidYouDo'))}</h2><p class="muted small">${esc(t('insteadOf', orig?.name || ''))}</p>
+    <div class="pick-list">${sugg.slice(0, 4).map((x, i) => { const e = x.ex; const n = e ? e.name : x.builtin.name; return `<button type="button" class="row pick" data-sug="${i}"><span class="row-text"><span class="row-title">${esc(n)}${i === 0 ? ` <span class="badge-mini">${esc(t('suggested'))}</span>` : ''}</span><span class="row-sub">${esc([x.why, e ? lastText(e) : t('newForYou')].filter(Boolean).join(' · '))}</span></span></button>`; }).join('')}</div>
+    <label class="search">${icon('search', 18)}<span class="sr">${esc(t('searchExercises'))}</span><input id="ox-q" type="search" placeholder="${esc(t('searchAllYours'))}" autocomplete="off"></label>
+    <div class="pick-list" data-list hidden>${mine.map((e) => `<button type="button" class="row pick" data-pick="${esc(e.id)}"><span class="row-text"><span class="row-title">${esc(e.name)}</span><span class="row-sub">${esc(lastText(e) || whereText(e) || '')}</span></span></button>`).join('')}</div>
+    <div class="button-row"><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+  const got = await openSheet(html, (form, close) => {
+    const list = form.querySelector('[data-list]');
+    form.querySelector('#ox-q').addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      list.hidden = !q;
+      list.querySelectorAll('[data-pick]').forEach((b) => { b.hidden = q && !b.textContent.toLowerCase().includes(q); });
+    });
+    form.querySelectorAll('[data-sug]').forEach((b) => b.addEventListener('click', () => close({ sug: Number(b.dataset.sug) })));
+    form.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => close({ id: b.dataset.pick })));
+  });
+  if (!got || !active) return;
+  let other = got.id ? get('exercises', got.id) : sugg[got.sug]?.ex;
+  if (!other && got.sug != null) {
+    const b = sugg[got.sug].builtin;
+    other = live('exercises').find((e) => e.name.toLowerCase() === b.name.toLowerCase())
+      || upsert('exercises', { id: uid(), name: b.name, type: b.type, ...(b.equipment ? { equipment: b.equipment } : {}), muscles: b.muscles.slice(), defaultRest: training().rest, notes: '', increase: { mode: 'type' } });
+  }
+  if (!other) return;
+  const l = lastOf(other.id);
+  const plan = l ? { reps: l[0].reps, seconds: l[0].seconds, weight: Math.max(...l.map((y) => y.weight || 0)) } : { weight: other.type === 'weights' ? suggestWeight(other, bodyPrefs()) ?? 0 : null, ...(other.timed ? { seconds: 45 } : {}) };
+  commit(W.swapExercise(active, step.itemIndex, other, plan));
+  toast(t('nowDoing', other.name));
+}
+
 /** The question after an exercise's last set: another set, or another exercise. */
 function moreCard() {
   const s = W.current(active);
@@ -406,7 +460,7 @@ function moreCard() {
   if (nx && nx.extra && !W.isLogged(active, nx)) return `<p class="w-small center-text">${esc(t('extraAdded'))} <button type="button" class="link-btn" data-action="undo-set">${esc(t('removeIt'))}</button></p>`;
   if (!W.afterLastSet(active)) return '';
   const ex = state.exercises.find((e) => e.id === s.exerciseId);
-  return `<div class="w-card more-q"><p>${t('moreQ', `<b>${esc(ex?.name || '')}</b>`)}</p><div class="w-grid2"><button type="button" class="btn yellow" data-action="add-set">+ ${esc(t('oneMoreSet'))}</button><button type="button" class="btn dark-btn" data-action="add-ex">+ ${esc(t('oneMoreEx'))}</button></div></div>`;
+  return `<div class="w-card more-q"><p>${t('moreQshort', `<b>${esc(ex?.name || '')}</b>`)}</p><button type="button" class="btn yellow small" data-action="add-set">+ ${esc(t('setWord'))}</button><button type="button" class="btn dark-btn small" data-action="add-ex">+ ${esc(t('exWord'))}</button></div>`;
 }
 
 /** After the very last set: add something, or finish. */
@@ -551,7 +605,7 @@ function cardioBody(step, ex) {
   const dur = Number(step.plan.targets.duration) || 10;
   const sec = active.trial ? 0 : W.phaseSec(active);
   const left = dur * 60 - sec;
-  return `<main class="w-main">
+  return `<main class="w-main cardio">
       <div><h1 class="w-ex">${esc(ex.name)}</h1><p class="w-sub">${esc([t('minutesN', fmtNum(dur)), whereText(ex)].filter(Boolean).join(' · '))}</p></div>
       <div class="w-card timer-card" role="timer">
         <span class="eyebrow" data-live="cardio-label">${esc(left >= 0 ? t('timeLeft') : t('overTime'))}</span>
@@ -560,11 +614,11 @@ function cardioBody(step, ex) {
       </div>
       <div class="w-grid2">${ms.filter((m) => m.key !== 'duration').map((m) => `<div class="w-card stepcard">${stepper({ name: `t_${m.key}`, value: step.plan.targets[m.key] ?? 0, step: m.step, min: 0, unit: m.unit, label: measureLabel(m), big: true })}</div>`).join('')}</div>
       ${thumbOf(ex) ? machineCard(ex) : ''}
-      <label class="w-card w-field"><span>${esc(t('distanceFromDisplay'))} <small>${esc(t('optionalOne'))}</small></span><input name="distance" inputmode="decimal" placeholder="— km" autocomplete="off"></label>
-      ${ex.notes ? `<section class="w-note">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
+      ${active.trial ? '' : `<label class="w-card w-field"><span>${esc(t('distanceFromDisplay'))} <small>${esc(t('optionalOne'))}</small></span><input name="distance" inputmode="decimal" placeholder="— km" autocomplete="off"></label>`}
+      ${ex.notes ? `<button type="button" class="w-note clamp" data-action="note">${icon('pencil', 18)}<p>${esc(ex.notes)}</p></button>` : ''}
     </main>
-    <div class="w-foot row2"><button type="button" class="btn ghost-dark fill" data-action="pause">${esc(t('pause'))}</button><button type="button" class="btn yellow huge" data-action="done">${esc(t('finishCardio'))}</button></div>
-    ${W.canGoBack(active) ? `<div class="w-minor">${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(active.phase === 'rest' && W.current(active)?.kind === 'set' ? 'backToSet' : 'prevStep'))}</button>` : ''}</div>` : ''}`;
+    <div class="w-foot"><div class="row2"><button type="button" class="btn ghost-dark fill" data-action="pause">${esc(t('pause'))}</button><button type="button" class="btn yellow huge" data-action="done">${esc(t('finishCardio'))}</button></div>
+    ${W.canGoBack(active) ? `<div class="w-minor"><button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t('prevStep'))}</button></div>` : ''}</div>`;
 }
 
 function restBody() {
@@ -588,15 +642,15 @@ function restBody() {
       </div>
       ${trial ? `<p class="w-text">${esc(t('trialRest'))}</p>` : `<p class="w-text">${esc(t('youRested'))} <b data-live="rested">${clock(W.phaseSec(active))}</b></p>`}
       ${moreCard()}
+    </main>
+    <div class="w-foot rest-foot">
       ${trial ? `<button type="button" class="btn light big wide" data-action="end-rest">${esc(t('forward'))}</button>`
     : `<div class="w-grid2 wide"><button type="button" class="btn dark-btn big" data-action="add30">+30 s</button><button type="button" class="btn ${left <= 0 ? 'yellow' : 'light'} big" data-action="end-rest" data-live="end-rest">${esc(left <= 0 ? t('restEnd') : t('skip'))}</button></div>`}
-      ${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(active.phase === 'rest' && W.current(active)?.kind === 'set' ? 'backToSet' : 'prevStep'))}</button>` : ''}
-    </main>
-    ${nxt && nex ? `<section class="w-card next" aria-label="${esc(t('next'))}">
-      <span class="eyebrow">${esc(t('next'))}</span>
-      <div class="next-row"><div><b>${esc(nextText)}</b><small>${esc(sameMachine ? t('sameMachine', machineOf(nex)?.number || '') : whereText(nex) || '')}</small></div>${nextAmount ? `<span class="w-num">${esc(nextAmount)}</span>` : ''}</div>
-      ${aex && sameMachine ? `<div class="next-after">${icon('arrowRight', 16)}${esc(t('thenEx', aex.name, whereText(aex)))}</div>` : ''}
-    </section>` : ''}`;
+      ${nxt && nex ? `<section class="w-card next" aria-label="${esc(t('next'))}">
+        <div class="next-row"><div><span class="eyebrow">${esc(t('next'))}</span><b>${esc(nextText)}</b><small>${esc(sameMachine ? t('sameMachine', machineOf(nex)?.number || '') : whereText(nex) || '')}${aex && sameMachine ? ` · ${esc(t('thenEx', aex.name, ''))}` : ''}</small></div>${nextAmount ? `<span class="w-num">${esc(nextAmount)}</span>` : ''}</div>
+      </section>` : ''}
+      ${W.canGoBack(active) ? `<div class="w-minor"><button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(active.phase === 'rest' && W.current(active)?.kind === 'set' ? 'backToSet' : 'prevStep'))}</button></div>` : ''}
+    </div>`;
 }
 
 function pausedBody() {
@@ -626,11 +680,7 @@ function liveTick(view) {
       endBtn.classList.replace('light', 'yellow');
       endBtn.textContent = t('restEnd');
     }
-    if (left <= 0 && vibratedFor !== `${active.idx}`) {
-      vibratedFor = `${active.idx}`;
-      if (training().vibrate && navigator.vibrate) navigator.vibrate([300, 120, 300]);
-      if (training().sound) beep();
-    }
+    restAlarm(left);
   } else {
     const step = W.current(active);
     if (step && step.kind === 'cardio') {
@@ -649,14 +699,60 @@ function liveTick(view) {
   }
 }
 
-function beep() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator(); const g = ctx.createGain();
-    o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(0.2, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    o.start(); o.stop(ctx.currentTime + 0.4);
-  } catch { /* no audio */ }
+/** The end of a rest: a tick in the last 3 seconds, the alarm at zero, once more 30 s later if nothing was tapped. */
+let alarmed = new Set();
+function restAlarm(left) {
+  const tr = training();
+  const key = `${active.idx}/${active.restPlanned}/${active.phaseStart}`;
+  const kind = alarmOf(tr);
+  const s = Math.ceil(left);
+  if (tr.tick !== false && s >= 1 && s <= 3 && !alarmed.has(`${key}t${s}`)) { alarmed.add(`${key}t${s}`); playSound('tick', tr.volume); }
+  if (left <= 0 && !alarmed.has(`${key}a`)) {
+    alarmed.add(`${key}a`);
+    if (tr.vibrate && navigator.vibrate) navigator.vibrate([300, 120, 300]);
+    playSound(kind, tr.volume);
+  }
+  if (left <= -30 && tr.alarmAgain !== false && !alarmed.has(`${key}b`)) {
+    alarmed.add(`${key}b`);
+    if (tr.vibrate && navigator.vibrate) navigator.vibrate([300, 120, 300]);
+    playSound(kind, tr.volume);
+  }
+  if (alarmed.size > 200) alarmed = new Set([...alarmed].slice(-50));
+}
+
+/**
+ * Riduci (v27): the workout goes on while you look around the app. A bar above the sections shows it, with the rest
+ * counting down; when the rest ends it turns yellow and the alarm sounds, as on the workout screen.
+ */
+export function miniBar() {
+  if (!hasActive() || W.isPaused(active)) return hasActive() ? `<a class="live-bar" href="#/workout" data-live-bar><span class="dot paused"></span><span class="tx"><b>${esc(state.routines.find((x) => x.id === active.routineId)?.name || '')}</b><small>${esc(t('paused'))}</small></span><span class="go">${esc(t('backThere'))}</span></a>` : '';
+  const r = state.routines.find((x) => x.id === active.routineId);
+  const step = W.current(active);
+  const ex = step && state.exercises.find((e) => e.id === step.exerciseId);
+  const resting = active.phase === 'rest' && active.restKind !== 'end';
+  const left = resting ? W.restLeft(active) : 0;
+  const nxt = resting ? W.current({ ...active, idx: active.idx + 1 }) : step;
+  const nex = nxt && state.exercises.find((e) => e.id === nxt.exerciseId);
+  const what = nex ? (nxt.kind === 'cardio' ? nex.name : `${nex.name} · ${t('setNofM', nxt.n, nxt.of)}`) : '';
+  const ding = resting && left <= 0;
+  return `<a class="live-bar${ding ? ' ding' : ''}" href="#/workout" data-live-bar>
+    <span class="dot"></span>
+    <span class="tx"><b data-lb="title">${esc(ding ? t('restOverNext', what) : r?.name || '')}</b><small data-lb="sub">${esc(resting ? (ding ? t('overBy', clock(-left)) : `${t('rest')} · ${what}`) : active.phase === 'rest' ? t('lastSetDone') : what)}</small></span>
+    ${resting && !ding ? `<span class="t" data-lb="left">${clock(left)}</span>` : ''}
+    <span class="go">${esc(t('backThere'))} ›</span></a>`;
+}
+export function miniTick() {
+  if (!hasActive()) return;
+  const bar = document.querySelector('[data-live-bar]');
+  if (!bar) return;
+  if (active.phase === 'rest' && active.restKind !== 'end' && !W.isPaused(active)) {
+    const left = W.restLeft(active);
+    restAlarm(left);
+    const ding = left <= 0;
+    if (ding !== bar.classList.contains('ding') || ding) { const tmp = document.createElement('div'); tmp.innerHTML = miniBar(); bar.replaceWith(tmp.firstElementChild); return; }
+    const el = bar.querySelector('[data-lb=left]');
+    if (el) el.textContent = clock(left);
+  }
 }
 
 async function keepAwake() {
@@ -703,7 +799,7 @@ async function finish(early) {
       const items = (r.items || []).map((it, ix) => {
         const ex = get('exercises', it.exerciseId);
         if (!ex || ex.type !== 'weights' || Array.from({ length: setsOf(it) }, (_, i) => setPlan(it, i + 1).weight).some((w) => w > 0)) return it;
-        const done = active.log.filter((x) => x.item === ix && x.weight > 0);
+        const done = active.log.filter((x) => x.item === ix && x.exerciseId === it.exerciseId && x.weight > 0);
         if (!done.length) return it;
         changed = true;
         const rows = Array.from({ length: setsOf(it) }, (_, i) => { const p = setPlan(it, i + 1); const d = done.find((x) => x.n === i + 1) || done[done.length - 1]; return { ...(p.seconds != null ? { seconds: p.seconds } : { reps: p.reps }), weight: d.weight }; });
@@ -711,7 +807,7 @@ async function finish(early) {
       });
       const next = changed ? upsert('routines', { ...r, items }) : r;
       const rows = diffRows(active, next);
-      if (rows.length) summaryDiff = { routineId: r.id, rows, pick: Object.fromEntries(rows.map((x) => [x.ix, x.def])) };
+      if (rows.length) summaryDiff = { routineId: r.id, gymId: active.gymId || routineGymId(r), rows, pick: Object.fromEntries(rows.map((x) => [x.ix, x.def])) };
     }
   }
   await W.saveActive(null);
@@ -741,6 +837,12 @@ export function diffRows(w, r) {
     if (!ex) continue;
     const added = first.added != null;
     if (!added && (!items[ix] || first.kind === 'cardio')) continue;
+    const swapped = steps.find((x) => x.swappedFrom);
+    if (!added && swapped && first.kind === 'set') {
+      const done = steps.filter((x) => x.exerciseId === swapped.exerciseId).map((st) => { const e = w.log.find((x) => x.item === ix && x.n === st.n && x.exerciseId === st.exerciseId); return e ? { reps: e.reps ?? null, seconds: e.seconds ?? null, weight: ex.type === 'weights' || state.exercises.find((y) => y.id === swapped.exerciseId)?.type === 'weights' ? e.weight ?? 0 : null } : null; });
+      if (done.some(Boolean)) out.push({ ix, exerciseId: swapped.exerciseId, swapFrom: items[ix].exerciseId, plan: [], done, def: 'oggi' });
+      continue;
+    }
     if (!added && items[ix].exerciseId !== first.exerciseId) continue; // a stand-in for this gym: the scheda stays as it is
     const logOf = (st) => w.log.find((x) => x.item === ix && x.n === st.n) || null;
     if (first.kind === 'cardio') {
@@ -762,6 +864,7 @@ export function diffRows(w, r) {
 }
 
 function diffOptions(row) {
+  if (row.swapFrom) return gyms().length > 1 ? ['oggi', 'gym', 'swap'] : ['oggi', 'swap'];
   if (row.added != null) return ['oggi', 'fatto'];
   const did = row.done.filter(Boolean);
   const o = ['oggi', 'fatto'];
@@ -805,6 +908,16 @@ function chip(cls, txt) { return `<span class="chg ${cls}">${esc(txt)}</span>`; 
 
 function diffCard(row, pick, r) {
   const ex = state.exercises.find((e) => e.id === row.exerciseId);
+  if (row.swapFrom) {
+    const from = state.exercises.find((e) => e.id === row.swapFrom);
+    const did = row.done.filter(Boolean);
+    const g = gymName(gymById(summaryDiff?.gymId));
+    const what = { oggi: t('swapToday', from?.name || ''), gym: t('swapGym', g, ex?.name || '', from?.name || ''), swap: t('swapScheda', ex?.name || '') };
+    return `<div class="w-card diff-card"><h3>${esc(from?.name || '')} <span class="arrow">→</span> ${esc(ex?.name || '')}</h3>
+      <p class="w-small">${esc(`${t('nSets', did.length)} · ${did.map((d) => `${d.seconds != null ? `${d.seconds} s` : d.reps}${d.weight ? ` × ${fmtNum(d.weight)}` : ''}`).join(', ')}`)}</p>
+      <div class="diff-choose" role="radiogroup">${diffOptions(row).map((k) => `<button type="button" class="${pick === k ? 'on' : ''}" aria-pressed="${pick === k}" data-pick="${row.ix}|${k}">${esc(k === 'oggi' ? t('onlyToday') : k === 'gym' ? t('onlyAt', g) : t('replaceInRoutine'))}</button>`).join('')}</div>
+      <p class="w-small">${esc(what[pick] || '')}</p></div>`;
+  }
   const n = Math.max(row.plan.length, row.done.length);
   const amt = (x) => (x ? `${x.seconds != null ? `${x.seconds} s` : x.reps}${x.weight != null ? ` × ${fmtNum(x.weight)}` : ''}` : '');
   let rows = '';
@@ -849,6 +962,13 @@ function applyDiff() {
   for (const row of d.rows) {
     const k = d.pick[row.ix];
     if (k === 'oggi' || row.added != null) continue;
+    if (row.swapFrom) {
+      const to = state.exercises.find((e) => e.id === row.exerciseId);
+      if (k === 'gym') items[row.ix] = { ...items[row.ix], alt: { ...(items[row.ix].alt || {}), [d.gymId]: row.exerciseId } };
+      else items[row.ix] = itemFromRows(fitItem(items[row.ix], state.exercises.find((e) => e.id === row.swapFrom), to), chosenRows(row, 'fatto').map(clean));
+      n++;
+      continue;
+    }
     items[row.ix] = itemFromRows(items[row.ix], chosenRows(row, k).map(clean));
     n++;
   }

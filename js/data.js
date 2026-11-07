@@ -1,6 +1,6 @@
 // Lookups and derived values the views share: names, places, estimated lengths, labels.
 import { state, live, get, upsert, pref } from './store.js';
-import { estMinutes, DEFAULT_TRAINING, DEFAULT_INCREASE, CARDIO_KINDS } from './model.js';
+import { estMinutes, durationFromHistory, DEFAULT_TRAINING, DEFAULT_INCREASE, CARDIO_KINDS } from './model.js';
 import { t } from './i18n.js';
 
 export const training = () => ({ ...DEFAULT_TRAINING, ...(pref('training', {}) || {}) });
@@ -45,8 +45,18 @@ export function measureLabel(m) {
 }
 
 /** The estimated length of a routine, computed now. */
+/** The scheda's minutes: the estimate from its sets and rests, corrected by how long it really took you (v27). */
 export function routineMinutes(r) {
-  return estMinutes(r, state.exercises.filter((e) => !e.deleted), state.sessions.filter((s) => !s.deleted), training());
+  const ex = state.exercises.filter((e) => !e.deleted); const ss = state.sessions.filter((s) => !s.deleted);
+  const base = estMinutes(r, ex, ss, training());
+  if (!r || !base) return base;
+  return Math.max(1, Math.round(base * durationFromHistory(r.id, ss, ex, training()).ratio));
+}
+export function minutesExplained(r) {
+  const ex = state.exercises.filter((e) => !e.deleted); const ss = state.sessions.filter((s) => !s.deleted);
+  const base = estMinutes(r, ex, ss, training());
+  const h = durationFromHistory(r.id, ss, ex, training());
+  return { base, ...h, minutes: Math.max(1, Math.round(base * h.ratio)) };
 }
 
 /** Keep every routine's estMinutes (read by Everyday) in step with the exercises and the logged sessions. */

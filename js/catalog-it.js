@@ -1,0 +1,63 @@
+// Italian names for the most used exercises of the catalogue (free-exercise-db ids); the rest keep their English name.
+// German names here are only words to search with.
+export const IT_NAMES = {
+  // petto
+  'Barbell_Bench_Press_-_Medium_Grip': 'Panca piana con bilanciere', 'Barbell_Incline_Bench_Press_-_Medium_Grip': 'Panca inclinata con bilanciere',
+  Decline_Barbell_Bench_Press: 'Panca declinata con bilanciere', Dumbbell_Bench_Press: 'Panca piana con manubri', Incline_Dumbbell_Press: 'Panca inclinata con manubri',
+  Decline_Dumbbell_Bench_Press: 'Panca declinata con manubri', Dumbbell_Flyes: 'Croci con manubri', Incline_Dumbbell_Flyes: 'Croci su panca inclinata',
+  Decline_Dumbbell_Flyes: 'Croci su panca declinata', Cable_Crossover: 'Croci ai cavi', Low_Cable_Crossover: 'Croci ai cavi dal basso', Flat_Bench_Cable_Flyes: 'Croci ai cavi su panca',
+  Incline_Cable_Flye: 'Croci ai cavi su panca inclinata', Butterfly: 'Pectoral machine', Leverage_Chest_Press: 'Chest press', Machine_Bench_Press: 'Panca alla macchina',
+  Leverage_Incline_Chest_Press: 'Chest press inclinata', Leverage_Decline_Chest_Press: 'Chest press declinata', Cable_Chest_Press: 'Spinte ai cavi', Smith_Machine_Bench_Press: 'Panca piana al multipower',
+  Smith_Machine_Incline_Bench_Press: 'Panca inclinata al multipower', Pushups: 'Piegamenti', 'Push-Up_Wide': 'Piegamenti a mani larghe', 'Push-Ups_With_Feet_Elevated': 'Piegamenti con piedi rialzati',
+  'Incline_Push-Up': 'Piegamenti con mani rialzate', 'Straight-Arm_Dumbbell_Pullover': 'Pullover con manubrio', 'Wide-Grip_Barbell_Bench_Press': 'Panca piana presa larga',
+  // schiena
+  'Wide-Grip_Lat_Pulldown': 'Lat machine', 'Close-Grip_Front_Lat_Pulldown': 'Lat machine presa stretta', 'V-Bar_Pulldown': 'Lat machine con triangolo',
+  Underhand_Cable_Pulldowns: 'Lat machine presa inversa', 'Wide-Grip_Pulldown_Behind_The_Neck': 'Lat machine dietro la nuca', Pullups: 'Trazioni', 'Chin-Up': 'Trazioni presa inversa',
+  'Straight-Arm_Pulldown': 'Pull-down a braccia tese', Seated_Cable_Rows: 'Pulley basso', 'Seated_One-arm_Cable_Pulley_Rows': 'Pulley a un braccio',
+  Bent_Over_Barbell_Row: 'Rematore con bilanciere', 'Reverse_Grip_Bent-Over_Rows': 'Rematore presa inversa', 'One-Arm_Dumbbell_Row': 'Rematore con manubrio',
+  'Bent_Over_Two-Dumbbell_Row': 'Rematore con due manubri', 'T-Bar_Row_with_Handle': 'T-bar row', Lying_T_Bar_Row: 'T-bar row alla panca', 'Lying_T-Bar_Row': 'T-bar row alla panca',
+  Leverage_High_Row: 'Row machine alta', Leverage_Iso_Row: 'Row machine', Dumbbell_Incline_Row: 'Rematore su panca inclinata', Barbell_Deadlift: 'Stacco da terra',
+  Romanian_Deadlift: 'Stacco rumeno', 'Stiff-Legged_Barbell_Deadlift': 'Stacco a gambe tese', 'Stiff-Legged_Dumbbell_Deadlift': 'Stacco a gambe tese con manubri', Sumo_Deadlift: 'Stacco sumo',
+  Rack_Pulls: 'Stacco dai blocchi', Hyperextensions_With_No_Hyperextension_Bench: 'Iperestensioni a terra', Good_Morning: 'Good morning', Barbell_Shrug: 'Scrollate con bilanciere',
+  Dumbbell_Shrug: 'Scrollate con manubri', Cable_Shrugs: 'Scrollate ai cavi', Upright_Barbell_Row: 'Tirate al mento', Standing_Dumbbell_Upright_Row: 'Tirate al mento con manubri',
+  // spalle
+  Barbell_Shoulder_Press: 'Lento avanti con bilanciere', Seated_Barbell_Military_Press: 'Military press seduto', Standing_Military_Press: 'Military press in piedi',
+  Dumbbell_Shoulder_Press: 'Lento con manubri', Seated_Dumbbell_Press: 'Lento con manubri seduto', Arnold_Dumbbell_Press: 'Arnold press', Machine_Shoulder_Military_Press: 'Shoulder press',
+  Leverage_Shoulder_Press: 'Shoulder press alla macchina', Smith_Machine_Overhead_Shoulder_Press: 'Lento al multipower', Standing_Barbell_Press_Behind_Neck: 'Lento dietro la nuca',
+  Side_Lateral_Raise: 'Alzate laterali', Seated_Side_Lateral_Raise: 'Alzate laterali seduto', Cable_Seated_Lateral_Raise: 'Alzate laterali ai cavi seduto',
+  'Bent_Over_Low-Pulley_Side_Lateral': 'Alzate laterali al cavo basso', Front_Dumbbell_Raise: 'Alzate frontali con manubri', Front_Cable_Raise: 'Alzate frontali al cavo',
+  Standing_Front_Barbell_Raise_Over_Head: 'Alzate frontali con bilanciere', Reverse_Flyes: 'Alzate posteriori', Reverse_Machine_Flyes: 'Reverse pectoral machine',
+  'Seated_Bent-Over_Rear_Delt_Raise': 'Alzate posteriori seduto', Cable_Rear_Delt_Fly: 'Alzate posteriori ai cavi', Face_Pull: 'Face pull', Push_Press: 'Push press',
+  'Handstand_Push-Ups': 'Piegamenti in verticale',
+  // braccia
+  Barbell_Curl: 'Curl con bilanciere', 'EZ-Bar_Curl': 'Curl con bilanciere EZ', Close_Grip_EZ_Bar_Curl: 'Curl EZ presa stretta', Dumbbell_Bicep_Curl: 'Curl con manubri',
+  Dumbbell_Alternate_Bicep_Curl: 'Curl alternato con manubri', Hammer_Curls: 'Curl a martello', Alternate_Hammer_Curl: 'Curl a martello alternato', Cable_Hammer_Curls_Rope_Attachment: 'Curl a martello ai cavi',
+  'Cable_Hammer_Curls_-_Rope_Attachment': 'Curl a martello alla corda', Incline_Dumbbell_Curl: 'Curl su panca inclinata', Concentration_Curls: 'Curl di concentrazione',
+  Preacher_Curl: 'Curl alla panca Scott', Machine_Preacher_Curls: 'Panca Scott alla macchina', Cable_Preacher_Curl: 'Panca Scott ai cavi', Machine_Bicep_Curl: 'Curl alla macchina',
+  Standing_Biceps_Cable_Curl: 'Curl ai cavi', High_Cable_Curls: 'Curl ai cavi alti', Overhead_Cable_Curl: 'Curl ai cavi sopra la testa', Reverse_Barbell_Curl: 'Curl presa inversa',
+  Spider_Curl: 'Spider curl', Zottman_Curl: 'Zottman curl', Triceps_Pushdown: 'Push down ai cavi', 'Triceps_Pushdown_-_Rope_Attachment': 'Push down alla corda',
+  'Triceps_Pushdown_-_V-Bar_Attachment': 'Push down con triangolo', Reverse_Grip_Triceps_Pushdown: 'Push down presa inversa', 'EZ-Bar_Skullcrusher': 'French press',
+  Lying_Triceps_Press: 'French press con bilanciere', Lying_Dumbbell_Tricep_Extension: 'French press con manubri', Triceps_Overhead_Extension_with_Rope: 'Estensioni sopra la testa alla corda',
+  Cable_Rope_Overhead_Triceps_Extension: 'Estensioni sopra la testa ai cavi', Standing_Dumbbell_Triceps_Extension: 'Estensioni tricipiti con manubrio',
+  Seated_Triceps_Press: 'Estensioni tricipiti seduto', Tricep_Dumbbell_Kickback: 'Kickback con manubrio', 'Dips_-_Triceps_Version': 'Dip alle parallele', Bench_Dips: 'Dip alla panca',
+  Dip_Machine: 'Dip alla macchina', Machine_Triceps_Extension: 'Tricipiti alla macchina', 'Close-Grip_Barbell_Bench_Press': 'Panca presa stretta', 'Push-Ups_-_Close_Triceps_Position': 'Piegamenti stretti',
+  'Palms-Up_Barbell_Wrist_Curl_Over_A_Bench': 'Curl per i polsi', 'Palms-Down_Wrist_Curl_Over_A_Bench': 'Curl per i polsi presa prona',
+  // gambe
+  Barbell_Full_Squat: 'Squat con bilanciere', Barbell_Squat: 'Squat', Front_Barbell_Squat: 'Front squat', Box_Squat: 'Box squat', Bodyweight_Squat: 'Squat a corpo libero',
+  Dumbbell_Squat: 'Squat con manubri', Plie_Dumbbell_Squat: 'Squat sumo con manubrio', Smith_Machine_Squat: 'Squat al multipower', Hack_Squat: 'Hack squat', Barbell_Hack_Squat: 'Hack squat con bilanciere',
+  Leg_Press: 'Leg press', Narrow_Stance_Leg_Press: 'Leg press piedi stretti', Leg_Extensions: 'Leg extension', 'Single-Leg_Leg_Extension': 'Leg extension a una gamba',
+  Lying_Leg_Curls: 'Leg curl sdraiato', Seated_Leg_Curl: 'Leg curl seduto', Standing_Leg_Curl: 'Leg curl in piedi', Barbell_Lunge: 'Affondi con bilanciere', Dumbbell_Lunges: 'Affondi con manubri',
+  Dumbbell_Rear_Lunge: 'Affondi indietro con manubri', Barbell_Walking_Lunge: 'Affondi in camminata', Split_Squat_with_Dumbbells: 'Split squat con manubri', Dumbbell_Step_Ups: 'Step up con manubri',
+  Barbell_Hip_Thrust: 'Hip thrust', Barbell_Glute_Bridge: 'Ponte glutei con bilanciere', Single_Leg_Glute_Bridge: 'Ponte glutei a una gamba', Butt_Lift_Bridge: 'Ponte glutei',
+  'One-Legged_Cable_Kickback': 'Slanci dietro al cavo', Glute_Kickback: 'Slanci dietro', Thigh_Adductor: 'Adductor machine', Thigh_Abductor: 'Abductor machine', Cable_Hip_Adduction: 'Adduzioni al cavo',
+  Standing_Calf_Raises: 'Calf raise in piedi', Seated_Calf_Raise: 'Calf raise seduto', Calf_Press_On_The_Leg_Press_Machine: 'Calf alla leg press', Standing_Dumbbell_Calf_Raise: 'Calf raise con manubri',
+  Smith_Machine_Calf_Raise: 'Calf raise al multipower', Glute_Ham_Raise: 'Glute ham raise', Reverse_Hyperextension: 'Iperestensioni inverse', Pull_Through: 'Pull through al cavo',
+  // core
+  Crunches: 'Crunch', Cable_Crunch: 'Crunch ai cavi', Ab_Crunch_Machine: 'Crunch alla macchina', Reverse_Crunch: 'Crunch inverso', Decline_Crunch: 'Crunch su panca declinata',
+  Oblique_Crunches: 'Crunch obliqui', 'Sit-Up': 'Sit-up', Plank: 'Plank', Side_Bridge: 'Plank laterale', Russian_Twist: 'Russian twist', Hanging_Leg_Raise: 'Sollevamento gambe alla sbarra',
+  Flat_Bench_Lying_Leg_Raise: 'Sollevamento gambe su panca', Barbell_Ab_Rollout: 'Ab rollout', 'Barbell_Ab_Rollout_-_On_Knees': 'Ab rollout in ginocchio', Dead_Bug: 'Dead bug',
+  Standing_Cable_Wood_Chop: 'Wood chop al cavo', Pallof_Press: 'Pallof press', Dumbbell_Side_Bend: 'Piegamenti laterali con manubrio', Air_Bike: 'Bicicletta (addominali)',
+  // cardio
+  Running_Treadmill: 'Tapis roulant (corsa)', Jogging_Treadmill: 'Tapis roulant (corsa leggera)', Walking_Treadmill: 'Tapis roulant (camminata)', Bicycling_Stationary: 'Cyclette',
+  Recumbent_Bike: 'Cyclette reclinata', Elliptical_Trainer: 'Ellittica', Rowing_Stationary: 'Vogatore', Stairmaster: 'Stepper', Step_Mill: 'Scala mobile (step mill)', Rope_Jumping: 'Salto della corda',
+};

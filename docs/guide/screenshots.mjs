@@ -179,7 +179,7 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await new Promise((r) => setTimeout(r, 700)); // the server starting
   const browser = await chromium.launch();
   const ctx = await browser.newContext({
-    viewport: DESK ? { width: 1440, height: 900 } : { width: 390, height: 780 }, deviceScaleFactor: DESK ? 1 : 2,
+    viewport: DESK ? { width: 1440, height: 900 } : process.env.SMALL ? { width: 360, height: Number(process.env.SMALL) || 720 } : { width: 390, height: 780 }, deviceScaleFactor: DESK ? 1 : 2,
     locale: LANG === 'it' ? 'it-IT' : 'en-GB', timezoneId: 'Europe/Rome', serviceWorkers: 'block', colorScheme: DARK ? 'dark' : 'light',
   });
   await ctx.route('https://api.github.com/**', fakeGithub);
@@ -209,6 +209,8 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
     const file = path.join(out, `${name}.png`);
     await page.screenshot({ path: file });
     made.push(name);
+    // a quick check: does a workout screen (it has to fit) need scrolling?
+    if (process.env.SMALL) { const o = await page.evaluate(() => { const m = document.querySelector('.w-screen.fit .w-main'); return { dark: Boolean(document.querySelector('.w-screen')), over: m ? m.scrollHeight - m.clientHeight : document.documentElement.scrollHeight - innerHeight }; }); if (o.over > 2) console.log(`${o.dark ? 'WORKOUT ' : ''}${name}: ${o.over}px more than the screen`); }
   };
   const ids = await page.evaluate(async ([other, note]) => {
     const { live } = await import('/js/store.js');
@@ -260,6 +262,7 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   // Schede
   await go(DESK ? `#/routines?sel=${ids.wed}` : '#/routines'); await shot('10-routines');
   await go(`#/routine/${ids.wed}`); await shot('11-routine');
+  await page.click('[data-explain]'); await page.waitForSelector('#modal[open]'); await shot('44-minutes'); await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   await page.click('.where-row .chip-btn:nth-child(3)'); await page.waitForSelector('.warn-box');
   await page.evaluate(() => { const r = document.querySelector('.card-row.missing'); window.scrollTo(0, r.getBoundingClientRect().top + window.scrollY - 230); }); await shot('39-missing');
   await page.click('.where-row .chip-btn:nth-child(2)'); await page.waitForTimeout(200);
@@ -273,8 +276,18 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   { const ix = await page.evaluate(async (id) => (await import('/js/store.js')).get('routines', id).items.findIndex((x) => x.perSet), ids.mon);
     await go(`#/routine/${ids.mon}/edit`); await page.click(`[data-edit-item="${ix}"]`); await page.waitForSelector('#modal .set-row-edit'); await shot('34-sets-editor'); await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
   await go('#/settings/body'); await shot('37-body');
+  await go('#/settings/training'); await page.evaluate(() => { const el = document.querySelector('[name=alarm]'); el.closest('.field, .card, label').scrollIntoView({ block: 'start' }); window.scrollBy(0, -80); }); await shot('42-alarm');
+  await go('#/exercises?cat=1'); await page.waitForSelector('.cat-row', { timeout: 8000 }).catch(() => {}); await page.waitForTimeout(400); await shot('43-catalogue');
   await go('#/plans'); await shot('14-plans');
   await go(`#/plan/${ids.plan}`); await shot('15-plan');
+  // v27: the same builder, alternating weeks and a rotation (on the workout that isn't active)
+  await go(`#/plan/${ids.lightPlan}`); await page.click('[data-mode=ab]'); await page.waitForTimeout(250);
+  if (!DESK) await page.click('[data-wv="1"]');
+  await page.click('.wb-chip[data-chip]'); await page.waitForTimeout(150); await page.click(DESK ? '.wb-day[data-drop="day:1:3"]' : '.wb-row[data-drop="day:1:3"]'); await page.waitForTimeout(250);
+  await page.evaluate(() => document.querySelector('.wb-mode').scrollIntoView({ block: 'start' })); await page.evaluate(() => window.scrollBy(0, -70)); await shot('45-plan-ab');
+  await page.click('[data-mode=rotation]'); await page.waitForTimeout(250); await page.click('[data-restchip]'); await page.waitForTimeout(250);
+  await page.evaluate(() => document.querySelector('.wb-mode').scrollIntoView({ block: 'start' })); await page.evaluate(() => window.scrollBy(0, -70)); await shot('46-plan-rotation');
+  await page.click('[data-mode=week]'); await page.waitForTimeout(250);
   await go('#/plans');
   await page.click(`[data-plan-menu="${ids.lightPlan}"]`); await page.click('.kit-menu [data-m=activate]'); await page.waitForSelector('#modal[open]'); await shot('16-activate');
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
@@ -300,7 +313,11 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   for (let i = 0; i < 80 && !(await page.$('.summary')); i++) {
     if (await page.$('[data-action=end-rest]')) {
       await tick(75);
-      if (!restShot && (await page.$('.ring')) && setShot && !(await page.$('.more-q'))) { await shot('21-rest'); restShot = true; }
+      if (!restShot && (await page.$('.ring')) && setShot && !(await page.$('.more-q'))) {
+        await shot('21-rest'); restShot = true;
+        await page.click('[data-action=minimise]'); await page.waitForSelector('[data-live-bar]'); await page.waitForTimeout(250); await shot('48-live');
+        await page.click('[data-live-bar]'); await page.waitForSelector('[data-action=end-rest]');
+      }
       if (!moreShot && setShot && (await page.$('[data-action=add-set]')) && (await page.$('.ring'))) { await page.click('[data-action=add-set]'); await page.waitForSelector('[data-action=undo-set]'); await shot('35-more'); moreShot = true; }
       await page.click('[data-action=end-rest]');
     } else {
@@ -309,6 +326,7 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
         await shot('20-set'); setShot = true;
         if (await page.$('.w-thumb')) { await page.click('.w-thumb'); await page.waitForSelector('.viewer'); await shot('30-viewer'); await page.click('.viewer-close'); }
         await page.click('.w-edge.r'); await page.waitForSelector('.pv-banner'); await shot('31-preview'); await page.click('[data-action=peek-home]'); await page.waitForSelector('[data-action=done]');
+        if (await page.$('.w-other')) { await page.click('.w-other'); await page.waitForSelector('#modal[open]'); await page.waitForTimeout(200); await shot('47-other'); await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
       } else if (setShot && !plusOne && (await page.$('[data-stepper=reps]'))) { await page.click('[data-stepper=reps] [data-delta="1"]'); plusOne = true; }
       await (await page.$('[data-action=done]')).click();
     }

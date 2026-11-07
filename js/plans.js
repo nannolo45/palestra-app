@@ -20,6 +20,8 @@ export function weekStart(ts = Date.now()) {
 }
 
 /** "YYYY-MM-DD" of a timestamp, local time. */
+const dayStart = (ts) => { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); };
+
 export function isoDate(ts) {
   const d = new Date(ts);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -52,20 +54,55 @@ export function activeInfo(now = Date.now()) {
 export const isActive = (planId) => { const a = activeInfo(); return a?.planId === planId; };
 export const isUpcoming = (planId) => activeInfo()?.upcoming?.planId === planId;
 
-/** The days of a plan whose routine still exists. */
-export function planDays(plan) {
+/** Every day of a plan whose routine still exists (both weeks of an A/B plan). */
+export function allDays(plan) {
   return (plan?.days || []).filter((d) => get('routines', d.routineId));
 }
 
+/**
+ * The shape of a workout (v27): 'week' (the same every week), 'ab' (two weeks that take turns: days[].week 0 or 1)
+ * or 'rotation' (an order with no fixed days: each time, the next one; days[].restDays = rest days at least after it).
+ */
+export const planMode = (plan) => (plan?.mode === 'ab' || plan?.mode === 'rotation' ? plan.mode : 'week');
+
+/** Which week of an A/B plan it is (0 = A): counted from when it became active, else from the calendar. */
+export function abWeek(plan, now = Date.now()) {
+  const a = pref('activePlan', null);
+  const from = a && a.planId === plan?.id ? a.from : null;
+  if (from) return (weekNumber(from, now) - 1) % 2;
+  return Math.floor(weekStart(now) / (7 * DAY)) % 2;
+}
+
+/** The days of a plan for the week of now: an A/B plan gives that week's days; a rotation, all of them in order. */
+export function planDays(plan, now = Date.now()) {
+  const all = allDays(plan);
+  if (planMode(plan) !== 'ab') return all;
+  const w = abWeek(plan, now);
+  return all.filter((d) => (Number(d.week) || 0) === w);
+}
+
+/** A rotation: the position of the next one, after the last one done (by its last session). */
+export function rotationNext(plan) {
+  const days = allDays(plan);
+  if (!days.length) return 0;
+  const ids = new Set(days.map((d) => d.routineId));
+  const last = live('sessions').filter((x) => x.end && ids.has(x.routineId)).sort((a, b) => b.start - a.start)[0];
+  if (!last) return 0;
+  const i = days.findIndex((d) => d.routineId === last.routineId);
+  return i < 0 ? 0 : (i + 1) % days.length;
+}
+
 /** What Everyday reads: the active plan, its days and weekdays (0 = Monday … 6 = Sunday, or null = any day). */
-function activeRecord(plan, from) {
+function activeRecord(plan, from, now = Date.now()) {
   return {
     planId: plan.id,
     name: plan.name,
     from,
-    days: planDays(plan).map((d) => ({
+    ...(planMode(plan) !== 'week' ? { mode: planMode(plan), weekOf: isoDate(weekStart(now)) } : {}),
+    // an A/B plan: this week's days (Palestra writes it again when the week changes); a rotation: any day
+    days: planDays(plan, now).map((d) => ({
       routineId: d.routineId,
-      weekday: Number.isInteger(d.weekday) ? d.weekday : null,
+      weekday: planMode(plan) !== 'rotation' && Number.isInteger(d.weekday) ? d.weekday : null,
       ...(validTime(d.time) ? { time: d.time } : {}),
     })),
   };
@@ -95,6 +132,14 @@ export function savePlan(plan) {
   return rec;
 }
 
+/** An A/B plan: on a new week, the record Everyday reads gets that week's days. */
+export function refreshActiveWeek(now = Date.now()) {
+  const a = pref('activePlan', null);
+  if (!a || !a.planId || a.mode !== 'ab' || a.weekOf === isoDate(weekStart(now))) return;
+  const plan = get('plans', a.planId);
+  if (plan) setPref('activePlan', { ...activeRecord(plan, a.from, now), ...(a.previous ? { previous: a.previous } : {}) });
+}
+
 /** The next Monday after ts (or ts's Monday if it's already Monday at 00:00). */
 export function nextMonday(ts = Date.now()) {
   const ws = weekStart(ts);
@@ -113,6 +158,12 @@ export function weekNumber(from, now = Date.now()) {
  * A day counts as done when a session of its routine ended this week.
  */
 export function weekStatus(plan, now = Date.now()) {
+  if (planMode(plan) === 'rotation') {
+    // a rotation has no weeks: the next one first, then the others in their order
+    const days = allDays(plan); const k = rotationNext(plan);
+    const order = [...days.slice(k), ...days.slice(0, k)];
+    return { days: order.map((d) => { const routine = get('routines', d.routineId); return { day: d, routine, minutes: routineMinutes(routine), done: null }; }), next: order.length ? 0 : -1, doneCount: 0, rotation: true };
+  }
   const ws = weekStart(now);
   const sess = live('sessions').filter((s) => s.end && s.start >= ws && s.start < ws + 7 * DAY);
   const used = new Set();
@@ -132,7 +183,7 @@ export function planMinutes(plan) {
 
 /** Routines that aren't in the given plan. */
 export function outsidePlan(plan) {
-  const inPlan = new Set(planDays(plan).map((d) => d.routineId));
+  const inPlan = new Set(allDays(plan).map((d) => d.routineId));
   return live('routines').filter((r) => !inPlan.has(r.id));
 }
 
@@ -144,11 +195,20 @@ const EQ_TXT = { barbell: 'bilanciere', dumbbell: 'manubri', cable: 'cavi', mach
 export function planToText(plan) {
   const lines = [`WORKOUT: ${plan.name}`];
   if (plan.note) lines.push(`Note: ${plan.note}`);
-  for (const d of planDays(plan)) {
+  const mode = planMode(plan);
+  if (mode !== 'week') lines.push(`Modo: ${mode === 'ab' ? 'settimane alterne' : 'rotazione'}`);
+  const seen = new Set();
+  for (const d of allDays(plan)) {
     const r = get('routines', d.routineId);
-    const wd = Number.isInteger(d.weekday) ? ` @ ${WD_TXT[d.weekday]}` : '';
-    const tm = validTime(d.time) ? `${wd ? '' : ' @'} ${d.time}` : '';
-    lines.push('', `SCHEDA: ${r.name}${wd}${tm}`);
+    const wk = mode === 'ab' ? (Number(d.week) === 1 ? ' B' : ' A') : '';
+    const wd = mode !== 'rotation' && Number.isInteger(d.weekday) ? ` ${WD_TXT[d.weekday]}` : '';
+    const tm = mode !== 'rotation' && validTime(d.time) ? ` ${d.time}` : '';
+    const rd = mode === 'rotation' && Number(d.restDays) > 0 ? ` riposo ${Number(d.restDays)}` : '';
+    const when = `${wk}${wd}${tm}${rd}`;
+    lines.push('', `SCHEDA: ${r.name}${when ? ` @${when}` : ''}`);
+    // a scheda on more than one day: its exercises once, the first time
+    if (seen.has(r.id)) continue;
+    seen.add(r.id);
     for (const it of r.items || []) {
       const ex = get('exercises', it.exerciseId);
       if (!ex) continue;
@@ -228,6 +288,16 @@ export function undoMove(routineId, now = Date.now()) {
  */
 export function todayDay(plan, now = Date.now()) {
   const status = weekStatus(plan, now);
+  if (status.rotation) {
+    // the next one, whenever you go; too soon if the rest after the last one isn't over
+    const first = status.days[0];
+    if (!first) return null;
+    const days = allDays(plan); const prev = days[(days.indexOf(first.day) - 1 + days.length) % days.length];
+    const last = live('sessions').filter((x) => x.end && x.routineId === prev?.routineId).sort((a, b) => b.start - a.start)[0];
+    const need = Number(prev?.restDays) || 0;
+    const tooSoon = Boolean(last && need && Math.round((dayStart(now) - dayStart(last.start)) / DAY) <= need);
+    return { ...first, index: 0, ...(tooSoon ? { tooSoon: true } : {}) };
+  }
   const wd = (new Date(now).getDay() + 6) % 7;
   const i = status.days.findIndex((x) => !x.done && effectiveWeekday(x.day, now) === wd);
   return i >= 0 ? { ...status.days[i], index: i } : null;

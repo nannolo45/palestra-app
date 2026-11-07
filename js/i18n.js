@@ -548,6 +548,80 @@ Object.assign(en, {
   eqk_machines: 'Weight machines', eqk_bars: 'Dip bars / pull-up bar', eqk_cardio: 'Cardio machines', eqk_mats: 'Mats', eqk_none: 'no equipment',
 });
 
+// v27: screens that fit, the rest alarm, Riduci, another exercise, durations, catalogue, builders.
+Object.assign(it, {
+  moreQshort: (x) => `Finite le serie di ${x}`, setWord: 'Serie', exWord: 'Esercizio',
+  alarmTitle: 'Suono a fine recupero', snd_bell: 'Campanella', snd_beeps: 'Tre bip', snd_gong: 'Gong', snd_none: 'Nessuno', volume: 'Volume', tryIt2: 'Prova',
+  tickLast3: 'Un tic negli ultimi 3 secondi', alarmAgain: 'Se non tocchi niente, risuona dopo 30 secondi',
+  alarmLimit: 'Con il telefono bloccato o un\'altra app davanti il browser non lascia suonare: per questo lo schermo resta acceso durante l\'allenamento.',
+  fromScheda: (m) => `Dalla scheda: ${m} min. Le ultime volte ci hai messo così:`, whenWord: 'Quando', tookWord: 'Durata', estStar: 'Stima*', weightWord: 'Peso',
+  estStarHint: '* quanto avrei stimato per le serie fatte quel giorno.', youTakeLess: (p) => `In media ci metti il ${p}% in meno della stima.`, youTakeMore: (p) => `In media ci metti il ${p}% in più della stima.`,
+  youTakeSame: 'Ci metti quanto la stima.', fewTimes: 'Con poche volte conta ancora la stima della scheda.', neverTimed: (m) => `Non l'hai ancora fatta: ${m} min da ripetizioni, recuperi e cambi. Dopo la prima volta impara dai tuoi tempi.`, okBtn: 'Ok',
+  didAnother: 'Ho fatto un altro esercizio', didAnotherAgain: 'Ho fatto un altro ancora', whatDidYouDo: 'Cosa hai fatto?', suggested: 'consigliato',
+  schedaAlternative: 'alternativa della scheda', lastTimeShort: (x) => `ultima ${x}`, newForYou: 'nuovo per te', searchAllYours: 'Cerca tra tutti i tuoi esercizi', nowDoing: (x) => `Ora: ${x}`,
+  swapToday: (x) => `La scheda resta con ${x}.`, swapGym: (g, a, b) => `A ${g} fai ${a}, altrove ${b}.`, swapScheda: (x) => `Da ora nella scheda c'è ${x}, con le serie e il peso di oggi.`,
+  myExercises: 'I miei', catalogue: 'Catalogo', searchCatalogue: 'Cerca: panca, row, cavi, squat…', catLoading: 'Carico il catalogo…', catOffline: 'Il catalogo si scarica la prima volta che lo apri: serve la rete.',
+  nFound: (n) => (n === 1 ? '1 esercizio' : `${n} esercizi`), yours: 'tuo', showMore: (n) => `Mostra altri (${n})`, createNamed: (x) => `Nel catalogo non c'è «<b>${x}</b>»: <b>crealo tu</b>`,
+  notThereCreate: 'Non lo trovi? Crea un esercizio tuo', addedToYours: (x) => `${x} è tra i tuoi esercizi`,
+  chainHint: 'Tocca un esercizio per serie e peso, trascinalo dalla maniglia; tocca un cerchio per il recupero.', chainHintWide: 'Trascina gli esercizi dalla libreria o per riordinarli; tocca un cerchio per il recupero.',
+  setRestShort: (x) => `${x} tra le serie`, removeFromRoutine: (x) => `Togli ${x}`, orWord: 'oppure', alternativeWord: 'alternativa', removeAlt: (x) => `Togli l'alternativa ${x}`,
+  addAlternative: 'Aggiungi un\'alternativa', addAlternativeFor: (x) => `Un'alternativa a ${x}`, chainStart: 'Inizio', chainEnd: 'Fine', supersetLabel: 'superserie: senza recupero',
+  restBefore: (x) => `Recupero ${x} prima del prossimo`, restDefault: 'recupero tra esercizi', restTap: 'recupero prima del prossimo', dragHereToRemove: 'Trascina qui per togliere',
+  altSet: (x) => `Alternativa: ${x}`, removedFrom: (x) => `${x} tolto dalla scheda`, alternativeFor: (x) => `Alternativa a ${x}`,
+  alternativeHint: 'La proposta per prima quando la macchina è occupata (Ho fatto un altro esercizio) o manca in una palestra.', noAlternative2: 'Nessuna alternativa',
+  minimise: 'Riduci: l\'allenamento continua', backThere: 'Torna', restOverNext: (x) => `Recupero finito · ${x}`, overBy: (x) => `oltre di ${x}`,
+});
+Object.assign(en, {
+  moreQshort: (x) => `${x}: sets done`, setWord: 'Set', exWord: 'Exercise',
+  alarmTitle: 'Sound when the rest ends', snd_bell: 'Bell', snd_beeps: 'Three beeps', snd_gong: 'Gong', snd_none: 'None', volume: 'Volume', tryIt2: 'Try',
+  tickLast3: 'A tick in the last 3 seconds', alarmAgain: 'If you don\'t tap anything, ring again after 30 seconds',
+  alarmLimit: 'With the phone locked or another app in front, the browser won\'t play sound: that\'s why the screen stays on during a workout.',
+  fromScheda: (m) => `From the routine: ${m} min. The last times it took you:`, whenWord: 'When', tookWord: 'Took', estStar: 'Estimate*', weightWord: 'Weight',
+  estStarHint: '* what I\'d have estimated for the sets done that day.', youTakeLess: (p) => `On average you take ${p}% less than the estimate.`, youTakeMore: (p) => `On average you take ${p}% more than the estimate.`,
+  youTakeSame: 'You take as long as the estimate.', fewTimes: 'With only a few times, the routine\'s estimate still counts.', neverTimed: (m) => `Not done yet: ${m} min from reps, rests and moves. After the first time it learns from your times.`, okBtn: 'Ok',
+  didAnother: 'I did another exercise', didAnotherAgain: 'I did yet another one', whatDidYouDo: 'What did you do?', suggested: 'suggested',
+  schedaAlternative: 'the routine\'s alternative', lastTimeShort: (x) => `last ${x}`, newForYou: 'new for you', searchAllYours: 'Search all your exercises', nowDoing: (x) => `Now: ${x}`,
+  swapToday: (x) => `The routine keeps ${x}.`, swapGym: (g, a, b) => `At ${g} you do ${a}, elsewhere ${b}.`, swapScheda: (x) => `From now the routine has ${x}, with today's sets and weight.`,
+  myExercises: 'Mine', catalogue: 'Catalogue', searchCatalogue: 'Search: bench, row, cable, squat…', catLoading: 'Loading the catalogue…', catOffline: 'The catalogue downloads the first time you open it: it needs a connection.',
+  nFound: (n) => (n === 1 ? '1 exercise' : `${n} exercises`), yours: 'yours', showMore: (n) => `Show more (${n})`, createNamed: (x) => `“<b>${x}</b>” isn't in the catalogue: <b>create it</b>`,
+  notThereCreate: 'Can\'t find it? Create your own exercise', addedToYours: (x) => `${x} is now one of your exercises`,
+  chainHint: 'Tap an exercise for sets and weight, drag it by the handle; tap a circle for the rest.', chainHintWide: 'Drag exercises from the library or to reorder them; tap a circle for the rest.',
+  setRestShort: (x) => `${x} between sets`, removeFromRoutine: (x) => `Remove ${x}`, orWord: 'or', alternativeWord: 'alternative', removeAlt: (x) => `Remove the alternative ${x}`,
+  addAlternative: 'Add an alternative', addAlternativeFor: (x) => `An alternative to ${x}`, chainStart: 'Start', chainEnd: 'End', supersetLabel: 'superset: no rest',
+  restBefore: (x) => `Rest ${x} before the next`, restDefault: 'rest between exercises', restTap: 'rest before the next', dragHereToRemove: 'Drag here to remove',
+  altSet: (x) => `Alternative: ${x}`, removedFrom: (x) => `${x} removed from the routine`, alternativeFor: (x) => `Alternative to ${x}`,
+  alternativeHint: 'Offered first when the machine is busy (I did another exercise) or missing at a gym.', noAlternative2: 'No alternative',
+  minimise: 'Minimise: the workout goes on', backThere: 'Back', restOverNext: (x) => `Rest over · ${x}`, overBy: (x) => `over by ${x}`,
+});
+
+// v27: the workout builder (shapes: weekly, alternating weeks, rotation)
+Object.assign(it, {
+  modeWeek: 'Settimanale', modeAB: 'Alterne A · B', modeRot: 'Rotazione', weekAB: (w) => `Settimana ${w ? 'B' : 'A'}`,
+  wbSchede: 'Schede', wbHint: 'Trascinale sui giorni, o toccane una e poi tocca il giorno.', wbHintRot: 'Trascinale nel giro, o toccane una per metterla in fondo.',
+  wbTapDay: (x) => `Tocca un giorno per mettere «${x}»`, restDayChip: 'Giorno di riposo', newScheda: 'Nuova scheda',
+  wbTime: 'Orario', wbTimeFor: (x) => `Orario di ${x}`, noTime: 'Senza orario', anyTime: 'orario?',
+  wbWeekSum: (n, m) => `${n} ${pl(n, 'allenamento', 'allenamenti')}, ${m}`, wbThisWeekIs: (w) => `questa è la settimana ${w ? 'B' : 'A'}`,
+  rotLoop: 'Ogni volta che vai fai la prossima; dopo l’ultima si ricomincia. I cerchi sono i giorni di riposo minimi: se vai prima, Oggi te lo dice. Tocca un cerchio per cambiarlo.',
+  rotSum: (n, d) => `Un giro: ${n} ${pl(n, 'allenamento', 'allenamenti')} in almeno ${d} ${pl(d, 'giorno', 'giorni')}`,
+  nRestDays: (n) => `${n} ${pl(n, 'giorno', 'giorni')} riposo`, rotStart: 'Si comincia', rotAgain: 'e si ricomincia',
+  dropBWeek: (n) => `La settimana B ha ${n} ${pl(n, 'scheda', 'schede')}: passando a settimanale le togli. Continuo?`,
+  rotNext: 'La prossima', rotTooSoon: 'La prossima · riposo consigliato ancora', rotOrder: 'Il giro', rotMeta: (n, m) => `Rotazione · ${n} schede · ${m} a giro`,
+  placedOn: (x, d) => `${x} · ${d}`, thisOneW: 'questa',
+});
+Object.assign(en, {
+  modeWeek: 'Weekly', modeAB: 'Alternate A · B', modeRot: 'Rotation', weekAB: (w) => `Week ${w ? 'B' : 'A'}`,
+  wbSchede: 'Routines', wbHint: 'Drag them onto the days, or tap one and then tap the day.', wbHintRot: 'Drag them into the loop, or tap one to add it at the end.',
+  wbTapDay: (x) => `Tap a day to put “${x}”`, restDayChip: 'Rest day', newScheda: 'New routine',
+  wbTime: 'Time', wbTimeFor: (x) => `Time of ${x}`, noTime: 'No time', anyTime: 'time?',
+  wbWeekSum: (n, m) => `${n} ${pl(n, 'workout', 'workouts')}, ${m}`, wbThisWeekIs: (w) => `this is week ${w ? 'B' : 'A'}`,
+  rotLoop: 'Each time you go, do the next one; after the last it starts again. The circles are the minimum rest days: if you go sooner, Today tells you. Tap a circle to change it.',
+  rotSum: (n, d) => `One loop: ${n} ${pl(n, 'workout', 'workouts')} in at least ${d} ${pl(d, 'day', 'days')}`,
+  nRestDays: (n) => `${n} rest ${pl(n, 'day', 'days')}`, rotStart: 'Start', rotAgain: 'and again',
+  dropBWeek: (n) => `Week B has ${n} ${pl(n, 'routine', 'routines')}: switching to weekly removes them. Go on?`,
+  rotNext: 'Next', rotTooSoon: 'Next · rest suggested a bit longer', rotOrder: 'The loop', rotMeta: (n, m) => `Rotation · ${n} routines · ${m} a loop`,
+  placedOn: (x, d) => `${x} · ${d}`, thisOneW: 'this one',
+});
+
 export const DICTS = { it, en };
 
 export function getLang() {
