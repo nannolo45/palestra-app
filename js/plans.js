@@ -86,10 +86,18 @@ export function rotationNext(plan) {
   const days = allDays(plan);
   if (!days.length) return 0;
   const ids = new Set(days.map((d) => d.routineId));
-  const last = live('sessions').filter((x) => x.end && ids.has(x.routineId)).sort((a, b) => b.start - a.start)[0];
-  if (!last) return 0;
-  const i = days.findIndex((d) => d.routineId === last.routineId);
-  return i < 0 ? 0 : (i + 1) % days.length;
+  const recent = live('sessions').filter((x) => x.end && ids.has(x.routineId)).sort((a, b) => b.start - a.start).slice(0, days.length * 2);
+  if (!recent.length) return 0;
+  // v29: the same scheda can be in the loop more than once (A B A C): pick the place where the recent sessions,
+  // walked backwards, follow the loop the longest; a tie goes to the first
+  let best = -1; let bestLen = -1;
+  days.forEach((d, i) => {
+    if (d.routineId !== recent[0].routineId) return;
+    let len = 0;
+    while (len < recent.length && days[((i - len) % days.length + days.length) % days.length].routineId === recent[len].routineId) len++;
+    if (len > bestLen) { best = i; bestLen = len; }
+  });
+  return best < 0 ? 0 : (best + 1) % days.length;
 }
 
 /** What Everyday reads: the active plan, its days and weekdays (0 = Monday … 6 = Sunday, or null = any day). */

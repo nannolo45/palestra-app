@@ -256,7 +256,12 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.click('[data-edit-item="0"]');
   await page.fill('#modal [name=sets]', '2');
   await page.fill('#modal [name=weight]', '100');
-  await page.fill('#modal [name=rest]', '60');
+  // v29: the rest between sets is typed (130 = 1:30) or ±30 s, like the circles
+  await page.fill('#modal [data-srest]', '130');
+  await page.click('#modal [data-sstep="-30"]');
+  check(await page.inputValue('#modal [data-srest]') === '1:00', `rest between sets: 1:30 − 30 s (${await page.inputValue('#modal [data-srest]')})`);
+  check(Boolean(await page.$('#modal [data-srest-reset]')), 'a way back to the usual rest');
+  await shot('v29-set-rest', { fullPage: true });
   await page.click('#modal [value=save]');
   // move the treadmill first with the keyboard on its handle
   await page.waitForTimeout(1000);
@@ -462,7 +467,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForTimeout(200);
 
   console.log('Import a plan from JSON, then one from text, and make it active');
-  const plan = fs.readFileSync('/home/claude/palestra-scheda-3-giorni.json', 'utf8');
+  const plan = fs.readFileSync(path.join(__dirname, 'sample-plan.json'), 'utf8');
   await go('#/import');
   await page.fill('#imp-text', plan);
   await page.click('[data-action=read]');
@@ -480,6 +485,26 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(days.join('|') === 'A · Spinta|B · Tirata|C · Gambe', 'home shows the active plan\'s days');
   const mins = await page.$$eval('.day-home .row-sub', (els) => els.map((e) => Number(e.textContent.match(/(\d+) min/)[1])));
   check(mins.every((m) => m >= 85 && m <= 120), `days last 85–120 min (${mins.join(', ')})`);
+
+  console.log('v29: importing the same plan again: update the ones there, or add as new');
+  { const count = () => page.evaluate(async () => { const { live } = await import('/js/store.js'); return [live('routines').length, live('plans').length]; });
+    const [r0, p0] = await count();
+    await go('#/import');
+    await page.fill('#imp-text', plan.replace('"sets": 5', '"sets": 6'));
+    await page.click('[data-action=read]');
+    await page.waitForSelector('.imp-how');
+    check((await page.textContent('.imp-how')).includes('Il workout e 3 schede'), `the clash is named (${await page.textContent('.imp-how p')})`);
+    check(await page.isChecked('[name=impHow][value=new]'), 'nothing is replaced unless asked');
+    check((await page.textContent('.imp-day')).includes('(2)'), 'as new: copies with (2)');
+    await page.click('.imp-choice:has([value=update])');
+    await page.waitForSelector('.imp-tag.upd');
+    check(!(await page.textContent('.imp-day')).includes('(2)'), 'update: same names');
+    await shot('v29-import-update', { fullPage: true });
+    await page.click('[data-action=do-import]');
+    await page.waitForTimeout(300);
+    const [r1, p1] = await count();
+    check(r1 === r0 && p1 === p0, `update: no new schede or workout (${r0}/${p0} → ${r1}/${p1})`);
+  }
 
   console.log('v24: sets that differ, rep ranges, the trial, Pronto?, the starting weight');
   await go('#/import?for=routine');
@@ -564,7 +589,8 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await kitSheet(() => page.click('.kit-panel [data-dense="1"]'));
   await page.waitForSelector('.list-row.compact');
   const short = await page.evaluate(() => document.documentElement.scrollHeight);
-  check(short < tall * 0.85, `compact list is much shorter (${tall} → ${short})`);
+  // v29: 0.9 (was 0.85) since the import fixture is now tests/sample-plan.json, with more muscle groups (more group headers)
+  check(short < tall * 0.9, `compact list is much shorter (${tall} → ${short})`);
   await shot('24-exercises-compact');
   await page.click('[data-kit-all]');
   await page.waitForTimeout(100);

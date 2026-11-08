@@ -16,7 +16,7 @@ import { activeInfo } from '../plans.js';
 // Shown at the bottom of Settings. Keep in step with VERSION in sw.js: changing sw.js is what makes phones update.
 import { themeChoice, applyTheme } from '../theme.js';
 
-export const APP_VERSION = 'v28';
+export const APP_VERSION = 'v29';
 const VERSION = APP_VERSION;
 
 function statusCard() {

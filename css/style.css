@@ -1309,3 +1309,15 @@ button.wb-tile { border: 0; font: inherit; color: var(--ink); text-align: left; 
 a.ax-row { text-decoration: none; }
 .wb-other-time { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; font-size: 14px; color: var(--muted); }
 .wb-other-time input { width: auto; }
+
+/* ---- v29 ---- */
+.rt-field > span { display: block; }
+.rt-row.sm .rt-b { min-height: 48px; }
+.rt-row.sm .rt-in { font-size: clamp(26px, 8vw, 34px); }
+.rt-field .rt-def { margin: 6px 0 0; text-align: left; }
+.imp-how p { margin: 0 0 8px; font-weight: 600; }
+.imp-choice { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+.imp-choice input { flex: none; margin-top: 3px; width: auto; }
+.imp-choice span { display: flex; flex-direction: column; min-width: 0; }
+.imp-choice small { color: var(--muted); font-size: 13px; }
+.imp-tag.upd { background: var(--chip); color: var(--ink); margin-left: auto; margin-right: 8px; }

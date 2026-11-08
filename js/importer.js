@@ -1,7 +1,8 @@
 // Import routines and their exercises from a file ("palestra-import", version 1), e.g. a plan written for you.
 // Exercises are matched by name to the ones you already have (and keep your machines); the rest are added.
-// Routines are always added as new ones. Nothing is overwritten.
-import { state, upsert, uid, live } from './store.js';
+// Routines are added as new ones; v29: or, when asked, a scheda (and a workout) with the same name is updated in place.
+import { state, upsert, uid, live, get } from './store.js';
+import { savePlan } from './plans.js';
 import { EXERCISE_TYPES, EQUIPMENT, CARDIO_KIND_KEYS } from './model.js';
 
 const norm = (s) => String(s || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
@@ -217,7 +218,7 @@ export function parseText(text) {
 }
 
 /** What an import would do: { newExercises:[names], reused:[names], routines:[{name, finalName, items}] } */
-export function planImport(data) {
+export function planImport(data, { update = false } = {}) {
   const mine = live('exercises');
   const reused = []; const added = [];
   const map = new Map();
@@ -225,14 +226,27 @@ export function planImport(data) {
     const same = mine.find((m) => norm(m.name) === norm(e.name) && m.type === e.type);
     if (same) { map.set(e.id, same.id); reused.push(same.name); } else { map.set(e.id, null); added.push(e.name); }
   }
-  const names = new Set(live('routines').map((r) => norm(r.name)));
+  const existing = live('routines');
+  const names = new Set(existing.map((r) => norm(r.name)));
+  const used = new Set();
   const routines = data.routines.map((r) => {
+    // v29: "Aggiorna quelli che ci sono": a scheda with the same name gets the new exercises (same id: history and workouts stay)
+    const same = update ? existing.find((x) => norm(x.name) === norm(r.name) && !used.has(x.id)) : null;
+    if (same) { used.add(same.id); return { name: r.name, finalName: same.name, items: r.items.length, updateId: same.id }; }
     let finalName = r.name; let n = 2;
     while (names.has(norm(finalName))) finalName = `${r.name} (${n++})`;
     names.add(norm(finalName));
     return { name: r.name, finalName, items: r.items.length };
   });
-  return { newExercises: added, reused, routines, map, plan: data.plan || null };
+  const samePlan = update && data.plan ? live('plans').find((p) => norm(p.name) === norm(data.plan.name)) || null : null;
+  return { newExercises: added, reused, routines, map, plan: data.plan || null, updatePlanId: samePlan?.id || null };
+}
+
+/** v29: does the import clash with what's there (a scheda or workout with the same name)? */
+export function importClashes(data) {
+  const rn = new Set(live('routines').map((r) => norm(r.name)));
+  const pn = new Set(live('plans').map((p) => norm(p.name)));
+  return { routines: data.routines.filter((r) => rn.has(norm(r.name))).length, plan: Boolean(data.plan && pn.has(norm(data.plan.name))) };
 }
 
 /** For the preview: is this exercise already yours? */
@@ -261,8 +275,8 @@ export function defaultWeekdays(count) {
 const n = (x) => (x == null || x === '' ? undefined : Number(x));
 
 /** Add everything. Returns the plan with the ids of the new routines (and of the new plan, if one was made). */
-export function runImport(data, { asPlan = true } = {}) {
-  const plan = planImport(data);
+export function runImport(data, { asPlan = true, update = false } = {}) {
+  const plan = planImport(data, { update });
   for (const e of data.exercises) {
     if (plan.map.get(e.id)) continue;
     const rec = upsert('exercises', cleanExercise(e), { silent: true });
@@ -288,10 +302,13 @@ export function runImport(data, { asPlan = true } = {}) {
       }
       return out;
     });
-    const rec = upsert('routines', {
-      id: uid(), name: plan.routines[i].finalName, items, autoIncrease: Boolean(r.autoIncrease),
-      ...(r.restBetween != null ? { restBetween: n(r.restBetween) } : {}), order: order++,
-    }, { silent: true });
+    const upd = plan.routines[i].updateId && get('routines', plan.routines[i].updateId);
+    const rec = upd
+      ? upsert('routines', { ...upd, items, autoIncrease: Boolean(r.autoIncrease), restBetween: r.restBetween != null ? n(r.restBetween) : null }, { silent: true })
+      : upsert('routines', {
+        id: uid(), name: plan.routines[i].finalName, items, autoIncrease: Boolean(r.autoIncrease),
+        ...(r.restBetween != null ? { restBetween: n(r.restBetween) } : {}), order: order++,
+      }, { silent: true });
     created.push(rec.id);
   });
   let planId = null;
@@ -314,7 +331,10 @@ export function runImport(data, { asPlan = true } = {}) {
       const r = data.routines[i];
       return [dayOf(routineId, r, i, i), ...(r._more || []).map((m) => dayOf(routineId, m, i, i))];
     }).sort((a, b) => a._seq - b._seq).map(({ _seq, ...d }) => d);
-    const p = upsert('plans', { id: uid(), name: String(data.plan.name || '').trim() || 'Workout', note: data.plan.note || '', ...(mode ? { mode } : {}), days }, { silent: true });
+    const upd = plan.updatePlanId && get('plans', plan.updatePlanId);
+    const p = upd
+      ? savePlan({ ...upd, note: data.plan.note || '', mode: mode || 'week', days })
+      : upsert('plans', { id: uid(), name: String(data.plan.name || '').trim() || 'Workout', note: data.plan.note || '', ...(mode ? { mode } : {}), days }, { silent: true });
     planId = p.id;
   }
   return { ...plan, created, planId };

@@ -660,6 +660,11 @@ async function editItem(routineId, index, draft = null) {
   const W = ex.type === 'weights';
   const kgStep = ex.equipment === 'dumbbell' ? 1 : 2.5;
   const sug = W ? suggestWeight(ex, bodyPrefs()) : null;
+  // v29: the rest between sets is typed or ±30 s, like the circles between exercises
+  const restDef = ex.defaultRest ?? (ex.type === 'bodyweight' ? 60 : training().rest);
+  const setRestField = () => `<div class="field rt-field"><span>${esc(t('restBetweenSets'))}</span>
+      <div class="rt-row sm"><button type="button" class="rt-b" data-sstep="-30">−30 s</button><input class="rt-in" data-srest inputmode="numeric" autocomplete="off" aria-label="${esc(t('restMinSec'))}"><button type="button" class="rt-b" data-sstep="30">+30 s</button></div>
+      <p class="rt-def" data-srest-def></p></div>`;
   let body;
   if (ex.type === 'cardio') {
     body = measuresFor(ex, machineOf(ex)).map((m) => stepper({ name: `t_${m.key}`, value: it.targets?.[m.key] ?? 0, step: m.step, min: m.min ?? 0, unit: m.unit, label: measureLabel(m) })).join('');
@@ -682,15 +687,30 @@ async function editItem(routineId, index, draft = null) {
         <p class="muted small">${esc(t('setsDiffHint'))}</p>`}
       ${W && sug ? `<p class="muted small sug-line">${esc(t('sugFor', fmtNum(sug)))}</p>` : ''}
       ${!timed ? `<label class="field"><span>${esc(t('failure'))}</span><select name="failure">${['none', 'all', 'last'].map((v) => `<option value="${v}" ${d.failure === v ? 'selected' : ''}>${esc(t(`failure_${v}`))}</option>`).join('')}</select></label>` : ''}
-      ${stepper({ name: 'rest', value: d.rest, step: 15, min: 0, unit: 's', label: t('rest') })}`;
+      ${setRestField()}`;
   }
   const html = `<h2>${esc(ex.name)}</h2><p class="muted">${esc([typeLabel(ex), whereText(ex)].filter(Boolean).join(' · '))}</p>
     <div class="stack">${body}</div>
     <div class="button-row"><button class="btn primary" value="save">${esc(t('save'))}</button><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>
-    <button type="button" class="btn danger-text wide" data-remove>${esc(t('removeFromRoutine'))}</button>`;
+    <button type="button" class="btn danger-text wide" data-remove>${esc(t('removeFromRoutine', ex.name))}</button>`;
   let again = null;
   await openSheet(html, (form, close) => {
     bindSteppers(form);
+    const sIn = form.querySelector('[data-srest]');
+    if (sIn) {
+      const showRest = (typing) => {
+        if (!typing) sIn.value = mmss(d.rest ?? 0);
+        form.querySelector('[data-srest-def]').innerHTML = d.rest !== restDef ? `<button type="button" class="link-btn" data-srest-reset>↺ ${esc(t('restUsual', mmss(restDef)))}</button>` : `<span>${esc(t('restUsual', mmss(restDef)))}</span>`;
+      };
+      showRest(false);
+      sIn.addEventListener('input', () => { const v = parseRest(sIn.value); if (v != null) { d.rest = Math.min(1800, v); showRest(true); } });
+      sIn.addEventListener('blur', () => showRest(false));
+      form.addEventListener('click', (e) => {
+        const st = e.target.closest('[data-sstep]');
+        if (st) { d.rest = Math.max(0, Math.min(1800, (d.rest ?? 0) + Number(st.dataset.sstep))); showRest(false); return; }
+        if (e.target.closest('[data-srest-reset]')) { d.rest = restDef; showRest(false); }
+      });
+    }
     // read what's on screen into the draft
     const read = () => {
       if (ex.type === 'cardio') return;
@@ -702,7 +722,6 @@ async function editItem(routineId, index, draft = null) {
       if (form.querySelector('[name=range]')) d.range = form.querySelector('[name=range]').checked;
       if (form.querySelector('[name=weight]')) d.weight = stepVal(form, 'weight') ?? d.weight;
       if (form.querySelector('[name=failure]')) d.failure = form.failure.value;
-      d.rest = stepVal(form, 'rest') ?? d.rest;
       d.rows = d.rows.map((row, i) => ({ reps: form.querySelector(`[name=r${i}]`) ? stepVal(form, `r${i}`) ?? row.reps : row.reps, weight: form.querySelector(`[name=w${i}]`) ? stepVal(form, `w${i}`) ?? row.weight : row.weight }));
     };
     const redraw = () => { read(); again = d; close(null); };

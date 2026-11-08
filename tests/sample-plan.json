@@ -1,0 +1,350 @@
+{
+ "format": "palestra-import",
+ "version": 1,
+ "title": "Scheda in 3 giorni: Spinta, Tirata, Gambe",
+ "note": "Pesi da scegliere alla prima seduta: da lì diventano l'obiettivo e l'aumento automatico li fa salire.",
+ "exercises": [
+  {
+   "id": "tapis",
+   "name": "Tapis roulant",
+   "type": "cardio",
+   "muscles": [],
+   "cardio": {
+    "kind": "treadmill",
+    "targets": {}
+   }
+  },
+  {
+   "id": "panca",
+   "name": "Panca piana",
+   "type": "weights",
+   "muscles": [
+    "chest"
+   ],
+   "equipment": "barbell"
+  },
+  {
+   "id": "incl",
+   "name": "Panca inclinata con manubri",
+   "type": "weights",
+   "muscles": [
+    "chest"
+   ],
+   "equipment": "dumbbell"
+  },
+  {
+   "id": "chest",
+   "name": "Chest press",
+   "type": "weights",
+   "muscles": [
+    "chest"
+   ],
+   "equipment": "machine"
+  },
+  {
+   "id": "lento",
+   "name": "Lento avanti con manubri",
+   "type": "weights",
+   "muscles": [
+    "shoulders"
+   ],
+   "equipment": "dumbbell"
+  },
+  {
+   "id": "alzate",
+   "name": "Alzate laterali",
+   "type": "weights",
+   "muscles": [
+    "shoulders"
+   ],
+   "equipment": "dumbbell"
+  },
+  {
+   "id": "push",
+   "name": "Push down ai cavi",
+   "type": "weights",
+   "muscles": [
+    "triceps"
+   ],
+   "equipment": "cable"
+  },
+  {
+   "id": "lat",
+   "name": "Lat machine",
+   "type": "weights",
+   "muscles": [
+    "back"
+   ],
+   "equipment": "machine"
+  },
+  {
+   "id": "rem",
+   "name": "Rematore con bilanciere",
+   "type": "weights",
+   "muscles": [
+    "back"
+   ],
+   "equipment": "barbell"
+  },
+  {
+   "id": "pulley",
+   "name": "Pulley basso",
+   "type": "weights",
+   "muscles": [
+    "back"
+   ],
+   "equipment": "machine"
+  },
+  {
+   "id": "face",
+   "name": "Face pull",
+   "type": "weights",
+   "muscles": [
+    "shoulders"
+   ],
+   "equipment": "cable"
+  },
+  {
+   "id": "curl",
+   "name": "Curl con bilanciere",
+   "type": "weights",
+   "muscles": [
+    "biceps"
+   ],
+   "equipment": "barbell"
+  },
+  {
+   "id": "hammer",
+   "name": "Curl a martello",
+   "type": "weights",
+   "muscles": [
+    "biceps"
+   ],
+   "equipment": "dumbbell"
+  },
+  {
+   "id": "legp",
+   "name": "Leg press",
+   "type": "weights",
+   "muscles": [
+    "quads"
+   ],
+   "equipment": "machine"
+  },
+  {
+   "id": "squat",
+   "name": "Squat con bilanciere",
+   "type": "weights",
+   "muscles": [
+    "quads"
+   ],
+   "equipment": "barbell"
+  },
+  {
+   "id": "lext",
+   "name": "Leg extension",
+   "type": "weights",
+   "muscles": [
+    "quads"
+   ],
+   "equipment": "machine"
+  },
+  {
+   "id": "lcurl",
+   "name": "Leg curl",
+   "type": "weights",
+   "muscles": [
+    "hamstrings"
+   ],
+   "equipment": "machine"
+  },
+  {
+   "id": "calf",
+   "name": "Calf raise",
+   "type": "weights",
+   "muscles": [
+    "calves"
+   ],
+   "equipment": "machine"
+  },
+  {
+   "id": "stacchi",
+   "name": "Stacchi rumeni",
+   "type": "weights",
+   "muscles": [
+    "hamstrings"
+   ],
+   "equipment": "barbell"
+  },
+  {
+   "id": "plank",
+   "name": "Plank",
+   "type": "bodyweight",
+   "muscles": [
+    "abs"
+   ],
+   "timed": true
+  }
+ ],
+ "routines": [
+  {
+   "name": "A · Spinta",
+   "items": [
+    {
+     "exerciseId": "tapis",
+     "targets": {
+      "duration": 20
+     }
+    },
+    {
+     "exerciseId": "panca",
+     "sets": 5,
+     "reps": 6,
+     "rest": 180
+    },
+    {
+     "exerciseId": "incl",
+     "sets": 4,
+     "reps": 10,
+     "rest": 120
+    },
+    {
+     "exerciseId": "chest",
+     "sets": 4,
+     "reps": 12,
+     "rest": 90
+    },
+    {
+     "exerciseId": "lento",
+     "sets": 4,
+     "reps": 10,
+     "rest": 120
+    },
+    {
+     "exerciseId": "alzate",
+     "sets": 4,
+     "reps": 15,
+     "rest": 60
+    },
+    {
+     "exerciseId": "push",
+     "sets": 4,
+     "reps": 12,
+     "rest": 60
+    },
+    {
+     "exerciseId": "plank",
+     "sets": 3,
+     "rest": 60,
+     "seconds": 45
+    }
+   ]
+  },
+  {
+   "name": "B · Tirata",
+   "items": [
+    {
+     "exerciseId": "tapis",
+     "targets": {
+      "duration": 20
+     }
+    },
+    {
+     "exerciseId": "lat",
+     "sets": 5,
+     "reps": 10,
+     "rest": 120
+    },
+    {
+     "exerciseId": "rem",
+     "sets": 5,
+     "reps": 6,
+     "rest": 180
+    },
+    {
+     "exerciseId": "pulley",
+     "sets": 4,
+     "reps": 12,
+     "rest": 90
+    },
+    {
+     "exerciseId": "face",
+     "sets": 4,
+     "reps": 15,
+     "rest": 60
+    },
+    {
+     "exerciseId": "curl",
+     "sets": 4,
+     "reps": 10,
+     "rest": 90
+    },
+    {
+     "exerciseId": "hammer",
+     "sets": 4,
+     "reps": 12,
+     "rest": 60
+    },
+    {
+     "exerciseId": "plank",
+     "sets": 3,
+     "rest": 60,
+     "seconds": 45
+    }
+   ]
+  },
+  {
+   "name": "C · Gambe",
+   "items": [
+    {
+     "exerciseId": "tapis",
+     "targets": {
+      "duration": 20
+     }
+    },
+    {
+     "exerciseId": "squat",
+     "sets": 5,
+     "reps": 6,
+     "rest": 180
+    },
+    {
+     "exerciseId": "legp",
+     "sets": 4,
+     "reps": 12,
+     "rest": 150
+    },
+    {
+     "exerciseId": "lext",
+     "sets": 4,
+     "reps": 12,
+     "rest": 90
+    },
+    {
+     "exerciseId": "lcurl",
+     "sets": 4,
+     "reps": 12,
+     "rest": 90
+    },
+    {
+     "exerciseId": "calf",
+     "sets": 4,
+     "reps": 15,
+     "rest": 60
+    },
+    {
+     "exerciseId": "stacchi",
+     "sets": 4,
+     "reps": 8,
+     "rest": 150
+    },
+    {
+     "exerciseId": "plank",
+     "sets": 3,
+     "rest": 60,
+     "seconds": 45
+    }
+   ]
+  }
+ ]
+}

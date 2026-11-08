@@ -6,13 +6,13 @@ import { esc, fmtNum } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { backLink, segmented, toggle } from '../ui/parts.js';
 import { toast } from '../ui/dialogs.js';
-import { parseImport, planImport, runImport } from '../importer.js';
+import { parseImport, planImport, runImport, importClashes } from '../importer.js';
 import { estMinutes, setsText } from '../model.js';
 import { training, refreshEstimates } from '../data.js';
 import { activeInfo, activate, isoDate, nextMonday, savePlan } from '../plans.js';
 
 // what's on screen, kept across redraws
-const st = { src: 'paste', text: '', result: null, error: '', asPlan: true, makeActive: false };
+const st = { src: 'paste', text: '', result: null, error: '', asPlan: true, makeActive: false, update: false };
 
 const rerender = () => window.dispatchEvent(new CustomEvent('palestra:render'));
 
@@ -32,7 +32,9 @@ function itemText(it, ex) {
 
 function preview() {
   const { data, issues } = st.result;
-  const plan = planImport(data);
+  const plan = planImport(data, { update: st.update && !st.into });
+  const clash = st.into ? { routines: 0, plan: false } : importClashes(data);
+  const planClash = clash.plan && data.plan && st.asPlan && !st.plan;
   const byLine = new Map(issues.filter((x) => x.line).map((x) => [x.line, x]));
   const exById = new Map(data.exercises.map((e) => [e.id, e]));
   const reusedCount = data.exercises.filter((e) => plan.map.get(e.id)).length;
@@ -48,7 +50,7 @@ function preview() {
       return `<div class="imp-row"><span class="row-text"><span class="row-title">${esc(ex.name)}</span>${issue ? `<span class="imp-issue">${esc(issue.reason === 'perSetMismatch' ? t('issue_perSetMismatch', issue.detail) : t('notUnderstood', issue.detail || ''))}</span>` : ''}</span>
         <span class="muted small nowrap">${esc(itemText(it, ex))}</span><span class="imp-tag ${status}">${esc(tag)}</span></div>`;
     }).join('');
-    return `<section class="card imp-day"><div class="imp-head"><b>${esc(`${i + 1} · ${plan.routines[i].finalName}`)}</b><span class="muted small">${mins} min</span></div>${rows}</section>`;
+    return `<section class="card imp-day"><div class="imp-head"><b>${esc(`${i + 1} · ${plan.routines[i].finalName}`)}</b>${plan.routines[i].updateId ? `<span class="imp-tag upd">${esc(t('tagUpdate'))}</span>` : ''}<span class="muted small">${mins} min</span></div>${rows}</section>`;
   }).join('');
   const lost = issues.filter((x) => x.reason !== 'leftover' && x.reason !== 'perSetMismatch');
   const counts = t('importCounts', data.routines.length, data.exercises.length, reusedCount, data.exercises.length - reusedCount, issues.length);
@@ -56,10 +58,14 @@ function preview() {
   return `<header class="bar"><button type="button" class="back plain" data-action="back-edit">${icon('back', 20)}<span>${esc(t('importShort'))}</span></button></header>
     <h1 class="title small">${esc(title)}</h1>
     <p class="lead">${esc(counts)}</p>
-    <div class="stack">${sections}
+    <div class="stack">
+      ${clash.routines || planClash ? `<div class="card imp-how"><p>${esc(t('impClash', clash.routines, planClash))}</p>
+        <label class="imp-choice"><input type="radio" name="impHow" value="update" ${st.update ? 'checked' : ''}><span><b>${esc(t('impUpdate'))}</b><small>${esc(t('impUpdateHint'))}</small></span></label>
+        <label class="imp-choice"><input type="radio" name="impHow" value="new" ${st.update ? '' : 'checked'}><span><b>${esc(t('impAddNew'))}</b><small>${esc(t('impAddNewHint'))}</small></span></label></div>` : ''}
+      ${sections}
       ${lost.length ? `<section class="card warn-card"><b>${esc(t('linesSkipped', lost.length))}</b>${lost.map((x) => `<div class="imp-row"><span class="muted small">${esc(t('lineN', x.line))}</span><code>${esc(x.text)}</code></div>`).join('')}<p class="muted small">${esc(t('linesSkippedHint'))}</p></section>` : ''}
       ${data.plan && !st.plan && !st.into ? `<div class="card">${toggle({ name: 'asPlan', checked: st.asPlan, label: t('saveAsPlan'), hint: t('saveAsPlanHint', data.routines.length) })}
-        ${st.asPlan ? toggle({ name: 'makeActive', checked: st.makeActive, label: t('makeItActive'), hint: a ? t('makeItActiveHint', a.plan.name) : t('makeItActiveHintNone') }) : ''}</div>` : ''}
+        ${st.asPlan && !(plan.updatePlanId && a?.planId === plan.updatePlanId) ? toggle({ name: 'makeActive', checked: st.makeActive, label: t('makeItActive'), hint: a ? t('makeItActiveHint', a.plan.name) : t('makeItActiveHintNone') }) : ''}</div>` : ''}
       <button type="button" class="btn yellow big wide" data-action="do-import">${esc(st.into ? t('importInto', get('routines', st.into)?.name || '') : data.plan && st.asPlan && !st.plan ? t('importPlan') : t('importNRoutines', data.routines.length))}</button>
       ${issues.length ? `<button type="button" class="btn ghost wide" data-action="back-edit">${esc(t('fixText'))}</button>` : ''}
     </div>`;
@@ -76,20 +82,22 @@ export function importView(query = {}) {
       bind(view) {
         view.querySelectorAll('[data-action=back-edit]').forEach((b) => b.addEventListener('click', () => { st.result = null; st.src = 'paste'; rerender(); }));
         view.querySelector('[name=asPlan]')?.addEventListener('change', (e) => { st.asPlan = e.target.checked; rerender(); });
+        view.querySelectorAll('[name=impHow]').forEach((x) => x.addEventListener('change', () => { st.update = x.value === 'update'; rerender(); }));
         view.querySelector('[name=makeActive]')?.addEventListener('change', (e) => { st.makeActive = e.target.checked; });
         view.querySelector('[data-action=do-import]').addEventListener('click', () => {
           const { data } = st.result;
           for (const r of data.routines) for (const it of r.items) delete it._line;
           const target = st.plan && get('plans', st.plan);
           const into = st.into && get('routines', st.into);
-          const out = runImport(data, { asPlan: !target && !into && st.asPlan });
+          const out = runImport(data, { asPlan: !target && !into && st.asPlan, update: st.update && !into });
           if (into) {
             // the exercises go into the scheda being edited; the schede made by the import aren't kept
             const add = out.created.flatMap((rid) => get('routines', rid)?.items || []);
             upsert('routines', { ...into, items: [...(into.items || []), ...add] });
             for (const rid of out.created) remove('routines', rid);
           } else if (target) {
-            savePlan({ ...target, days: [...(target.days || []), ...out.created.map((rid, i) => ({ routineId: rid, weekday: Number.isInteger(data.routines[i]?._weekday) ? data.routines[i]._weekday : null, ...(data.routines[i]?._time ? { time: data.routines[i]._time } : {}) }))] });
+            const already = new Set((target.days || []).map((d) => d.routineId));
+            savePlan({ ...target, days: [...(target.days || []), ...out.created.map((rid, i) => (already.has(rid) ? null : { routineId: rid, weekday: Number.isInteger(data.routines[i]?._weekday) ? data.routines[i]._weekday : null, ...(data.routines[i]?._time ? { time: data.routines[i]._time } : {}) })).filter(Boolean)] });
           }
           refreshEstimates();
           if (out.planId && st.makeActive) {
@@ -98,7 +106,7 @@ export function importView(query = {}) {
           }
           toast(out.planId ? t('importedPlan', get('plans', out.planId).name) : into ? t('importedInto', into.name) : t('importDone', out.created.length));
           const dest = into ? `#/routine/${encodeURIComponent(into.id)}/edit` : target ? `#/plan/${encodeURIComponent(target.id)}` : out.planId ? `#/plan/${encodeURIComponent(out.planId)}` : '#/routines';
-          Object.assign(st, { text: '', result: null, error: '', makeActive: false, asPlan: true, for: null, plan: null, into: null });
+          Object.assign(st, { text: '', result: null, error: '', makeActive: false, asPlan: true, update: false, for: null, plan: null, into: null });
           location.hash = dest;
         });
       },
@@ -127,7 +135,7 @@ export function importView(query = {}) {
       const read = (text) => {
         st.text = text;
         const res = parseImport(text);
-        if (res.error) { st.error = t(res.error, res.detail || ''); st.result = null; } else { st.error = ''; st.result = res; st.asPlan = st.for !== 'routine'; st.makeActive = st.for !== 'routine' && !activeInfo(); }
+        if (res.error) { st.error = t(res.error, res.detail || ''); st.result = null; } else { st.error = ''; st.result = res; st.update = false; st.asPlan = st.for !== 'routine'; st.makeActive = st.for !== 'routine' && !activeInfo(); }
         rerender();
       };
       view.querySelector('[data-action=read]')?.addEventListener('click', () => read(view.querySelector('#imp-text').value));

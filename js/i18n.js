@@ -634,6 +634,20 @@ Object.assign(en, {
   dayOn: ['on Monday', 'on Tuesday', 'on Wednesday', 'on Thursday', 'on Friday', 'on Saturday', 'on Sunday'], inTheLoop: 'in the loop', addToLoop: 'Routine in the loop', restAddDay: 'rest · add', moveTo: 'Move to', removeFromDay: (d) => `Remove from ${d}`, removeFromLoop: 'Remove from the loop', earlier: 'Earlier', later: 'Later', addRest: '+ rest', weekLetter: (w) => `week ${w ? 'B' : 'A'}`,
 });
 
+// v29: rest between sets like the circles; import: update or add as new
+Object.assign(it, {
+  restUsual: (x) => `il solito · ${x}`,
+  impClash: (n, p) => (!n ? 'Un workout con questo nome c’è già.' : `${p ? 'Il workout e ' : ''}${n} ${pl(n, 'scheda', 'schede')} con lo stesso nome ci ${n === 1 && !p ? 'è' : 'sono'} già.`),
+  impUpdate: 'Aggiorna quelli che ci sono', impUpdateHint: 'prendono i nuovi esercizi; lo storico resta',
+  impAddNew: 'Aggiungi come nuovi', impAddNewHint: 'i vecchi restano, i nuovi con «(2)»', tagUpdate: 'aggiorna',
+});
+Object.assign(en, {
+  restUsual: (x) => `the usual · ${x}`,
+  impClash: (n, p) => (!n ? 'A workout with this name already exists.' : `${p ? 'The workout and ' : ''}${n} ${pl(n, 'routine', 'routines')} with the same name already exist${n === 1 && !p ? 's' : ''}.`),
+  impUpdate: 'Update the existing ones', impUpdateHint: 'they get the new exercises; history stays',
+  impAddNew: 'Add as new', impAddNewHint: 'the old ones stay, the new ones get “(2)”', tagUpdate: 'update',
+});
+
 export const DICTS = { it, en };
 
 export function getLang() {
