@@ -80,6 +80,13 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
     return route.fulfill({ status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"><rect width="40" height="30" fill="#ccc"/></svg>' });
   });
   const page = await ctx.newPage();
+  // v30: every tone the app plays, by frequency (1318 = bell, 1500 = tick)
+  await page.addInitScript(() => {
+    window.__tones = [];
+    const st = OscillatorNode.prototype.start;
+    OscillatorNode.prototype.start = function (...a) { window.__tones.push(Math.round(this.frequency.value)); return st.apply(this, a); };
+  });
+  const tones = () => page.evaluate(() => { const x = window.__tones; window.__tones = []; return x; });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/status of 404/.test(m.text())) errors.push(m.text()); });
@@ -302,7 +309,9 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check(lv && lv.blockId === 'blk-1' && lv.pausedAt === null && lv.pausedMs === 0 && lv.sessionId && lv.at, `live record for Everyday on start (${JSON.stringify(lv)})`);
   await shot('09-cardio');
   await fitsAt('cardio');
+  await tones();
   await page.clock.runFor(10 * 60 * 1000);
+  { const tn = await tones(); check(tn.filter((f) => f === 1500).length === 3 && tn.includes(1318), `v30: cardio rings at the end, with the 3 ticks (${tn})`); }
   await page.fill('[name=distance]', '1,6');
   await page.click('[data-action=done]');
   await page.waitForSelector('.ring');
@@ -311,9 +320,11 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await shot('10-rest');
   await fitsAt('rest');
   check((await page.textContent('[data-action=end-rest]')).trim() === 'Salta', 'resting: Salta');
+  await tones();
   await page.clock.runFor(4 * 60 * 1000);
   await page.waitForTimeout(100);
   check((await page.textContent('[data-action=end-rest]')).trim() === 'Fine', `time's up: Salta becomes Fine`);
+  { const tn = await tones(); check(tn.filter((f) => f === 1318).length >= 2 && tn.filter((f) => f === 1500).length === 3, `v30: the rest rings at zero and again 30 s later (${tn})`); }
   await page.click('[data-action=end-rest]');
   await page.waitForSelector('.w-note');
   check((await page.textContent('.w-note')).includes('metà pedana'), 'note shown during the set');

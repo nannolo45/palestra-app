@@ -1,6 +1,6 @@
 // Offline support, as in Ricette. Each app version is cached as a whole; a new version is downloaded in the
 // background and takes over when the user taps "Aggiorna" (or the next time the app starts with no workout open).
-const VERSION = 'palestra-v29'; // keep in step with APP_VERSION in js/views/settings.js
+const VERSION = 'palestra-v30'; // keep in step with APP_VERSION in js/views/settings.js
 // Exercise drawings from free-exercise-db are kept in a cache of their own that survives app updates.
 const PICTURES = 'palestra-pictures';
 const PICTURE_HOST = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/';

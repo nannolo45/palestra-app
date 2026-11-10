@@ -21,7 +21,6 @@ let summaryDiff = null; // { routineId, rows, pick }: what was done differently 
 let pendingStart = null; // { routineId, blockId, proposals }
 let unchecked = new Set();
 let wakeLock = null;
-let vibratedFor = null;
 let peek = null;
 let peekMove = null; // the arrow keys, on a computer
 let lastOutside = null; // the page to go to with Riduci
@@ -293,7 +292,6 @@ export function workoutView() {
       view.querySelector('[data-action=end]').addEventListener('click', () => (active?.trial ? exitTrial() : endEarly()));
       view.querySelector('[data-action=exit-trial]')?.addEventListener('click', exitTrial);
       view.querySelector('[data-action=minimise]')?.addEventListener('click', () => { location.hash = lastOutside || '#/today'; });
-      view.addEventListener('pointerdown', unlockAudio, { once: true });
       view.querySelector('[data-action=add-set]')?.addEventListener('click', () => commit(W.addSet(active)));
       view.querySelector('[data-action=undo-set]')?.addEventListener('click', () => commit(W.removeAddedSet(active)));
       view.querySelector('[data-action=add-ex]')?.addEventListener('click', pickExtraExercise);
@@ -320,10 +318,9 @@ export function workoutView() {
           else values.reps = stepVal(view, 'reps');
           if (step.plan.weight != null) values.weight = stepVal(view, 'weight');
         }
-        vibratedFor = null;
         commit(W.completeStep(active, values));
       });
-      view.querySelector('[data-action=back]')?.addEventListener('click', () => { vibratedFor = null; commit(W.back(active)); });
+      view.querySelector('[data-action=back]')?.addEventListener('click', () => commit(W.back(active)));
       view.querySelector('[data-action=skip-set]')?.addEventListener('click', () => commit(W.skipStep(active)));
       view.querySelector('[data-action=viewer]')?.addEventListener('click', () => openViewer(ex));
       view.querySelectorAll('[data-action=note]').forEach((b) => b.addEventListener('click', () => b.classList.toggle('clamp')));
@@ -536,7 +533,6 @@ function bindPeek(view, exIndexes, pos) {
   view.querySelector('[data-action=do-now]')?.addEventListener('click', () => {
     const ix = exIndexes[peek];
     const ex = state.exercises.find((e) => e.id === active.steps.find((s) => s.itemIndex === ix)?.exerciseId);
-    vibratedFor = null;
     commit(W.doNow(active, ix));
     if (ex) toast(t('nowDone', ex.name));
   });
@@ -691,31 +687,36 @@ function liveTick(view) {
       set('cardio-label', left >= 0 ? t('timeLeft') : t('overTime'));
       const bar = view.querySelector('[data-live=cardio-bar]');
       if (bar) bar.style.width = `${Math.min(100, (sec / dur) * 100).toFixed(1)}%`;
-      if (left <= 0 && vibratedFor !== `c${active.idx}`) {
-        vibratedFor = `c${active.idx}`;
-        if (training().vibrate && navigator.vibrate) navigator.vibrate([300, 120, 300]);
-      }
+      cardioAlarm(left);
     }
   }
+}
+
+/** The end of a cardio exercise (v30): the same tick, alarm and second alarm as the end of a rest. */
+function cardioAlarm(left) {
+  ring(`c${active.idx}/${active.phaseStart}`, left);
 }
 
 /** The end of a rest: a tick in the last 3 seconds, the alarm at zero, once more 30 s later if nothing was tapped. */
 let alarmed = new Set();
 function restAlarm(left) {
+  ring(`${active.idx}/${active.restPlanned}/${active.phaseStart}`, left);
+}
+
+/** Only on the way through: coming back to the app long after zero doesn't ring everything at once. */
+function ring(key, left) {
   const tr = training();
-  const key = `${active.idx}/${active.restPlanned}/${active.phaseStart}`;
   const kind = alarmOf(tr);
   const s = Math.ceil(left);
+  const buzz = () => { if (tr.vibrate && navigator.vibrate) navigator.vibrate([300, 120, 300]); };
   if (tr.tick !== false && s >= 1 && s <= 3 && !alarmed.has(`${key}t${s}`)) { alarmed.add(`${key}t${s}`); playSound('tick', tr.volume); }
   if (left <= 0 && !alarmed.has(`${key}a`)) {
     alarmed.add(`${key}a`);
-    if (tr.vibrate && navigator.vibrate) navigator.vibrate([300, 120, 300]);
-    playSound(kind, tr.volume);
+    if (left > -10) { buzz(); playSound(kind, tr.volume); }
   }
   if (left <= -30 && tr.alarmAgain !== false && !alarmed.has(`${key}b`)) {
     alarmed.add(`${key}b`);
-    if (tr.vibrate && navigator.vibrate) navigator.vibrate([300, 120, 300]);
-    playSound(kind, tr.volume);
+    if (left > -40) { buzz(); playSound(kind, tr.volume); }
   }
   if (alarmed.size > 200) alarmed = new Set([...alarmed].slice(-50));
 }
@@ -752,6 +753,9 @@ export function miniTick() {
     if (ding !== bar.classList.contains('ding') || ding) { const tmp = document.createElement('div'); tmp.innerHTML = miniBar(); bar.replaceWith(tmp.firstElementChild); return; }
     const el = bar.querySelector('[data-lb=left]');
     if (el) el.textContent = clock(left);
+  } else if (active.phase !== 'rest' && !W.isPaused(active)) {
+    const step = W.current(active);
+    if (step?.kind === 'cardio') cardioAlarm((Number(step.plan.targets.duration) || 10) * 60 - W.phaseSec(active));
   }
 }
 

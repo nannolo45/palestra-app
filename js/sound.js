@@ -1,23 +1,39 @@
 // The rest alarm (v27): a few sounds made on the spot (no files), a tick in the last seconds, and unlocking the audio
-// on the first tap, because phones only let a page make sound that a tap started.
+// on every tap, because phones only let a page make sound that a tap started.
 let ac = null;
+let stale = false; // the last tap couldn't wake the audio: make a fresh one on the next tap
 
 function ctx() {
   const C = window.AudioContext || window.webkitAudioContext;
   if (!C) return null;
-  if (!ac) ac = new C();
-  if (ac.state === 'suspended') ac.resume().catch(() => {});
+  if (!ac || ac.state === 'closed') { ac = new C(); stale = false; }
+  // 'interrupted' is iOS after the screen locks, a call, or switching to the music app: it must be woken like 'suspended'
+  if (ac.state !== 'running') ac.resume().catch(() => {});
   return ac;
 }
 
-/** Call from a tap (starting a workout, any tap on its screen): from then on the alarm can sound. */
+/**
+ * Call from a tap: from then on the alarm can sound. Phones only let a tap (touchend / click, not pointerdown) start
+ * audio, so the whole app listens for taps (v30), and a context that won't wake up is replaced on the next one.
+ */
 export function unlockAudio() {
+  const C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return;
+  if (ac && ac.state === 'running') return;
+  if (ac && stale) { ac.close().catch(() => {}); ac = null; }
   const c = ctx();
   if (!c) return;
   try { // a silent blip: iOS needs something played from the tap itself
     const o = c.createOscillator(); const g = c.createGain();
     g.gain.value = 0.00001; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 0.02);
   } catch { /* no audio */ }
+  setTimeout(() => { if (ac === c && c.state !== 'running') stale = true; }, 400);
+}
+
+if (typeof document !== 'undefined') {
+  for (const type of ['touchend', 'click', 'keydown']) document.addEventListener(type, unlockAudio, { capture: true, passive: true });
+  // back from another app: the next tap wakes the audio again
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && ac && ac.state !== 'running') ac.resume().catch(() => {}); });
 }
 
 function tone(c, freq, start, dur, vol, type = 'sine') {
