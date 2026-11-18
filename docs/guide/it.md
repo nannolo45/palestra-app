@@ -63,7 +63,7 @@ Se Marco, il tuo istruttore, ti ha scritto la settimana su un foglio o in un mes
 
 ![Importa: incolla il testo, sotto c'è come scriverlo](guide/it/17-import.webp)
 
-Tocca *Leggi il testo*. Prima di salvare vedi un'anteprima: **già tuo** riusa un tuo esercizio con la sua macchina, **nuovo** lo crea, **da controllare** segna un pezzo che l'app non ha capito.
+Tocca *Leggi il testo*. Prima di salvare vedi un'anteprima: **già tuo** riusa un tuo esercizio con la sua macchina, **nuovo** lo crea, **da controllare** segna un pezzo che l'app non ha capito. Se hai già un workout o delle schede con lo stesso nome (per esempio Marco ti ha mandato la versione nuova), l'anteprima te lo dice: [Importare di nuovo](#importare-di-nuovo-lo-stesso-workout) spiega le due scelte.
 
 ![L'anteprima: cosa riusa, cosa crea, cosa controllare](guide/it/18-import-preview.webp)
 
@@ -84,7 +84,7 @@ Un **workout** raccoglie le schede della settimana, ognuna nel suo giorno. In *W
 
 In *Allenamento* passi da una linguetta all'altra toccandola o **scorrendo** a destra e a sinistra sull'elenco. Riapre l'ultima che hai guardato. Da una scheda, un workout o un esercizio, in alto **‹ Allenamento › Schede** ti riporta alla linguetta giusta.
 
-In cima a ogni pagina ci sono le sue azioni, come *Nuova scheda* e *Importa*. L'**ingranaggio** in alto a destra apre le *Impostazioni*: un elenco in tre gruppi (*Collegamenti*, *Allenamento*, *App*). Ogni riga dice com'è impostata ora e apre una pagina sola su quella cosa; *← Impostazioni* in alto torna all'elenco.
+In cima a ogni pagina ci sono le sue azioni, come *Nuova scheda* e *Importa*. I pannelli che salgono dal basso (scegliere un esercizio, un recupero, un orario) si chiudono anche toccando fuori, nella parte scura. L'**ingranaggio** in alto a destra apre le *Impostazioni*: un elenco in tre gruppi (*Collegamenti*, *Allenamento*, *App*). Ogni riga dice com'è impostata ora e apre una pagina sola su quella cosa; *← Impostazioni* in alto torna all'elenco.
 
 In *Impostazioni → Lingua e aspetto*, **Aspetto** sceglie i colori dell'app: *Automatico* segue il telefono o il computer (scuro la sera, se il telefono lo è), *Chiaro* o *Scuro* restano sempre così. La scelta resta su questo dispositivo, e la guida la segue. Durante l'allenamento lo schermo è comunque scuro.
 
@@ -136,13 +136,27 @@ Un workout è la tua settimana: le schede che fai, ognuna nel suo giorno. Quello
 
 ### Creare un workout
 
-Tocca *Nuovo workout*. In alto ci sono le tue schede come tessere colorate: **trascinane una sul giorno**, oppure toccala e poi tocca il giorno. In un giorno ne stanno più di una (mattina e sera). Per spostarne una trascinala su un altro giorno; per toglierla tocca ✕ o trascinala sul cestino che compare in fondo. *Nuova scheda* ne crea una (o la importa da testo).
+Tocca *Nuovo workout*. Il nome è il titolo in alto: toccalo per cambiarlo. Accanto c'è l'interruttore **Attivo** (vedi [Rendere attivo un workout](#7-rendere-attivo-un-workout)).
+
+Sotto c'è la settimana, un giorno per riga. Ogni giorno ha un **+**: toccalo e scegli la scheda. L'elenco mette prima quelle già **in questo workout**, poi quelle degli altri workout, poi *Le altre*; in alto puoi cercare, in fondo *Nuova scheda* ne crea una nuova e la apre. In un giorno ne stanno più di una (mattina e sera).
 
 ![Un workout: le schede sui giorni, con l'ora](guide/it/15-plan.webp)
 
+![Il + di un giorno: le schede di questo workout per prime](guide/it/51-pick-scheda.webp)
+
 ### Giorni e ore
 
-Sulla tessera c'è l'ora (o *orario?*): toccala per sceglierla, o *Senza orario*. Con l'ora Everyday la mette in agenda da solo; senza, la scegli tu ogni settimana in Everyday. Su un computer la settimana è una griglia di sette colonne.
+**Tocca una scheda** già messa su un giorno per il suo menu:
+
+- **Orario**: le ore che usi già, *Senza orario*, o *Un altro orario*.
+- **Sposta a**: un altro giorno (e, con le settimane alterne, l'altra settimana).
+- **Apri** la scheda, o **Togli** da quel giorno (con *Annulla* se ci ripensi).
+
+Con l'ora Everyday la mette in agenda da solo; senza, la scegli tu ogni settimana in Everyday.
+
+![Toccando una scheda: orario, un altro giorno, togli](guide/it/52-tile-menu.webp)
+
+Su un computer la settimana è una griglia di sette colonne e accanto ci sono tutte le tue schede come tessere colorate: **trascinane una sul giorno** col mouse, o sposta quelle già messe trascinandole su un altro giorno o sul cestino.
 
 ### Settimane alterne e rotazione
 
@@ -152,7 +166,7 @@ Sopra le tessere scegli la forma del workout:
 |---|---|
 | *Settimanale* | Ogni settimana uguale |
 | *Alterne A · B* | Due settimane che si danno il cambio: sul telefono scegli *Settimana A* o *B* e riempila; quella in corso è segnata *(questa)*. Si conta da quando il workout è attivo |
-| *Rotazione* | Nessun giorno fisso: ogni volta che vai fai **la prossima**, dopo l'ultima si ricomincia. Trascina le schede nel giro per l'ordine; *Giorno di riposo* aggiunge un cerchio dopo una scheda (toccalo: 1, 2, 3 giorni o via). Se vai prima, *Oggi* te lo dice |
+| *Rotazione* | Nessun giorno fisso: ogni volta che vai fai **la prossima**, dopo l'ultima si ricomincia. *Scheda nel giro* ne aggiunge una in fondo; toccane una per *Prima*, *Dopo*, *Apri* o *Togli dal giro*. Sotto ogni scheda, **+ riposo** aggiunge giorni di riposo: toccalo ancora per 1, 2, 3 giorni o niente. Se vai prima, *Oggi* te lo dice. Se fai una scheda due volte nel giro (A B A C), Palestra capisce lo stesso a che punto sei |
 
 ![Settimane alterne: la settimana B, con la scheda del giovedì](guide/it/45-plan-ab.webp)
 
@@ -191,7 +205,7 @@ In alto la durata stimata, le serie e le zone. Poi gli esercizi nell'ordine in c
 Tocca *Modifica*. Gli esercizi sono **blocchi** uno sotto l'altro, uniti da cerchi: ogni cerchio è il recupero prima del prossimo.
 
 - **Trascina** un blocco dalla maniglia (⋮⋮) per cambiare l'ordine; su un computer lo trascini da dove vuoi, e trascini anche dall'elenco a destra.
-- **Tocca il cerchio** per cambiare il recupero (30 s, 45 s, 1, 1:30, 2, 2:30, 3 min). Dopo 3 min viene **⚡ superserie**: i due esercizi si fanno di seguito, senza recupero in mezzo, giro dopo giro.
+- **Tocca il cerchio** per cambiare il recupero: *−30 s* e *+30 s*, oppure scrivi il tempo. Basta scrivere i numeri: *5* è 5:00, *45* è 0:45, *130* è 1:30, e anche *2:30* va bene. **↺ come le altre** rimette il recupero di sempre. Scendendo a zero diventa **⚡ superserie**: i due esercizi si fanno di seguito, senza recupero in mezzo, giro dopo giro (non accanto al cardio). Gli esercizi nuovi arrivano con 2:00.
 - **+ oppure**, accanto a un blocco: l'**alternativa**, da fare se la macchina è occupata o manca. Puoi anche trascinarci sopra un altro blocco. Durante l'allenamento è la prima proposta di *Ho fatto un altro esercizio*.
 
 | Parte | Cosa imposti |
@@ -199,14 +213,18 @@ Tocca *Modifica*. Gli esercizi sono **blocchi** uno sotto l'altro, uniti da cerc
 | Nome | Come la vedi qui e in Everyday |
 | *Aumento automatico* | Se Palestra ti propone di salire di peso ogni settimana |
 | Ordine | Trascina dalla maniglia (o le frecce ↑ ↓ sulla maniglia, da tastiera) |
-| Un esercizio | Toccalo: serie, ripetizioni o secondi, peso, recupero, oppure *Togli dalla scheda* |
+| Un esercizio | Toccalo: serie, ripetizioni o secondi, peso, il **recupero tra le serie** (come il cerchio: −30 s, +30 s o scritto; *↺ il solito* lo rimette), oppure *Togli …* |
 | *Serie uguali / Serie diverse* | Con *diverse* ogni serie ha le sue ripetizioni e il suo peso (piramidi, serie a scendere, un riscaldamento); *Un'altra serie* ne aggiunge una |
 | *Fascia di ripetizioni* | Es. 8–12 invece di un numero fisso: il peso sale quando arrivi a 12 in tutte le serie |
 | *A cedimento* | Tutte le serie o solo l'ultima, fino a quando non ne esce un'altra pulita |
-| *Aggiungi esercizio* | Sceglilo dall'elenco, o creane uno nuovo |
+| *Aggiungi esercizio* | Gli esercizi per parte del corpo (tocca il titolo per chiudere un gruppo), con la ricerca e l'ultima volta di ognuno. **Toccane più d'uno** e poi *Aggiungi 2*, *Aggiungi 3*…: entrano nell'ordine in cui li hai toccati. In fondo, *Dal catalogo* e *Nuovo esercizio* |
 | *Importa* | Aggiunge esercizi scritti come testo |
 
-![Aggiungi esercizio: l'elenco con la macchina di ognuno](guide/it/13-add-exercise.webp)
+![Aggiungi esercizio: per parte del corpo, due scelti](guide/it/13-add-exercise.webp)
+
+![Il cerchio tra due esercizi: il recupero, scritto o a passi di 30 secondi](guide/it/49-rest-circle.webp)
+
+![Un esercizio della scheda: il recupero tra le serie](guide/it/50-set-rest.webp)
 
 ![Serie diverse: ogni serie con le sue ripetizioni e il suo peso](guide/it/34-sets-editor.webp)
 
@@ -228,7 +246,7 @@ In *Allenamento → Esercizi* trovi tutti i tuoi esercizi, raggruppati per **par
 
 ### Il catalogo
 
-In alto, *I miei · Catalogo*. Il **catalogo** ha circa 750 esercizi comuni, con il disegno e i muscoli, i più usati con il nome in italiano. Cerca, filtra per parte del corpo o attrezzo, e tocca **+ Aggiungi**: diventa tuo, con muscoli, attrezzo e disegno già messi. Quelli che hai già dicono *✓ tuo*. Non c'è? *Crea «…»* in fondo ne fa uno nuovo con quel nome.
+In alto, *I miei · Catalogo*. Il **catalogo** ha circa 750 esercizi comuni, con il disegno e i muscoli, i più usati con il nome in italiano. Cerca, o apri *Filtri* per parte del corpo o attrezzo (i filtri accesi restano sotto la ricerca come etichette), e tocca il **+** giallo: diventa tuo, con muscoli, attrezzo e disegno già messi. Quelli che hai già dicono *✓ tuo*. Non c'è? *Crea «…»* in fondo ne fa uno nuovo con quel nome.
 
 ![Il catalogo: cerca e aggiungi](guide/it/43-catalogue.webp)
 
@@ -343,13 +361,15 @@ Accanto alla macchina c'è una piccola immagine: la tua foto, o il disegno dell'
 
 ### Il recupero
 
-Parte il conto alla rovescia, e vedi quanto hai riposato davvero. *+30 s* allunga (a tempo scaduto conta 30 secondi da adesso), *Salta* riparte subito. A zero suona, il telefono vibra e *Salta* diventa *Fine*, in giallo. Hai toccato *Fatto* troppo presto o sbagliato un numero? *Rifai la serie* la riapre con i valori che avevi messo. Sotto c'è cosa viene dopo e dove andare.
+Parte il conto alla rovescia, e vedi quanto hai riposato davvero. Il recupero è quello della scheda: tra le serie quello dell'esercizio, tra un esercizio e l'altro quello del cerchio. *+30 s* allunga (a tempo scaduto conta 30 secondi da adesso), *Salta* riparte subito. A zero suona, il telefono vibra e *Salta* diventa *Fine*, in giallo. Hai toccato *Fatto* troppo presto o sbagliato un numero? *Rifai la serie* la riapre con i valori che avevi messo. Sotto c'è cosa viene dopo e dove andare.
 
 ![Il recupero: quanto manca e cosa viene dopo](guide/it/21-rest.webp)
 
 ### Il suono a fine recupero
 
-In *Impostazioni → Allenamento*, **Suono a fine recupero**: *Campanella*, *Tre bip*, *Gong* o *Nessuno*, il volume e *Prova*. Puoi avere un tic negli ultimi 3 secondi, e un secondo suono dopo 30 secondi se non tocchi niente. Il suono parte dopo il primo tocco nell'allenamento (i browser lo vogliono così).
+In *Impostazioni → Allenamento*, **Suono a fine recupero**: *Campanella*, *Tre bip*, *Gong* o *Nessuno*, il volume e *Prova*. Puoi avere un tic negli ultimi 3 secondi, e un secondo suono dopo 30 secondi se non tocchi niente. Lo stesso suono c'è alla **fine del cardio**, e anche con l'allenamento ridotto nella barra in basso.
+
+Il suono si sveglia al primo tocco nell'allenamento (i browser lo vogliono così), e di nuovo a ogni tocco se nel frattempo hai spento lo schermo o aperto la musica. Se torni nell'app molto dopo lo zero non suona tutto insieme: suona solo se mancano o sono passati al massimo 10 secondi. Con il telefono bloccato o un'altra app davanti il browser non può suonare: per questo lo schermo resta acceso. Su iPhone, con l'interruttore silenzioso attivo non si sente niente.
 
 ![Il suono a fine recupero](guide/it/42-alarm.webp)
 
@@ -367,7 +387,7 @@ La macchina è occupata e hai fatto altro? Sotto il nome tocca **Ho fatto un alt
 
 ### Il cardio
 
-Per il cardio vedi il tempo che manca e gli obiettivi, da cambiare con − e +. Se vuoi, scrivi la distanza che legge il display. Tocca *Fine* quando hai finito.
+Per il cardio vedi il tempo che manca e gli obiettivi, da cambiare con − e +. Se vuoi, scrivi la distanza che legge il display. A tempo scaduto suona come il recupero (con il tic e il secondo suono, se li hai accesi). Tocca *Fine* quando hai finito.
 
 ![Il cardio: il tempo che manca e gli obiettivi](guide/it/22-cardio.webp)
 
@@ -452,6 +472,15 @@ Con le barre, il numero di serie è quante voci ci sono tra le barre. Se ripetiz
 
 I file scritti prima, con `SCHEDA:` per la settimana e `GIORNO:` per le schede, si leggono ancora.
 
+### Importare di nuovo lo stesso workout
+
+Se nel testo c'è un workout o delle schede con un nome che hai già, in cima all'anteprima Palestra lo dice e chiede:
+
+- **Aggiorna quelli che ci sono**: le schede prendono i nuovi esercizi e il workout i nuovi giorni. Restano le stesse schede, quindi lo storico resta, e se il workout è attivo resta attivo. Nell'anteprima sono segnate *aggiorna*.
+- **Aggiungi come nuovi** (la scelta di partenza): i vecchi restano come sono, i nuovi arrivano con «(2)» nel nome.
+
+![Lo stesso workout importato di nuovo: aggiornare o aggiungere](guide/it/53-import-clash.webp)
+
 ## Con Everyday
 
 Palestra decide nome, durata ed esercizi; Everyday decide quando. Per collegarle, in Everyday apri *Impostazioni → Avanzate → Collegamenti → Palestra* e incolla un token per `palestra-data` con *Contents: Read and write*.
@@ -493,6 +522,8 @@ Usa un token diverso per ogni dispositivo: telefono e computer restano allineati
 **Lo schermo si spegne durante l'allenamento.** Escludi Palestra dal risparmio batteria del telefono, e controlla che in *Recupero e allenamento* sia acceso lo schermo.
 
 **Il blocco non risulta fatto in Everyday.** Sincronizza Palestra (ingranaggio → *Sync*), poi Everyday.
+
+**Il suono a fine recupero non si sente.** Prova *Impostazioni → Allenamento → Prova*. Su Android il suono segue il volume dei media (non quello della suoneria): alzalo. Lo schermo deve restare acceso con Palestra davanti. Su iPhone togli l'interruttore silenzioso.
 
 **Compare la barra Aggiorna.** È uscita una versione nuova: toccala quando non ti stai allenando.
 

@@ -63,7 +63,7 @@ If Marco, your trainer, wrote your week on a sheet or in a message, you don't ha
 
 ![Import: paste the text, how to write it is underneath](guide/en/17-import.webp)
 
-Tap *Read the text*. Before saving you see a preview: **yours** reuses one of your exercises with its machine, **new** creates it, **check** marks a bit the app didn't understand.
+Tap *Read the text*. Before saving you see a preview: **yours** reuses one of your exercises with its machine, **new** creates it, **check** marks a bit the app didn't understand. If you already have a workout or routines with the same name (say Marco sent you the new version), the preview tells you: [Import the same workout again](#import-the-same-workout-again) explains the two choices.
 
 ![The preview: what it reuses, what it creates, what to check](guide/en/18-import-preview.webp)
 
@@ -84,7 +84,7 @@ A **workout** groups the week's routines, each on its day. In *Workouts* open on
 
 In *Training* you move between tabs by tapping them or **swiping** left and right on the list. It reopens the one you looked at last. From a routine, a workout or an exercise, **‹ Training › Routines** at the top takes you back to the right tab.
 
-At the top of each page are its actions, like *New routine* and *Import*. The **gear** at the top right opens *Settings*: one list in three groups (*Connections*, *Training*, *App*). Each row says how it's set now and opens a page about that one thing; *← Settings* at the top goes back to the list.
+At the top of each page are its actions, like *New routine* and *Import*. Panels that slide up from the bottom (picking an exercise, a rest, a time) also close when you tap outside them, on the dark part. The **gear** at the top right opens *Settings*: one list in three groups (*Connections*, *Training*, *App*). Each row says how it's set now and opens a page about that one thing; *← Settings* at the top goes back to the list.
 
 In *Settings → Language and appearance*, **Appearance** picks the app's colours: *Automatic* follows the phone or computer (dark in the evening, if the device is), *Light* and *Dark* stay that way. The choice stays on this device, and the guide follows it. During a workout the screen is dark either way.
 
@@ -136,13 +136,27 @@ A workout is your week: the routines you do, each on its day. The **active** one
 
 ### Create a workout
 
-Tap *New workout*. At the top are your routines as coloured tiles: **drag one onto a day**, or tap it and then tap the day. A day can hold more than one (morning and evening). To move one, drag it to another day; to remove it tap ✕ or drag it to the bin that appears at the bottom. *New routine* makes one (or imports it from text).
+Tap *New workout*. The name is the title at the top: tap it to change it. Beside it is the **Active** switch (see [Make a workout active](#7-make-a-workout-active)).
+
+Underneath is the week, one day per row. Each day has a **+**: tap it and pick the routine. The list puts the ones already **in this workout** first, then those of your other workouts, then *Others*; you can search at the top, and *New routine* at the bottom makes a new one and opens it. A day can hold more than one (morning and evening).
 
 ![A workout: routines on the days, with the time](guide/en/15-plan.webp)
 
+![A day's +: this workout's routines first](guide/en/51-pick-scheda.webp)
+
 ### Days and times
 
-The tile shows the time (or *time?*): tap it to pick one, or *No time*. With a time Everyday puts it in your plan by itself; without one, you choose when in Everyday each week. On a computer the week is a grid of seven columns.
+**Tap a routine** already on a day for its menu:
+
+- **Time**: the times you already use, *No time*, or *Another time*.
+- **Move to**: another day (and, with alternating weeks, the other week).
+- **Open** the routine, or **Remove** it from that day (with *Undo* if you change your mind).
+
+With a time Everyday puts it in your plan by itself; without one, you choose when in Everyday each week.
+
+![Tapping a routine: time, another day, remove](guide/en/52-tile-menu.webp)
+
+On a computer the week is a grid of seven columns, and beside it are all your routines as coloured tiles: **drag one onto a day** with the mouse, or move placed ones by dragging them to another day or onto the bin.
 
 ### Alternating weeks and rotation
 
@@ -152,7 +166,7 @@ Above the tiles pick the shape of the workout:
 |---|---|
 | *Weekly* | Every week the same |
 | *Alternate A · B* | Two weeks that take turns: on a phone pick *Week A* or *B* and fill it in; the current one says *(this one)*. Counted from when the workout became active |
-| *Rotation* | No fixed days: each time you go you do **the next one**, after the last it starts again. Drag routines into the loop to order them; *Rest day* adds a circle after a routine (tap it: 1, 2, 3 days or gone). If you go sooner, *Today* tells you |
+| *Rotation* | No fixed days: each time you go you do **the next one**, after the last it starts again. *Routine in the loop* adds one at the end; tap one for *Earlier*, *Later*, *Open* or *Remove from the loop*. Under each routine, **+ rest** adds rest days: tap it again for 1, 2, 3 days or none. If you go sooner, *Today* tells you. If a routine comes twice in the loop (A B A C), Palestra still knows where you are |
 
 ![Alternating weeks: week B, with Thursday's routine](guide/en/45-plan-ab.webp)
 
@@ -191,7 +205,7 @@ At the top: the estimated length, the sets and the zones. Then the exercises in 
 Tap *Edit*. The exercises are **blocks** one under the other, joined by circles: each circle is the rest before the next one.
 
 - **Drag** a block by its handle (⋮⋮) to change the order; on a computer drag it from anywhere, and drag in from the list on the right too.
-- **Tap the circle** to change the rest (30 s, 45 s, 1, 1:30, 2, 2:30, 3 min). After 3 min comes **⚡ superset**: the two exercises are done back to back, no rest between, round after round.
+- **Tap the circle** to change the rest: *−30 s* and *+30 s*, or type the time. Just the digits will do: *5* is 5:00, *45* is 0:45, *130* is 1:30, and *2:30* works too. **↺ like the others** puts back the usual rest. Going down to zero makes it a **⚡ superset**: the two exercises are done back to back, no rest between, round after round (not next to cardio). New exercises come with 2:00.
 - **+ or**, beside a block: the **alternative**, for when the machine is busy or missing. You can also drag another block onto it. During a workout it's the first suggestion of *I did another exercise*.
 
 | Part | What you set |
@@ -199,14 +213,18 @@ Tap *Edit*. The exercises are **blocks** one under the other, joined by circles:
 | Name | How you see it here and in Everyday |
 | *Automatic increase* | Whether Palestra offers to raise your weights each week |
 | Order | Drag by the handle (or the ↑ ↓ arrows on the handle, from a keyboard) |
-| An exercise | Tap it: sets, reps or seconds, weight, rest, or *Remove from routine* |
+| An exercise | Tap it: sets, reps or seconds, weight, the **rest between sets** (like the circle: −30 s, +30 s or typed; *↺ the usual* puts it back), or *Remove …* |
 | *Equal sets / Different sets* | With *different* each set has its own reps and weight (pyramids, drop sets, a warm-up); *Another set* adds one |
 | *Rep range* | E.g. 8–12 instead of a fixed number: the weight goes up when you reach 12 in every set |
 | *To failure* | Every set or only the last, until you can't do another clean rep |
-| *Add exercise* | Pick it from the list, or make a new one |
+| *Add exercise* | Your exercises by body part (tap a heading to close a group), with a search and each one's last time. **Tap more than one**, then *Add 2*, *Add 3*…: they go in in the order you tapped them. At the bottom, *From the catalogue* and *New exercise* |
 | *Import* | Adds exercises written as text |
 
-![Add exercise: the list, with each one's machine](guide/en/13-add-exercise.webp)
+![Add exercise: by body part, two picked](guide/en/13-add-exercise.webp)
+
+![The circle between two exercises: the rest, typed or in 30-second steps](guide/en/49-rest-circle.webp)
+
+![An exercise in the routine: the rest between sets](guide/en/50-set-rest.webp)
 
 ![Different sets: each set with its own reps and weight](guide/en/34-sets-editor.webp)
 
@@ -228,7 +246,7 @@ In a routine tap *Duplicate into another workout* and choose where. The copy is 
 
 ### The catalogue
 
-At the top, *Mine · Catalogue*. The **catalogue** has about 750 common exercises, with a drawing and the muscles. Search, filter by body part or equipment, and tap **+ Add**: it becomes yours, with muscles, equipment and drawing already set. The ones you have say *✓ yours*. Not there? *Create "…"* at the bottom makes a new one with that name.
+At the top, *Mine · Catalogue*. The **catalogue** has about 750 common exercises, with a drawing and the muscles. Search, or open *Filters* for body part or equipment (the filters that are on stay under the search as tags), and tap the yellow **+**: it becomes yours, with muscles, equipment and drawing already set. The ones you have say *✓ yours*. Not there? *Create "…"* at the bottom makes a new one with that name.
 
 ![The catalogue: search and add](guide/en/43-catalogue.webp)
 
@@ -343,13 +361,15 @@ Next to the machine there's a small picture: your photo, or the exercise's drawi
 
 ### Rest
 
-A countdown starts, and you see how long you actually rested. *+30 s* adds time (once the time is up it counts 30 seconds from now), *Skip* moves straight on. At zero it rings, the phone vibrates and *Skip* turns into a yellow *Done*. Tapped *Done* too early, or got a number wrong? *Redo the set* reopens it with the values you had entered. Underneath is what's next and where to go.
+A countdown starts, and you see how long you actually rested. The rest is the routine's: between sets the exercise's, between exercises the circle's. *+30 s* adds time (once the time is up it counts 30 seconds from now), *Skip* moves straight on. At zero it rings, the phone vibrates and *Skip* turns into a yellow *Done*. Tapped *Done* too early, or got a number wrong? *Redo the set* reopens it with the values you had entered. Underneath is what's next and where to go.
 
 ![Rest: the time left and what comes next](guide/en/21-rest.webp)
 
 ### The sound when the rest ends
 
-In *Settings → Training*, **Sound when the rest ends**: *Bell*, *Three beeps*, *Gong* or *None*, the volume and *Try*. You can have a tick in the last 3 seconds, and a second ring after 30 seconds if you don't tap anything. The sound works after your first tap in the workout (browsers want it that way).
+In *Settings → Training*, **Sound when the rest ends**: *Bell*, *Three beeps*, *Gong* or *None*, the volume and *Try*. You can have a tick in the last 3 seconds, and a second ring after 30 seconds if you don't tap anything. The same sound plays when **cardio** ends, and also with the workout minimised, in the bar at the bottom.
+
+The sound wakes up with your first tap in the workout (browsers want it that way), and again with any tap if meanwhile you turned the screen off or opened your music. If you come back long after zero it doesn't ring everything at once: it only rings within 10 seconds of the moment. With the phone locked or another app in front the browser can't play sound: that's why the screen stays on. On an iPhone, the silent switch mutes it.
 
 ![The sound when the rest ends](guide/en/42-alarm.webp)
 
@@ -367,7 +387,7 @@ The machine is busy and you did something else? Under the name tap **I did anoth
 
 ### Cardio
 
-For cardio you see the time left and the targets, which you can change with − and +. If you like, enter the distance from the display. Tap *Finish* when you're done.
+For cardio you see the time left and the targets, which you can change with − and +. If you like, enter the distance from the display. When the time is up it rings like the rest (with the tick and the second ring, if they're on). Tap *Finish* when you're done.
 
 ![Cardio: the time left and the targets](guide/en/22-cardio.webp)
 
@@ -452,6 +472,15 @@ With slashes, the number of sets is how many values sit between the slashes. If 
 
 Older files, with `PLAN:` for the week and `DAY:` for the routines, still read.
 
+### Import the same workout again
+
+If the text has a workout or routines with a name you already have, the top of the preview says so and asks:
+
+- **Update the existing ones**: the routines get the new exercises and the workout the new days. They stay the same routines, so their history stays, and an active workout stays active. In the preview they're marked *update*.
+- **Add as new** (the starting choice): the old ones stay as they are, the new ones come with "(2)" in the name.
+
+![The same workout imported again: update or add](guide/en/53-import-clash.webp)
+
 ## With Everyday
 
 Palestra decides name, length and exercises; Everyday decides when. To connect them, in Everyday open *Settings → Advanced → Connections → Palestra* and paste a token for `palestra-data` with *Contents: Read and write*.
@@ -493,6 +522,8 @@ Use a different token for each device: phone and computer stay in step at every 
 **The screen turns off during a workout.** Exclude Palestra from your phone's battery saving, and check that the screen-on option is switched on in *Rest and training*.
 
 **The block isn't ticked in Everyday.** Sync Palestra (gear → *Sync*), then Everyday.
+
+**The rest sound can't be heard.** Try *Settings → Training → Try*. On Android the sound follows the media volume (not the ringer): turn it up. The screen has to stay on with Palestra in front. On an iPhone, turn off the silent switch.
 
 **An Update bar appears.** A new version is out: tap it when you're not training.
 

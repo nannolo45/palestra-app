@@ -267,7 +267,18 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await page.evaluate(() => { const r = document.querySelector('.card-row.missing'); window.scrollTo(0, r.getBoundingClientRect().top + window.scrollY - 230); }); await shot('39-missing');
   await page.click('.where-row .chip-btn:nth-child(2)'); await page.waitForTimeout(200);
   await go(`#/routine/${ids.wed}/edit`); await shot('12-routine-edit');
-  await page.click('[data-action=add-item]'); await page.waitForSelector('#modal[open]'); await shot('13-add-exercise');
+  // v28: Aggiungi esercizio, by body part, two ticked
+  await page.click('[data-action=add-item]'); await page.waitForSelector('#modal[open] .ax-row');
+  for (const n of [1, 2]) { await page.locator('#modal .ax-row').nth(n).click(); await page.waitForTimeout(150); }
+  await shot('13-add-exercise');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  // v28: the rest circle between two exercises
+  await page.click('[data-rest="0"]'); await page.waitForSelector('#modal[open] [data-rt]'); await page.evaluate(() => document.activeElement && document.activeElement.blur()); await shot('49-rest-circle');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  // v29: the rest between sets, inside an exercise's sheet
+  { const ix = await page.evaluate(async (id) => { const { get } = await import('/js/store.js'); return get('routines', id).items.findIndex((x) => !x.perSet && get('exercises', x.exerciseId)?.type === 'weights'); }, ids.wed);
+    await page.click(`[data-edit-item="${ix}"]`); } await page.waitForSelector('#modal [data-srest]');
+  await page.evaluate(() => document.querySelector('#modal [data-srest]').scrollIntoView({ block: 'center' })); await shot('50-set-rest');
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   // Workout
   // v24: trying a routine, sets that differ, your body
@@ -280,12 +291,17 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await go('#/exercises?cat=1'); await page.waitForSelector('.cat-row', { timeout: 8000 }).catch(() => {}); await page.waitForTimeout(400); await shot('43-catalogue');
   await go('#/plans'); await shot('14-plans');
   await go(`#/plan/${ids.plan}`); await shot('15-plan');
+  // v28: tap a placed scheda: time, another day, open, remove
+  await page.click('.wb-tile'); await page.waitForSelector('#modal[open]'); await shot('52-tile-menu');
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   // v27: the same builder, alternating weeks and a rotation (on the workout that isn't active)
   await go(`#/plan/${ids.lightPlan}`); await page.click('[data-mode=ab]'); await page.waitForTimeout(250);
   if (!DESK) await page.click('[data-wv="1"]');
-  await page.click('.wb-chip[data-chip]'); await page.waitForTimeout(150); await page.click(DESK ? '.wb-day[data-drop="day:1:3"]' : '.wb-row[data-drop="day:1:3"]'); await page.waitForTimeout(250);
+  // v28: the + of a day opens the schede, this workout's first
+  await page.click('[data-add="1:3"]'); await page.waitForSelector('#modal[open] [data-pick]'); await shot('51-pick-scheda');
+  await page.click('#modal [data-pick]'); await page.waitForTimeout(250);
   await page.evaluate(() => document.querySelector('.wb-mode').scrollIntoView({ block: 'start' })); await page.evaluate(() => window.scrollBy(0, -70)); await shot('45-plan-ab');
-  await page.click('[data-mode=rotation]'); await page.waitForTimeout(250); await page.click('[data-restchip]'); await page.waitForTimeout(250);
+  await page.click('[data-mode=rotation]'); await page.waitForTimeout(250); await page.click('.wb-rd'); await page.waitForTimeout(250);
   await page.evaluate(() => document.querySelector('.wb-mode').scrollIntoView({ block: 'start' })); await page.evaluate(() => window.scrollBy(0, -70)); await shot('46-plan-rotation');
   await page.click('[data-mode=week]'); await page.waitForTimeout(250);
   await go('#/plans');
@@ -341,6 +357,12 @@ let now = new Date('2026-11-02T08:30:00+01:00').getTime(); // Monday 2 November 
   await page.evaluate(() => window.scrollTo(0, 0));
   const sid = await page.evaluate(async () => (await import('/js/data.js')).sessions()[0].id);
   await go(`#/session/${sid}`); await shot('25-session');
+  // v29: importing a workout that is already there (last, as it adds schede): update those, or add as new
+  const freshImport = async () => { await go('#/import?for=routine', 200); await go('#/import?for=plan'); }; // another key starts the import over
+  await freshImport(); await page.fill('#imp-text', T.importText); await page.click('[data-action=read]'); await page.waitForSelector('.imp-day');
+  await page.click('[data-action=do-import]'); await page.waitForTimeout(500);
+  await freshImport(); await page.fill('#imp-text', T.importText); await page.click('[data-action=read]'); await page.waitForSelector('.imp-how');
+  await page.click('.imp-choice:has([value=update])'); await page.waitForTimeout(300); await page.evaluate(() => window.scrollTo(0, 0)); await shot('53-import-clash');
 
   await browser.close();
   server.kill();
