@@ -1336,3 +1336,8 @@ a.ax-row { text-decoration: none; }
 @media (max-height: 700px) { .w-screen.fit .w-main.ask .rested { display: none; } }
 .w-screen.fit .w-main.ask .ring .w-bigclock { font-size: clamp(36px, 6.2dvh, 64px); }
 .w-screen.fit .w-main.ask .ring-text small { font-size: 12px; }
+
+/* ---- v33 ---- */
+/* every weight says what it means */
+.inc-name small { display: block; font-size: 13px; font-weight: 500; color: var(--d-muted); }
+.stepcard .stepper-label.as-btn { border: 0; background: none; padding: 0; font-family: inherit; color: var(--d-muted); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }

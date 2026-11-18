@@ -193,7 +193,8 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.selectOption('[name=equipment]', 'barbell');
   check(await page.isChecked('[name=weightAs][value=total]'), 'barbell: with the bar by default');
   await page.selectOption('[name=equipment]', 'machine');
-  check(!(await page.$('[name=weightAs]')), 'a machine: plain kg');
+  check(await page.isChecked('[name=weightAs][value=total]') && Boolean(await page.$('[name=weightAs][value=side]')), 'v33: a machine: in all by default, or per side / arm');
+  check((await page.textContent('.form')).includes('Per lato / braccio'), 'v33: the machine option is named');
   await go('#/exercises');
   await shot('06-exercises', { fullPage: true });
   check((await page.$$('.list-row')).length === 3, 'three exercises listed');
@@ -331,6 +332,18 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   check((await page.textContent('.w-note')).includes('metà pedana'), 'note shown during the set');
   await shot('11-set');
   await fitsAt('set with a note');
+  check((await page.textContent('[data-stepper=weight] .stepper-label')).includes('kg · in tutto'), `v33: the machine says in all (${await page.textContent('[data-stepper=weight] .stepper-label')})`);
+  await page.click('[data-action=weight-as]');
+  await page.waitForSelector('#modal [data-wa]');
+  check((await page.$$('#modal [data-wa]')).length === 2 && (await page.textContent('#modal [data-wa].on')).includes('In tutto'), 'v33: tapping the label: in all or per side / arm');
+  await page.click('#modal [data-wa="1"]');
+  await page.waitForSelector('[data-wt-hint]');
+  check((await page.textContent('[data-stepper=weight] .stepper-label')).includes('per lato') && (await page.textContent('[data-wt-hint]')).includes('200 kg in tutto'), `v33: per side, with the sum (${await page.textContent('[data-wt-hint]')})`);
+  await page.click('[data-action=weight-as]');
+  await page.waitForSelector('#modal [data-wa]');
+  await page.click('#modal [data-wa="0"]');
+  await page.waitForTimeout(150);
+  check(!(await page.$('[data-wt-hint]')), 'v33: back to in all');
   check(Boolean(await page.$('.w-card.machine .w-thumb')), 'a small picture next to the machine');
   await page.click('.w-thumb');
   await page.waitForSelector('.viewer');

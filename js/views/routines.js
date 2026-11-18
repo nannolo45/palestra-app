@@ -4,7 +4,7 @@ import { startDrag } from '../ui/dropdrag.js';
 import { regionOf, regionColor, regionName, REGION_KEYS } from '../body.js';
 import { gyms, gymById, gymName, mainGym, routineGymId, missingIn, exerciseIn, alternatives, fitItem } from '../gyms.js';
 import { needOf } from '../body.js';
-import { minutesExplained } from '../data.js';
+import { minutesExplained, weightTexts } from '../data.js';
 import { t, getLang } from '../i18n.js';
 import { esc, fmtNum, restText, minText, shortDate, timeOfDay, weekdayShort } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
@@ -659,6 +659,8 @@ async function editItem(routineId, index, draft = null) {
   const d = draft || itemDraft(it);
   const W = ex.type === 'weights';
   const kgStep = ex.equipment === 'dumbbell' ? 1 : 2.5;
+  // v33: the label says what the kg mean (per dumbbell, in all, per side…), as in the workout
+  const wLabel = W && weightTexts(ex).what ? t('weightWhat', weightTexts(ex).what) : t('weight');
   const sug = W ? suggestWeight(ex, bodyPrefs()) : null;
   // v29: the rest between sets is typed or ±30 s, like the circles between exercises
   const restDef = ex.defaultRest ?? (ex.type === 'bodyweight' ? 60 : training().rest);
@@ -678,10 +680,10 @@ async function editItem(routineId, index, draft = null) {
     : `${stepper({ name: 'reps', value: d.reps, step: 1, min: 1, label: d.range ? t('repsFrom') : t('reps') })}
           ${toggle({ name: 'range', checked: d.range, label: t('repRange'), hint: t('repRangeHint') })}
           <div data-range ${d.range ? '' : 'hidden'}>${stepper({ name: 'repsMax', value: d.repsMax, step: 1, min: 1, label: t('repsTo') })}</div>`}
-        ${W ? stepper({ name: 'weight', value: d.weight, step: kgStep, min: 0, unit: 'kg', label: t('weight') }) : ''}`
+        ${W ? stepper({ name: 'weight', value: d.weight, step: kgStep, min: 0, unit: 'kg', label: wLabel }) : ''}`
     : `<div class="set-rows">${d.rows.map((row, i) => `<div class="set-row-edit"><b>${esc(t('setN', i + 1))}</b>
           ${stepper({ name: `r${i}`, value: row.reps, step: 1, min: 1, label: t('reps') })}
-          ${W ? stepper({ name: `w${i}`, value: row.weight, step: kgStep, min: 0, unit: 'kg', label: t('weight') }) : ''}
+          ${W ? stepper({ name: `w${i}`, value: row.weight, step: kgStep, min: 0, unit: 'kg', label: wLabel }) : ''}
           ${d.rows.length > 1 ? `<button type="button" class="btn small ghost" data-del-row="${i}">${esc(t('removeSet'))}</button>` : ''}</div>`).join('')}</div>
         <button type="button" class="btn dashed wide" data-add-row>+ ${esc(t('addSetRow'))}</button>
         <p class="muted small">${esc(t('setsDiffHint'))}</p>`}

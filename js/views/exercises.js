@@ -343,7 +343,7 @@ export function exerciseView(id, query = {}) {
         draft.muscles = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k];
         rerender();
       }));
-      form.equipment?.addEventListener('change', () => { read(); delete draft.weightAs; rerender(); });
+      form.equipment?.addEventListener('change', () => { read(); draft.weightAs = draft.equipment === 'dumbbell' ? 'each' : 'total'; rerender(); }); // written, not deleted: upsert merges
       form.querySelectorAll('[name=weightAs],[name=dumbbells]').forEach((x) => x.addEventListener('change', () => { read(); rerender(); }));
       form.incMode.addEventListener('change', () => { form.querySelector('[data-inc-custom]').hidden = form.incMode.value !== 'custom'; });
       const newMachine = async (cardio) => {
@@ -430,11 +430,13 @@ function weightAsBlock(ex) {
   const m = weightMode(ex);
   if (m === 'plain') return '';
   const db = ex.equipment === 'dumbbell';
-  const opts = db ? [['each', t('wAsEach')], ['total', t('wAsTotal')]] : [['total', t('wAsBar')], ['side', t('wAsSide')]];
-  const val = db ? (m === 'dbTotal' ? 'total' : 'each') : (m === 'barSide' ? 'side' : 'total');
+  const bar = ex.equipment === 'barbell';
+  // v33: machines and cables too: in all, or per side / arm
+  const opts = db ? [['each', t('wAsEach')], ['total', t('wAsTotal')]] : bar ? [['total', t('wAsBar')], ['side', t('wAsSide')]] : [['total', t('wAsTotal')], ['side', t('wAsSideArm')]];
+  const val = db ? (m === 'dbTotal' ? 'total' : 'each') : (m === 'barSide' || m === 'stackSide' ? 'side' : 'total');
   return `<div class="field"><span class="field-label">${esc(t('weightAs'))}</span>${segmented({ name: 'weightAs', value: val, options: opts, label: t('weightAs') })}</div>
     ${db && m !== 'dbTotal' ? `<div class="field"><span class="field-label">${esc(t('dumbbellsN'))}</span>${segmented({ name: 'dumbbells', value: m === 'dbOne' ? 1 : 2, options: [[1, '1'], [2, '2']], label: t('dumbbellsN') })}</div>` : ''}
-    <p class="muted small">${esc(t(db ? 'weightAsHintDb' : 'weightAsHintBar'))}</p>`;
+    <p class="muted small">${esc(t(db ? 'weightAsHintDb' : bar ? 'weightAsHintBar' : 'weightAsHintStack'))}</p>`;
 }
 
 function pictureBlock(ex) {

@@ -373,7 +373,6 @@ Object.assign(it, {
   onlyToday: 'Solo oggi', asIDid: 'Come l\'ho fatto', addToScheda: 'Aggiungi alla scheda', allLike: (x) => `Tutte ${x}`, allAsIDid: 'Tutto come l\'ho fatto', noneOnlyToday: 'Niente, solo oggi',
   becomesNone: 'La scheda resta senza.', becomesAdded: (after, x) => `Entra nella scheda dopo ${after}: ${x}.`, becomesStays: (x) => `La scheda resta ${x}.`, becomesNew: (x) => `La scheda diventa ${x}.`,
   updateScheda: (n) => `Aggiorna la scheda · ${n}`, onlyTodayAll: 'Niente, era solo per oggi', schedaUpdated: (n) => `Scheda aggiornata: ${n} ${n === 1 ? 'cambiamento' : 'cambiamenti'}`,
-  wKgEach: 'kg · per manubrio', wKgOne: 'kg · 1 manubrio', wKgTotal: 'kg in tutto', wKgBar: 'kg · con la sbarra', wKgSide: 'kg · per lato',
   wHintEach: (x, tot) => `Prendi 2 manubri da ${x} kg · ${tot} kg in tutto`, wHintOne: (x) => `Un manubrio da ${x} kg`, wHintDbTotal: (h) => `Due manubri da ${h} kg`,
   wHintBar: (side) => `Sbarra da 20 kg più ${side} kg per lato`, wHintSide: (tot) => `Con la sbarra da 20 kg: ${tot} kg in tutto`,
   weightAs: 'Il peso è', wAsEach: 'Per manubrio', wAsTotal: 'In tutto', wAsBar: 'Con la sbarra', wAsSide: 'Dischi per lato', dumbbellsN: 'Manubri',
@@ -459,7 +458,6 @@ Object.assign(en, {
   onlyToday: 'Just today', asIDid: 'As I did it', addToScheda: 'Add to the routine', allLike: (x) => `All ${x}`, allAsIDid: 'All as I did it', noneOnlyToday: 'None, just today',
   becomesNone: 'The routine stays without it.', becomesAdded: (after, x) => `Goes into the routine after ${after}: ${x}.`, becomesStays: (x) => `The routine stays ${x}.`, becomesNew: (x) => `The routine becomes ${x}.`,
   updateScheda: (n) => `Update the routine · ${n}`, onlyTodayAll: 'None, it was just for today', schedaUpdated: (n) => `Routine updated: ${n} ${n === 1 ? 'change' : 'changes'}`,
-  wKgEach: 'kg · per dumbbell', wKgOne: 'kg · 1 dumbbell', wKgTotal: 'kg in all', wKgBar: 'kg · with the bar', wKgSide: 'kg · per side',
   wHintEach: (x, tot) => `Take 2 dumbbells of ${x} kg · ${tot} kg in all`, wHintOne: (x) => `One dumbbell of ${x} kg`, wHintDbTotal: (h) => `Two dumbbells of ${h} kg`,
   wHintBar: (side) => `20 kg bar plus ${side} kg per side`, wHintSide: (tot) => `With the 20 kg bar: ${tot} kg in all`,
   weightAs: 'The weight is', wAsEach: 'Per dumbbell', wAsTotal: 'In all', wAsBar: 'With the bar', wAsSide: 'Plates per side', dumbbellsN: 'Dumbbells',
@@ -660,6 +658,26 @@ Object.assign(en, {
   nextKg: (n) => `+${n} kg`, nextReps: (n) => `+${n} ${n === 1 ? 'rep' : 'reps'}`, nextSecs: (n) => `+${n} s`, nextMin: (n) => `+${n} min`,
   nextWillBe: (x) => `Next time: ${x}`, nextStaysAt: (x) => `Stays ${x}`, nextTag: (x) => `Next time: ${x}`,
   nextHint: 'Changes the routine for the next session. The weekly automatic increase leaves these exercises out.',
+});
+
+// v33: every weight says what it means (machines and cables too)
+Object.assign(it, {
+  wWhatEach: 'per manubrio', wWhatOne: '1 manubrio', wWhatTotal: 'in tutto', wWhatBar: 'con la sbarra', wWhatSide: 'per lato',
+  wHintStackSide: (tot) => `${tot} kg in tutto, sommando i due lati`, wAsOne: '1 manubrio', wAsSideArm: 'Per lato / braccio',
+  wSubEach: 'Il peso di un manubrio; ne usi due', wSubOne: 'Un manubrio solo', wSubDbTotal: 'I due manubri sommati',
+  wSubBar: 'Il totale, sbarra da 20 kg compresa', wSubBarSide: 'Solo i dischi di un lato',
+  wSubStack: 'Il numero sul pacco pesi, o tutti i dischi insieme', wSubStackSide: 'Macchine a dischi, con due bracci o due pacchi: i kg di un lato solo',
+  weightAsHintStack: 'In tutto: il numero sul pacco pesi, o tutti i dischi insieme. Per lato: macchine a dischi o con due bracci o due pacchi (chest press a dischi, cavi incrociati), i kg di un lato.',
+  weightWhat: (x) => `Peso · ${x}`,
+});
+Object.assign(en, {
+  wWhatEach: 'per dumbbell', wWhatOne: '1 dumbbell', wWhatTotal: 'in all', wWhatBar: 'with the bar', wWhatSide: 'per side',
+  wHintStackSide: (tot) => `${tot} kg in all, both sides together`, wAsOne: '1 dumbbell', wAsSideArm: 'Per side / arm',
+  wSubEach: 'The weight of one dumbbell; you use two', wSubOne: 'A single dumbbell', wSubDbTotal: 'Both dumbbells added up',
+  wSubBar: 'The total, 20 kg bar included', wSubBarSide: 'Only the plates on one side',
+  wSubStack: 'The number on the weight stack, or all the plates together', wSubStackSide: 'Plate-loaded machines, two arms or two stacks: the kilos on one side',
+  weightAsHintStack: 'In all: the number on the weight stack, or all the plates together. Per side: plate-loaded machines or ones with two arms or two stacks (plate-loaded chest press, cable crossover), the kilos on one side.',
+  weightWhat: (x) => `Weight · ${x}`,
 });
 
 export const DICTS = { it, en };

@@ -143,7 +143,8 @@ test('what the weight means: per dumbbell, in all, bar and plates', async () => 
   assert.equal(weightMode({ equipment: 'dumbbell', dumbbells: 1 }), 'dbOne');
   assert.equal(weightMode({ equipment: 'dumbbell', weightAs: 'total' }), 'dbTotal');
   assert.equal(weightMode({ equipment: 'barbell' }), 'barTotal');
-  assert.equal(weightMode({ equipment: 'machine' }), 'plain');
+  assert.equal(weightMode({ equipment: 'machine' }), 'stackTotal', 'v33: machines say in all');
+  assert.equal(weightMode({ type: 'bodyweight' }), 'plain');
   assert.equal(liftedKg({ equipment: 'dumbbell' }, 15), 30);
   assert.equal(liftedKg({ equipment: 'barbell', weightAs: 'side' }, 20), 60);
   const s = { sets: [{ exerciseId: 'a', reps: 10, weight: 15 }, { exerciseId: 'b', reps: 5, weight: 100 }] };

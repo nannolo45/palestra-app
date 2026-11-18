@@ -176,6 +176,10 @@ export function suggestWeight(ex, body) {
   const h = 1 + Math.max(-0.05, Math.min(0.05, ((Number(body.cm) || 175) - 175) / 300));
   let w = Number(body.kg) * ratio * sex * (LEVEL[body.level] ?? LEVEL.weeks) * h;
   if (ex.equipment === 'barbell' && ex.weightAs === 'side') w = (w - BAR_KG) / 2;
+  // the number as the exercise reads it (v33): both dumbbells together, or one side of a machine
+  const mode = weightMode({ ...ex, type: 'weights' });
+  if (mode === 'dbTotal') w *= 2;
+  if (mode === 'stackSide') w /= 2;
   const step = db ? 1 : 2.5;
   w = Math.max(step, Math.round(w / step) * step);
   if (ex.equipment === 'barbell' && ex.weightAs !== 'side') w = Math.max(BAR_KG, w);
@@ -465,13 +469,14 @@ export const BAR_KG = 20;
 
 /**
  * How an exercise's weight is read. Dumbbells: per dumbbell (the default; 1 or 2 of them) or in all. Barbell: in all,
- * bar included (the default), or plates per side. Anything else: plain kg.
+ * bar included (the default), or plates per side. Machines and cables (v33): in all (the stack, or every plate; the
+ * default) or per side / arm (plate-loaded machines, two arms or two stacks). Not weights: plain.
  */
 export function weightMode(ex) {
-  if (!ex) return 'plain';
+  if (!ex || (ex.type && ex.type !== 'weights')) return 'plain';
   if (ex.equipment === 'dumbbell') return ex.weightAs === 'total' ? 'dbTotal' : Number(ex.dumbbells) === 1 ? 'dbOne' : 'dbEach';
   if (ex.equipment === 'barbell') return ex.weightAs === 'side' ? 'barSide' : 'barTotal';
-  return 'plain';
+  return ex.weightAs === 'side' ? 'stackSide' : 'stackTotal';
 }
 
 /** The kilos actually lifted for one rep at weight w, for the totals. */
@@ -480,6 +485,7 @@ export function liftedKg(ex, w) {
   const m = weightMode(ex);
   if (m === 'dbEach') return n * 2;
   if (m === 'barSide') return n > 0 ? n * 2 + BAR_KG : 0;
+  if (m === 'stackSide') return n * 2;
   return n;
 }
 

@@ -9,10 +9,10 @@ export function backLink(href, label) {
 }
 
 /** A − value + control. name = the field name; the value lives in a hidden input. */
-export function stepper({ name, value, step = 1, min = 0, unit = '', label = '', big = false, id = '' }) {
+export function stepper({ name, value, step = 1, min = 0, unit = '', label = '', big = false, id = '', labelAction = '' }) {
   const v = value == null || value === '' ? '' : value;
   return `<div class="stepper${big ? ' big' : ''}" data-stepper="${esc(name)}" data-step="${step}" data-min="${min}">
-    ${label ? `<span class="stepper-label" id="${esc(id || `lbl-${name}`)}">${esc(label)}</span>` : ''}
+    ${label ? (labelAction ? `<button type="button" class="stepper-label as-btn" id="${esc(id || `lbl-${name}`)}" data-action="${esc(labelAction)}">${esc(label)} ▾</button>` : `<span class="stepper-label" id="${esc(id || `lbl-${name}`)}">${esc(label)}</span>`) : ''}
     <div class="stepper-row">
       <button type="button" class="step-btn" data-delta="-1" aria-label="${esc(t('less', label || name))}">−</button>
       <input class="stepper-value" ${id ? `id="${esc(id)}"` : ''} name="${esc(name)}" inputmode="decimal" value="${esc(v === '' ? '' : fmtNum(v))}" aria-label="${esc(label || name)}" autocomplete="off">

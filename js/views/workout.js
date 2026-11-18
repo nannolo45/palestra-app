@@ -7,7 +7,7 @@ import { esc, fmtNum, clock, num, timeOfDay, minText } from '../ui/format.js';
 import { icon } from '../ui/icons.js';
 import { stepper, bindSteppers, stepVal } from '../ui/parts.js';
 import { askConfirm, toast, openSheet } from '../ui/dialogs.js';
-import { machineOf, placeOf, whereText, measureLabel, training, increaseSettings, refreshEstimates, routineMinutes, bodyPrefs } from '../data.js';
+import { machineOf, placeOf, whereText, measureLabel, training, increaseSettings, refreshEstimates, routineMinutes, bodyPrefs, weightTexts, weightAsChoices, withWhat } from '../data.js';
 import { increaseProposals, applyIncrease, measuresFor, totalWeight, lastResult, weightMode, BAR_KG, setsOf, setPlan, setsText, suggestWeight, defaultTargets, itemFromRows, nextOptions, nextItem, applyNext } from '../model.js';
 import * as W from '../workout.js';
 import { breakdownBar, setText } from './history.js';
@@ -116,7 +116,7 @@ export function startView(routineId, query = {}) {
     const on = !unchecked.has(p.itemIndex);
     return `<button type="button" class="inc-row${on ? ' on' : ''}" aria-pressed="${on}" data-toggle="${p.itemIndex}">
           <span class="check-box" aria-hidden="true">${on ? icon('check', 18) : ''}</span>
-          <span class="inc-name">${esc(exName(p.exerciseId))}</span>
+          <span class="inc-name">${esc(exName(p.exerciseId))}${p.field === 'weight' && weightTexts(get('exercises', p.exerciseId)).what ? `<small>${esc(weightTexts(get('exercises', p.exerciseId)).label)}</small>` : ''}</span>
           <span class="inc-from">${esc(fmtNum(p.from))}</span>${icon('arrowRight', 16)}
           <span class="inc-to">${esc(fmtNum(p.to))}${esc(unitOf(p))}</span>
         </button>`;
@@ -328,6 +328,7 @@ export function workoutView() {
       view.querySelector('[data-action=back]')?.addEventListener('click', () => commit(W.back(active)));
       view.querySelector('[data-action=skip-set]')?.addEventListener('click', () => commit(W.skipStep(active)));
       view.querySelector('[data-action=viewer]')?.addEventListener('click', () => openViewer(ex));
+      view.querySelector('[data-action=weight-as]')?.addEventListener('click', () => changeWeightAs(ex));
       view.querySelectorAll('[data-action=note]').forEach((b) => b.addEventListener('click', () => b.classList.toggle('clamp')));
       view.querySelector('[data-action=add30]')?.addEventListener('click', () => commit(W.addRest(active, 30)));
       view.querySelector('[data-action=end-rest]')?.addEventListener('click', () => commit(W.endRest(active)));
@@ -356,9 +357,9 @@ function setBody(step, ex) {
         ${step.plan.seconds != null
     ? `<div class="w-card stepcard">${stepper({ name: 'seconds', value: step.plan.seconds, step: 5, min: 0, label: t('seconds'), big: true })}<span class="w-extra" data-extra></span></div>`
     : `<div class="w-card stepcard">${stepper({ name: 'reps', value: step.plan.reps, step: 1, min: 0, label: t('reps'), big: true })}<span class="w-extra" data-extra></span></div>`}
-        ${step.plan.weight != null ? `<div class="w-card stepcard">${stepper({ name: 'weight', value: step.plan.weight, step: ex.equipment === 'dumbbell' ? 1 : 2.5, min: 0, label: weightTexts(ex).label, big: true })}</div>` : ''}
+        ${step.plan.weight != null ? `<div class="w-card stepcard">${stepper({ name: 'weight', value: step.plan.weight, step: ex.equipment === 'dumbbell' ? 1 : 2.5, min: 0, label: weightTexts(ex).label, big: true, labelAction: active.trial ? '' : 'weight-as' })}</div>` : ''}
       </div>
-      ${step.plan.weight != null && weightMode(ex) !== 'plain' ? `<p class="w-small w-wthint" data-wt-hint>${esc(weightTexts(ex, step.plan.weight).hint)}</p>` : ''}
+      ${step.plan.weight != null && /^(db|bar)|Side$/.test(weightMode(ex)) ? `<p class="w-small w-wthint" data-wt-hint>${esc(weightTexts(ex, step.plan.weight).hint)}</p>` : ''}
       ${range ? `<p class="w-small w-goal">${esc(range)}${step.plan.failure ? esc(t('untilFailure')) : ''}${lastReps.length ? ` · ${esc(t('lastTimeReps', lastReps.join(', ')))}` : ''}</p>` : ''}
       ${sug ? `<div class="sug-chip"><span>${esc(t('sugStart'))} <b>${esc(fmtNum(sug))} kg</b><small>${esc(t('sugFrom', bodyPrefs().kg))}</small></span><button type="button" class="btn small yellow" data-action="use-sug" data-kg="${sug}">${esc(t('use'))}</button></div>` : ''}
       ${step.plan.weight === 0 ? `<p class="w-small">${esc(t('weightFirstTime'))}${!bodyPrefs() && !active.trial ? ` <a href="#/settings/body">${esc(t('sugSetBody'))}</a>` : ''}</p>` : ''}
@@ -371,6 +372,19 @@ function setBody(step, ex) {
       <button type="button" class="btn yellow huge done-btn" data-action="done">${icon('check', 30)}${esc(t('doneSet'))}</button>
       <div class="w-minor">${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(active.phase === 'rest' && W.current(active)?.kind === 'set' ? 'backToSet' : 'prevStep'))}</button>` : ''}<button type="button" class="btn ghost-dark" data-action="skip-set">${esc(t('skipSet'))}</button></div>
     </div>`;
+}
+
+/** Tapping "kg · …" (v33): per dumbbell or in all, with the bar or per side, in all or per side / arm. */
+async function changeWeightAs(ex) {
+  const opts = weightAsChoices(ex);
+  const cur = weightMode(ex);
+  const html = `<h2>${esc(t('weightAs'))}</h2><p class="muted">${esc(ex.name)}</p>
+    <div class="pick-list">${opts.map((o, i) => `<button type="button" class="row pick${o.mode === cur ? ' on' : ''}" aria-pressed="${o.mode === cur}" data-wa="${i}"><span class="row-text"><span class="row-title">${esc(o.label)}${o.mode === cur ? ' ✓' : ''}</span><span class="row-sub">${esc(o.sub)}</span></span></button>`).join('')}</div>
+    <div class="button-row"><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
+  const i = await openSheet(html, (form, close) => form.querySelectorAll('[data-wa]').forEach((b) => b.addEventListener('click', () => close(Number(b.dataset.wa)))));
+  if (i == null || !opts[i]) return;
+  upsert('exercises', { ...get('exercises', ex.id), ...opts[i].patch });
+  window.dispatchEvent(new CustomEvent('palestra:render'));
 }
 
 /** "+1" next to the reps when you do more than the scheda (less shows too). */
@@ -473,7 +487,7 @@ function nextLabel(o) {
   return t('nextReps', o.by);
 }
 
-const itemText = (it, ex) => (ex.type === 'cardio' ? t('minutesN', fmtNum(Number(it.targets?.duration) || 10)) : setsText(it, ex.type === 'weights'));
+const itemText = (it, ex) => (ex.type === 'cardio' ? t('minutesN', fmtNum(Number(it.targets?.duration) || 10)) : withWhat(setsText(it, ex.type === 'weights'), ex));
 
 /** The three buttons, and once one is on, what the scheda will say. attr: next (workout) or snext (summary). */
 function nextQ(it, ex, ix, pick, attr, short = false) {
@@ -530,20 +544,6 @@ function prevSummary(ex, s) {
   if (ex.type === 'cardio') return setText(ex, sets[0]);
   const reps = sets[0].reps ?? `${sets[0].seconds} s`;
   return ex.type === 'weights' ? `${sets.length} × ${reps} · ${fmtNum(Math.max(...sets.map((x) => x.weight || 0)))} kg` : `${sets.length} × ${reps}`;
-}
-
-/** What the kg means for this exercise: the stepper's label and a line that does the sums (empty for plain kg). */
-function weightTexts(ex, w) {
-  const n = Number(w) || 0;
-  const k = (x) => fmtNum(Math.round(x * 100) / 100);
-  switch (weightMode(ex)) {
-    case 'dbEach': return { label: t('wKgEach'), hint: n ? t('wHintEach', k(n), k(n * 2)) : '' };
-    case 'dbOne': return { label: t('wKgOne'), hint: n ? t('wHintOne', k(n)) : '' };
-    case 'dbTotal': return { label: t('wKgTotal'), hint: n ? t('wHintDbTotal', k(n / 2)) : '' };
-    case 'barTotal': return { label: t('wKgBar'), hint: n > BAR_KG ? t('wHintBar', k((n - BAR_KG) / 2)) : '' };
-    case 'barSide': return { label: t('wKgSide'), hint: n ? t('wHintSide', k(n * 2 + BAR_KG)) : '' };
-    default: return { label: 'kg', hint: '' };
-  }
 }
 
 // ---- looking at the exercises before and after (Anteprima) ----
@@ -953,12 +953,12 @@ function diffBecomes(row, choice, r) {
   if (row.added != null) {
     if (choice === 'oggi') return t('becomesNone');
     const after = state.exercises.find((e) => e.id === r.items[row.added]?.exerciseId)?.name || '';
-    return t('becomesAdded', after, setsText(itemFromRows({}, chosenRows(row, choice).map(clean)), ex.type === 'weights'));
+    return t('becomesAdded', after, withWhat(setsText(itemFromRows({}, chosenRows(row, choice).map(clean)), ex.type === 'weights'), ex));
   }
   const nextOn = summaryNext && summaryNext.routineId === summaryDiff?.routineId && summaryNext.applied[row.ix];
-  if (choice === 'oggi') return nextOn ? `${t('nextWillBe', setsText(it, ex.type === 'weights'))}.` : t('becomesStays', setsText(it, ex.type === 'weights'));
+  if (choice === 'oggi') return nextOn ? `${t('nextWillBe', withWhat(setsText(it, ex.type === 'weights'), ex))}.` : t('becomesStays', withWhat(setsText(it, ex.type === 'weights'), ex));
   const becomes = withNext(row.ix, itemFromRows(baseItem(row.ix, it), chosenRows(row, choice).map(clean)));
-  return nextOn ? `${t('nextWillBe', setsText(becomes, ex.type === 'weights'))}.` : t('becomesNew', setsText(becomes, ex.type === 'weights'));
+  return nextOn ? `${t('nextWillBe', withWhat(setsText(becomes, ex.type === 'weights'), ex))}.` : t('becomesNew', withWhat(setsText(becomes, ex.type === 'weights'), ex));
 }
 
 function chip(cls, txt) { return `<span class="chg ${cls}">${esc(txt)}</span>`; }
