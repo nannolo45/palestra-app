@@ -1343,18 +1343,13 @@ a.ax-row { text-decoration: none; }
 .stepcard .stepper-label.as-btn { border: 0; background: none; padding: 0; font-family: inherit; color: var(--d-muted); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
 
 /* ---- v34 ---- */
-/* the arrows for the exercise before and after: at the ends of the progress bar, not over the page */
-.w-prog { display: flex; align-items: center; gap: 2px; padding-top: 2px; margin: 0 -6px; flex: none; }
-.w-prog .w-progress { flex: 1; min-width: 0; padding: 0; }
-.w-prog .w-edge, .w-screen.fit .w-prog .w-edge { position: static; width: 34px; height: 32px; margin: -8px 0; flex: none; opacity: .75; }
-.w-prog .w-edge[hidden] { display: flex; visibility: hidden; }
-/* salta o rimanda, in the card of what comes next */
+/* rimanda, in the card of what comes next */
 .w-card.next { gap: 2px; }
 .next-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .next-skip { border: 0; background: none; color: var(--d-soft); font: inherit; font-size: 13px; line-height: 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 2px; padding: 10px 0 10px 12px; margin: -10px 0; cursor: pointer; white-space: nowrap; flex: none; }
 .w-subrow { display: flex; align-items: center; justify-content: space-between; gap: 4px 12px; flex-wrap: wrap; }
 .w-subrow .w-sub { margin-bottom: 0; }
-/* the end: what wasn't done today */
+/* the end: what was put off */
 .left-list { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
 .left-list .eyebrow { color: var(--d-muted); }
 .left-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -1364,3 +1359,13 @@ a.ax-row { text-decoration: none; }
 .left-row .btn { flex: none; }
 /* the rest that asks about next time: a touch smaller, to make room for the taller card of what comes next */
 .w-screen.fit .w-main.ask .ring { width: min(200px, 19dvh, 60vw); height: min(200px, 19dvh, 60vw); }
+
+/* ---- v35 ---- */
+/* the arrows are back at the sides, in a gutter of their own: the page and the buttons stand clear of them */
+/* (the screen reaches the phone's edges, so the arrows aren't cut off by its overflow: hidden, as they were) */
+.w-screen.fit { margin-left: -16px; margin-right: -16px; padding-left: 16px; padding-right: 16px; }
+.w-screen.fit .w-main, .w-screen.fit .w-foot { padding-left: 14px; padding-right: 14px; }
+.w-edge, .w-screen.fit .w-edge { top: 30%; bottom: 38%; left: 0; width: 30px; opacity: .7; }
+.w-edge.r, .w-screen.fit .w-edge.r { left: auto; right: 0; }
+/* an exercise put off: greyed, in its place */
+.w-progress .later { background: repeating-linear-gradient(90deg, var(--d-muted) 0 4px, transparent 4px 7px); opacity: .8; }

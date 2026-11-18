@@ -681,19 +681,17 @@ Object.assign(en, {
 });
 
 Object.assign(it, {
-  // v34: salta o rimanda, un'altra serie, la fine
-  skipMenu: 'Salta o rimanda', laterAfter: (n) => `Più tardi, dopo ${n}`, laterAfterSub: 'Macchina occupata? Intanto fai il prossimo', laterEnd: 'Più tardi, alla fine', laterEndSub: 'Lo fai per ultimo',
-  skipToday: 'Salta per oggi', skipTodaySub: 'Se poi hai tempo, lo riprendi', skipOnlySet: 'Salta solo questa serie',
-  laterDone: (x, n) => `${x}: dopo ${n}`, laterEndDone: (x) => `${x}: alla fine`, skippedToday: (x) => `${x}: saltato per oggi`,
+  // v34, v35: rimanda, un'altra serie, la fine
+  postpone: 'Rimanda', postponedToast: (x) => `${x}: rimandato`, pvLater: 'Rimandato',
   pvOneMore: 'Fai un\'altra serie', oneMoreNow: (x) => `${x}: una serie in più, adesso`, oneMoreAfterRest: (x) => `${x}: una serie in più, dopo il recupero`, nowAfterRest: (x) => `${x}: lo fai dopo il recupero`,
-  pvLater: 'Rimandato', atTheEnd: 'Sei alla fine', notDoneToday: 'Non fatti oggi',
+  atTheEnd: 'Sei alla fine', postponedN: (n) => (n === 1 ? 'Ne hai rimandato uno' : `Ne hai rimandati ${n}`), doNowQ: (n) => (n === 1 ? 'Lo fai adesso?' : 'Li fai adesso?'),
+  skipAndFinish: (n) => (n === 1 ? 'Saltalo e termina' : 'Saltali e termina'),
 });
 Object.assign(en, {
-  skipMenu: 'Skip or put off', laterAfter: (n) => `Later, after ${n}`, laterAfterSub: 'Machine taken? Do the next one first', laterEnd: 'Later, at the end', laterEndSub: 'You do it last',
-  skipToday: 'Skip it today', skipTodaySub: 'If there\'s time later, you can pick it up again', skipOnlySet: 'Skip just this set',
-  laterDone: (x, n) => `${x}: after ${n}`, laterEndDone: (x) => `${x}: at the end`, skippedToday: (x) => `${x}: skipped for today`,
+  postpone: 'Put off', postponedToast: (x) => `${x}: put off`, pvLater: 'Put off',
   pvOneMore: 'Do one more set', oneMoreNow: (x) => `${x}: one more set, now`, oneMoreAfterRest: (x) => `${x}: one more set, after the rest`, nowAfterRest: (x) => `${x}: you do it after the rest`,
-  pvLater: 'Put off', atTheEnd: 'You\'re at the end', notDoneToday: 'Not done today',
+  atTheEnd: 'You\'re at the end', postponedN: (n) => (n === 1 ? 'You put one off' : `You put ${n} off`), doNowQ: (n) => (n === 1 ? 'Do it now?' : 'Do them now?'),
+  skipAndFinish: (n) => (n === 1 ? 'Skip it and finish' : 'Skip them and finish'),
 });
 
 export const DICTS = { it, en };

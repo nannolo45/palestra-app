@@ -264,7 +264,9 @@ export function workoutView() {
   const step = W.current(active);
   const ex = state.exercises.find((e) => e.id === step.exerciseId);
   const exIndexes = [...new Set(active.steps.map((s) => s.itemIndex))];
-  const pos = exIndexes.indexOf(step.itemIndex);
+  const here = active.phase === 'rest' ? W.restedFrom(active)?.step || step : step;
+  const pos = exIndexes.indexOf(here.itemIndex);
+  const off = W.postponed(active); // put off: greyed in the bar, where they were
   const paused = W.isPaused(active);
   if (peek != null && (peek === pos || peek < 0 || peek >= exIndexes.length || paused)) peek = null;
   const looking = peek != null;
@@ -273,7 +275,7 @@ export function workoutView() {
       <div class="w-head-mid"><span class="w-small">${looking ? esc(t('pvPrefix')) : ''}${esc(t('exNofM', r?.name || '', (looking ? peek : pos) + 1, exIndexes.length))}</span><span class="w-clock" data-live="elapsed">${trial ? '—:—' : clock(W.elapsedSec(active))}</span></div>
       <span class="w-head-r">${trial ? '' : `<button type="button" class="w-icon" data-action="end" aria-label="${esc(t('endWorkout'))}" title="${esc(t('endWorkout'))}">${icon('close', 20)}</button>`}<button type="button" class="w-icon filled" data-action="pause" aria-label="${esc(paused ? t('resume') : t('pauseWorkout'))}">${icon(paused ? 'play' : 'pause', 18)}</button></span>
     </header>
-    <div class="w-prog">${edge(-1, !paused && (looking ? peek : pos) > 0)}<div class="w-progress" aria-hidden="true">${exIndexes.map((ix, i) => `<span class="${i < pos ? 'done' : i === pos ? 'now' : ''}${looking && i === peek ? ' view' : ''}"></span>`).join('')}</div>${edge(1, !paused && (looking ? peek : pos) < exIndexes.length - 1)}</div>`;
+    <div class="w-progress" aria-hidden="true">${exIndexes.map((ix, i) => `<span class="${i === pos ? 'now' : off.includes(ix) ? 'later' : i < pos ? 'done' : ''}${looking && i === peek ? ' view' : ''}"></span>`).join('')}</div>`;
   let body;
   if (paused) body = pausedBody();
   else if (looking) body = previewBody(exIndexes[peek], pos);
@@ -282,7 +284,7 @@ export function workoutView() {
   else body = setBody(step, ex);
   return {
     dark: true,
-    html: `<div class="w-screen fit${looking ? ' peeking' : ''}">${head}${body}</div>`,
+    html: `<div class="w-screen fit${looking ? ' peeking' : ''}">${head}${body}${paused ? '' : edges(exIndexes.length, looking ? peek : pos)}</div>`,
     bind(view) {
       bindSteppers(view, (name, v) => {
         if (name === 'weight') { const h = view.querySelector('[data-wt-hint]'); if (h) h.textContent = weightTexts(ex, v).hint; }
@@ -326,7 +328,7 @@ export function workoutView() {
         commit(W.completeStep(active, values));
       });
       view.querySelector('[data-action=back]')?.addEventListener('click', () => commit(W.back(active)));
-      view.querySelectorAll('[data-action=skip-menu]').forEach((b) => b.addEventListener('click', () => skipMenu(b.dataset.fromRest != null)));
+      view.querySelectorAll('[data-action=postpone]').forEach((b) => b.addEventListener('click', () => putOff(b.dataset.fromRest != null)));
       view.querySelectorAll('[data-do-now]').forEach((b) => b.addEventListener('click', () => bringBack(Number(b.dataset.doNow))));
       view.querySelector('[data-action=viewer]')?.addEventListener('click', () => openViewer(ex));
       view.querySelector('[data-action=weight-as]')?.addEventListener('click', () => changeWeightAs(ex));
@@ -371,7 +373,7 @@ function setBody(step, ex) {
     </main>
     <div class="w-foot">
       <button type="button" class="btn yellow huge done-btn" data-action="done">${icon('check', 30)}${esc(t('doneSet'))}</button>
-      <div class="w-minor">${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t('prevStep'))}</button>` : ''}<button type="button" class="btn ghost-dark" data-action="skip-menu">${esc(t('skipMenu'))}</button></div>
+      <div class="w-minor">${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t('prevStep'))}</button>` : ''}<button type="button" class="btn ghost-dark" data-action="postpone">${esc(t('postpone'))}</button></div>
     </div>`;
 }
 
@@ -510,11 +512,11 @@ function nextCard() {
 
 /** The question after an exercise's last set: another set, or another exercise. */
 function moreCard() {
-  const s = W.current(active);
+  const s = W.restedFrom(active)?.step;
   const nx = active.steps[active.idx + 1];
   if (nx && nx.extra && !W.isLogged(active, nx)) return `<p class="w-small center-text">${esc(t('extraAdded'))} <button type="button" class="link-btn" data-action="undo-set">${esc(t('removeIt'))}</button></p>`;
   if (!W.afterLastSet(active)) return '';
-  const ex = state.exercises.find((e) => e.id === s.exerciseId);
+  const ex = state.exercises.find((e) => e.id === s?.exerciseId);
   return `<div class="w-card more-q"><p>${t('moreQshort', `<b>${esc(ex?.name || '')}</b>`)}</p><button type="button" class="btn yellow small" data-action="add-set">+ ${esc(t('setWord'))}</button><button type="button" class="btn dark-btn small" data-action="add-ex">+ ${esc(t('exWord'))}</button></div>`;
 }
 
@@ -523,14 +525,14 @@ function endBody() {
   const left = W.notDone(active);
   return `<main class="w-main center">
       <span class="eyebrow">${esc(t(redo() ? 'lastSetDone' : 'atTheEnd'))}</span>
-      <h2 class="w-title">${esc(t('allDoneQ'))}</h2>
-      ${nextCard()}${moreCard()}
-      ${left.length ? `<div class="w-card left-list"><span class="eyebrow">${esc(t('notDoneToday'))}</span>${left.map((o) => {
+      <h2 class="w-title">${esc(left.length ? t('postponedN', left.length) : t('allDoneQ'))}</h2>
+      ${left.length ? `<div class="w-card left-list"><span class="eyebrow">${esc(t('doNowQ', left.length))}</span>${left.map((o) => {
     const ex = state.exercises.find((e) => e.id === active.steps.find((x) => x.itemIndex === o.itemIndex)?.exerciseId);
     return `<div class="left-row"><span><b>${esc(ex?.name || '')}</b>${o.left < o.of ? `<small>${esc(t('pvLeft', o.left))}</small>` : ''}</span><button type="button" class="btn dark-btn small" data-do-now="${o.itemIndex}">${esc(t('pvNow'))}</button></div>`;
   }).join('')}</div>` : ''}
+      ${nextCard()}${moreCard()}
     </main>
-    <div class="w-foot"><button type="button" class="btn yellow huge" data-action="end-rest">${icon('check', 26)}${esc(active.trial ? t('endTrial') : t('finishWorkout'))}</button>
+    <div class="w-foot"><button type="button" class="btn yellow huge" data-action="end-rest">${icon('check', 26)}${esc(active.trial ? t('endTrial') : left.length ? t('skipAndFinish', left.length) : t('finishWorkout'))}</button>
       ${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(redo() ? 'backToSet' : 'prevStep'))}</button>` : ''}</div>`;
 }
 
@@ -543,30 +545,15 @@ function bringBack(ix) {
 }
 
 /**
- * Salta o rimanda (v34): the exercise you're at (or, from the rest, the one that comes next) goes after the next
- * one or to the end — the machine is taken — or is skipped for today. Skipped ones can always come back.
+ * Rimanda (v35, one tap): the exercise you're at — or, from the rest, the one that comes next — is put off. It stays
+ * where it is, greyed in the bar; its preview has Fallo adesso, and the last screen asks about what is still put off.
  */
-async function skipMenu(fromRest) {
+function putOff(fromRest) {
   const step = fromRest ? active.steps[active.idx + 1] : W.current(active);
   if (!step || (fromRest ? active.phase !== 'rest' : active.phase !== 'work')) return;
-  const ix = step.itemIndex;
   const ex = state.exercises.find((e) => e.id === step.exerciseId);
-  const nameOf = (i) => state.exercises.find((e) => e.id === active.steps.find((s) => s.itemIndex === i)?.exerciseId)?.name || '';
-  const coming = W.comingAfter(active, ix);
-  const setsLeft = active.steps.filter((s) => s.itemIndex === ix && !W.isLogged(active, s)).length;
-  const opts = [];
-  if (coming.length) opts.push({ k: 'next', title: t('laterAfter', nameOf(coming[0])), sub: t('laterAfterSub') });
-  if (coming.length > 1) opts.push({ k: 'end', title: t('laterEnd'), sub: t('laterEndSub') });
-  opts.push({ k: 'skip', title: t('skipToday'), sub: t('skipTodaySub') });
-  if (!fromRest && step.kind === 'set' && setsLeft > 1) opts.push({ k: 'set', title: t('skipOnlySet'), sub: t('setNofM', step.n, step.of) });
-  const html = `<h2>${esc(t('skipMenu'))}</h2><p class="muted">${esc(ex?.name || '')}</p>
-    <div class="pick-list">${opts.map((o) => `<button type="button" class="row pick" data-skip="${o.k}"><span class="row-text"><span class="row-title">${esc(o.title)}</span><span class="row-sub">${esc(o.sub)}</span></span></button>`).join('')}</div>
-    <div class="button-row"><button type="button" class="btn ghost" data-close>${esc(t('cancel'))}</button></div>`;
-  const k = await openSheet(html, (form, close) => form.querySelectorAll('[data-skip]').forEach((b) => b.addEventListener('click', () => close(b.dataset.skip))));
-  if (!k || !active) return;
-  if (k === 'set') { commit(W.skipStep(active)); return; }
-  commit(k === 'skip' ? W.skipExercise(active, ix) : W.later(active, ix, k));
-  if (ex) toast(k === 'skip' ? t('skippedToday', ex.name) : k === 'end' ? t('laterEndDone', ex.name) : t('laterDone', ex.name, nameOf(coming[0])));
+  commit(W.postpone(active, step.itemIndex));
+  if (ex) toast(t('postponedToast', ex.name));
 }
 
 /** Machine number, zone and settings, with a small picture (your photo, or the exercise's) that opens full screen. */
@@ -590,11 +577,12 @@ function prevSummary(ex, s) {
 // ---- looking at the exercises before and after (Anteprima) ----
 
 /**
- * The arrows at the two ends of the progress bar (v34; they used to float over the page's edges, on top of the
- * notes): tap (or swipe, or the arrow keys) for the exercise before or after. A hidden one keeps its place.
+ * The strips at the left and right edges: tap (or swipe, or the arrow keys) for the exercise before or after. The
+ * page keeps a gutter for them (v35), so they never sit on a note or a card.
  */
-function edge(d, on) {
-  return `<button type="button" class="w-edge ${d < 0 ? 'l' : 'r'}" data-peek="${d}" aria-label="${esc(t(d < 0 ? 'peekPrev' : 'peekNext'))}" ${on ? '' : 'hidden'}>${icon(d < 0 ? 'back' : 'chevron', 20)}</button>`;
+function edges(n, at) {
+  return `<button type="button" class="w-edge l" data-peek="-1" aria-label="${esc(t('peekPrev'))}" ${at <= 0 ? 'hidden' : ''}>${icon('back', 20)}</button>
+    <button type="button" class="w-edge r" data-peek="1" aria-label="${esc(t('peekNext'))}" ${at >= n - 1 ? 'hidden' : ''}>${icon('chevron', 20)}</button>`;
 }
 
 function bindPeek(view, exIndexes, pos) {
@@ -640,8 +628,8 @@ function previewBody(ix, pos) {
   const plan = steps[0].kind === 'cardio'
     ? [t('minutesN', fmtNum(Number(p.targets.duration) || 10))].join('')
     : `${steps.length} × ${p.seconds != null ? `${p.seconds} s` : p.reps}${p.weight ? ` · ${fmtNum(p.weight)} kg` : ''}`;
-  const putOff = !behind && steps.some((s) => s.later && !W.isLogged(active, s));
-  const status = logged.length && !left ? t('pvDone') : logged.length ? t('pvPart', logged.length, steps.length) : behind ? t('pvSkipped') : putOff ? t('pvLater') : t('pvAhead');
+  const off = behind && left > 0; // put off: waiting to be started
+  const status = logged.length && !left ? t('pvDone') : logged.length ? t('pvPart', logged.length, steps.length) : behind ? t('pvLater') : t('pvAhead');
   const rows = logged.map((x) => `<div><span>${esc(steps[0].kind === 'cardio' ? t('pvDone') : t('setN', x.n))}</span><b>${esc(setText(ex, x))} <span class="ok">✓</span></b></div>`).join('');
   const wt = p.weight ? weightTexts(ex, p.weight).hint : '';
   return `<main class="w-main pv">
@@ -654,8 +642,8 @@ function previewBody(ix, pos) {
       ${ex.notes ? `<section class="w-note pv-dim">${icon('pencil', 20)}<p>${esc(ex.notes)}</p></section>` : ''}
     </main>
     <div class="w-foot">
-      <button type="button" class="btn big pv-home" data-action="peek-home">${icon('back', 22)}${esc(t('pvBack', pos + 1))}</button>
-      <div class="w-minor">${left ? `<button type="button" class="btn ghost-dark" data-action="do-now">${esc(t('pvNow'))}</button>` : ''}
+      ${off ? `<button type="button" class="btn yellow huge" data-action="do-now">${icon('play', 22)}${esc(t('pvNow'))}</button>` : `<button type="button" class="btn big pv-home" data-action="peek-home">${icon('back', 22)}${esc(t('pvBack', pos + 1))}</button>`}
+      <div class="w-minor">${off ? `<button type="button" class="btn ghost-dark" data-action="peek-home">${icon('back', 18)}${esc(t('pvBack', pos + 1))}</button>` : left ? `<button type="button" class="btn ghost-dark" data-action="do-now">${esc(t('pvNow'))}</button>` : ''}
       ${!left && logged.length && steps[0].kind !== 'cardio' ? `<button type="button" class="btn ghost-dark" data-action="one-more">${esc(t('pvOneMore'))}</button>` : ''}
       ${logged.length && steps[0].kind !== 'cardio' ? `<button type="button" class="btn ghost-dark" data-action="fix">${esc(t('pvFix'))}</button>` : ''}</div>
     </div>`;
@@ -692,7 +680,7 @@ function cardioBody(step, ex) {
   const sec = active.trial ? 0 : W.phaseSec(active);
   const left = dur * 60 - sec;
   return `<main class="w-main cardio">
-      <div><h1 class="w-ex">${esc(ex.name)}</h1><div class="w-subrow"><p class="w-sub">${esc([t('minutesN', fmtNum(dur)), whereText(ex)].filter(Boolean).join(' · '))}</p><button type="button" class="next-skip" data-action="skip-menu">${esc(t('skipMenu'))}${icon('chevron', 14)}</button></div></div>
+      <div><h1 class="w-ex">${esc(ex.name)}</h1><div class="w-subrow"><p class="w-sub">${esc([t('minutesN', fmtNum(dur)), whereText(ex)].filter(Boolean).join(' · '))}</p><button type="button" class="next-skip" data-action="postpone">${esc(t('postpone'))}${icon('chevron', 14)}</button></div></div>
       <div class="w-card timer-card" role="timer">
         <span class="eyebrow" data-live="cardio-label">${esc(left >= 0 ? t('timeLeft') : t('overTime'))}</span>
         <span class="w-bigclock" data-live="cardio-left">${left >= 0 ? clock(left) : `+${clock(-left)}`}</span>
@@ -734,7 +722,7 @@ function restBody() {
       ${trial ? `<button type="button" class="btn light big wide" data-action="end-rest">${esc(t('forward'))}</button>`
     : `<div class="w-grid2 wide"><button type="button" class="btn dark-btn big" data-action="add30">+30 s</button><button type="button" class="btn ${left <= 0 ? 'yellow' : 'light'} big" data-action="end-rest" data-live="end-rest">${esc(left <= 0 ? t('restEnd') : t('skip'))}</button></div>`}
       ${nxt && nex ? `<section class="w-card next" aria-label="${esc(t('next'))}">
-        <div class="next-top"><span class="eyebrow">${esc(t('next'))}</span><button type="button" class="next-skip" data-action="skip-menu" data-from-rest>${esc(t('skipMenu'))}${icon('chevron', 14)}</button></div>
+        <div class="next-top"><span class="eyebrow">${esc(t('next'))}</span><button type="button" class="next-skip" data-action="postpone" data-from-rest>${esc(t('postpone'))}${icon('chevron', 14)}</button></div>
         <div class="next-row"><div><b>${esc(nextText)}</b><small>${esc(sameMachine ? t('sameMachine', machineOf(nex)?.number || '') : whereText(nex) || '')}${aex && sameMachine ? ` · ${esc(t('thenEx', aex.name, ''))}` : ''}</small></div>${nextAmount ? `<span class="w-num">${esc(nextAmount)}</span>` : ''}</div>
       </section>` : ''}
       ${W.canGoBack(active) ? `<div class="w-minor"><button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t(redo() ? 'backToSet' : 'prevStep'))}</button></div>` : ''}
