@@ -316,6 +316,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.click('[data-action=done]');
   await page.waitForSelector('.ring');
   check((await page.textContent('.eyebrow')).includes('spostamento'), 'rest between exercises');
+  { const q = (await page.textContent('.next-q').catch(() => '')).replace(/\s+/g, ' '); check(q.includes('Tapis roulant') && q.includes('+1 min') && q.includes('Uguale'), `v32: after the cardio, next time? (${q})`); }
   await page.clock.runFor(30 * 1000);
   await shot('10-rest');
   await fitsAt('rest');
@@ -383,6 +384,12 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.click('[data-action=done]');
   // the last set of the leg press: one more set?
   check(Boolean(await page.waitForSelector('.more-q', { timeout: 3000 }).catch(() => null)), 'after the last set: "Ne fai un\'altra?"');
+  { const q = (await page.textContent('.next-q')).replace(/\s+/g, ' '); check(q.includes('Leg press') && q.includes('+2,5 kg') && q.includes('+1 rip.') && q.includes('Uguale'), `v32: after the last set, next time? (${q})`); }
+  await page.click('.next-q [data-next$="|weight"]');
+  await page.waitForSelector('.next-q button.on');
+  { const q = (await page.textContent('.next-q')).replace(/\s+/g, ' '); check(q.includes('La prossima volta: ') && q.includes('102,5 kg'), `v32: what the scheda will say (${q})`); }
+  await shot('v32-next-time');
+  await fitsAt('v32: rest with next time');
   await page.click('[data-action=add-set]');
   await page.waitForSelector('[data-action=undo-set]');
   check((await page.textContent('.w-card.next')).includes('Serie 3 di 3 · in più'), 'the extra set comes next');
@@ -416,14 +423,22 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('.summary');
   check((await page.$$('.diff-card')).length === 2, `the summary lists what was different (${(await page.$$('.diff-card')).length})`);
   const d1 = await page.textContent('.diff-card');
-  check(d1.includes('in più') && d1.includes('10/10/11 × 100 kg'), `leg press: the extra set and rep, and what the scheda becomes (${d1.replace(/\s+/g, ' ')})`);
+  check(d1.includes('in più') && d1.includes('La prossima volta: 10/10/11 × 102,5 kg'), `leg press: the extra set and rep, and what the scheda becomes with next time's +2,5 kg (${d1.replace(/\s+/g, ' ')})`);
+  { const qs = await page.$$eval('.summary .next-q', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ')));
+    check(qs.length === 2 && qs[0].includes('Tapis roulant') && qs[1].includes('Plank') && qs[1].includes('+1 rip.'), `v32: the summary asks about the ones not answered (${JSON.stringify(qs)})`); }
+  check((await page.textContent('.sum-row:has-text("Leg press")')).includes('Prossima volta: +2,5 kg'), 'v32: the answer given during the workout, under the exercise');
+  await page.click('.summary .next-q:has-text("Plank") [data-snext$="|more"]');
+  await page.waitForSelector('.summary .next-q button.on');
+  check(await page.evaluate(() => [...document.querySelectorAll('.summary .next-q *')].every((el) => el.getBoundingClientRect().right <= innerWidth + 1)), 'v32: the next-time buttons fit the width');
   check((await page.textContent('.diff-card >> nth=1')).includes('Entra nella scheda dopo Plank'), 'the added exercise goes in after Plank');
   await shot('13-summary', { fullPage: true });
   check((await page.textContent('.summary')).includes('tutte le serie'), 'session complete');
   await page.click('[data-action=save-diff]');
   await page.waitForTimeout(200);
   { const r = await page.evaluate(async () => { const { live } = await import('/js/store.js'); return live('routines').find((x) => x.name === 'Gambe'); });
-    check(r.items.length === 4 && r.items[1].perSet && r.items[1].perSet.map((x) => x.reps).join('/') === '10/10/11' && r.items[3].sets === 1 && r.items[3].exerciseId === r.items[2].exerciseId, `the scheda updated from the summary (${JSON.stringify(r.items.map((x) => [x.sets, x.reps, x.perSet ? 'perSet' : '']))})`); }
+    check(r.items.length === 4 && r.items[1].perSet && r.items[1].perSet.map((x) => x.reps).join('/') === '10/10/11' && r.items[3].sets === 1 && r.items[3].exerciseId === r.items[2].exerciseId, `the scheda updated from the summary (${JSON.stringify(r.items.map((x) => [x.sets, x.reps, x.perSet ? 'perSet' : '']))})`);
+    check(r.items[1].perSet.every((x) => x.weight === 102.5) && r.items[1].pickedAt > 0, `v32: leg press +2,5 kg next time (${JSON.stringify(r.items[1])})`);
+    check(r.items[2].reps === 13 && r.items[2].pickedAt > 0 && !r.items[0].pickedAt, `v32: plank +1 rep from the summary, the treadmill untouched (${JSON.stringify([r.items[0], r.items[2]])})`); }
   await page.waitForSelector('.chart');
   await page.clock.runFor(5000);
   await page.waitForTimeout(300);
@@ -468,7 +483,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('.inc-row');
   await shot('16-increase', { fullPage: true });
   const incText = await page.textContent('.w-card.list');
-  check(incText.includes('100') && incText.includes('102,5'), 'leg press 100 → 102,5 proposed');
+  check(incText.includes('Tapis roulant') && !incText.includes('Leg press'), `v32: the weekly increase leaves out what was answered last time (${incText.replace(/\s+/g, ' ')})`);
   await page.click('[data-action=confirm]');
   await page.waitForSelector('[data-action=go]');
   await page.click('[data-action=go]');

@@ -648,6 +648,20 @@ Object.assign(en, {
   impAddNew: 'Add as new', impAddNewHint: 'the old ones stay, the new ones get “(2)”', tagUpdate: 'update',
 });
 
+// v32: after an exercise, what to do next time
+Object.assign(it, {
+  nextQ: (x) => `La prossima volta, ${x}:`, nextTitle: 'La prossima volta', nextSame: 'Uguale',
+  nextKg: (n) => `+${n} kg`, nextReps: (n) => `+${n} rip.`, nextSecs: (n) => `+${n} s`, nextMin: (n) => `+${n} min`,
+  nextWillBe: (x) => `La prossima volta: ${x}`, nextStaysAt: (x) => `Resta ${x}`, nextTag: (x) => `Prossima volta: ${x}`,
+  nextHint: 'Cambia la scheda per la prossima seduta. L’aumento automatico della settimana salta questi esercizi.',
+});
+Object.assign(en, {
+  nextQ: (x) => `Next time, ${x}:`, nextTitle: 'Next time', nextSame: 'Same',
+  nextKg: (n) => `+${n} kg`, nextReps: (n) => `+${n} ${n === 1 ? 'rep' : 'reps'}`, nextSecs: (n) => `+${n} s`, nextMin: (n) => `+${n} min`,
+  nextWillBe: (x) => `Next time: ${x}`, nextStaysAt: (x) => `Stays ${x}`, nextTag: (x) => `Next time: ${x}`,
+  nextHint: 'Changes the routine for the next session. The weekly automatic increase leaves these exercises out.',
+});
+
 export const DICTS = { it, en };
 
 export function getLang() {

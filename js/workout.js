@@ -195,6 +195,27 @@ export function afterLastSet(w) {
   return Boolean(s && s.kind === 'set' && (!nx || (nx.itemIndex !== s.itemIndex && (s.group == null || nx.group !== s.group))));
 }
 
+/**
+ * The scheda items just finished, to ask about next time (v32): during the rest after an exercise's last set (all of a
+ * superserie's exercises after its last round) or after a cardio. Empty otherwise.
+ */
+export function justFinished(w) {
+  if (w.phase !== 'rest' || isPaused(w)) return [];
+  const s = current(w);
+  if (!s) return [];
+  if (s.kind === 'cardio') return isLogged(w, s) ? [s.itemIndex] : [];
+  if (!afterLastSet(w)) return [];
+  if (s.group == null) return [s.itemIndex];
+  return [...new Set(w.steps.filter((x) => x.group === s.group).map((x) => x.itemIndex))];
+}
+
+/** The answer for next time for one item: 'weight', 'more', 'same', or null to take it back. */
+export function setNext(w, itemIndex, key) {
+  const next = { ...(w.next || {}) };
+  if (key) next[itemIndex] = key; else delete next[itemIndex];
+  return { ...w, next };
+}
+
 /** One more set of the exercise just done, right after, from its numbers. */
 export function addSet(w) {
   if (!afterLastSet(w)) return w;

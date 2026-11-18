@@ -8,7 +8,7 @@ import { icon } from '../ui/icons.js';
 import { stepper, bindSteppers, stepVal } from '../ui/parts.js';
 import { askConfirm, toast, openSheet } from '../ui/dialogs.js';
 import { machineOf, placeOf, whereText, measureLabel, training, increaseSettings, refreshEstimates, routineMinutes, bodyPrefs } from '../data.js';
-import { increaseProposals, applyIncrease, measuresFor, totalWeight, lastResult, weightMode, BAR_KG, setsOf, setPlan, setsText, suggestWeight, defaultTargets, itemFromRows } from '../model.js';
+import { increaseProposals, applyIncrease, measuresFor, totalWeight, lastResult, weightMode, BAR_KG, setsOf, setPlan, setsText, suggestWeight, defaultTargets, itemFromRows, nextOptions, nextItem, applyNext } from '../model.js';
 import * as W from '../workout.js';
 import { breakdownBar, setText } from './history.js';
 import { syncNow } from '../sync.js';
@@ -18,6 +18,7 @@ import { thumbOf, openViewer } from './pictures.js';
 let active = null; // the workout in progress
 let summaryId = null; // the session just finished, shown until closed
 let summaryDiff = null; // { routineId, rows, pick }: what was done differently from the scheda, for the summary
+let summaryNext = null; // { routineId, at, applied, base, ask, pick }: next time (v32), see finish()
 let pendingStart = null; // { routineId, blockId, proposals }
 let unchecked = new Set();
 let wakeLock = null;
@@ -293,6 +294,10 @@ export function workoutView() {
       view.querySelector('[data-action=exit-trial]')?.addEventListener('click', exitTrial);
       view.querySelector('[data-action=minimise]')?.addEventListener('click', () => { location.hash = lastOutside || '#/today'; });
       view.querySelector('[data-action=add-set]')?.addEventListener('click', () => commit(W.addSet(active)));
+      view.querySelectorAll('[data-next]').forEach((b) => b.addEventListener('click', () => {
+        const [ix, k] = b.dataset.next.split('|');
+        commit(W.setNext(active, Number(ix), active.next?.[ix] === k ? null : k));
+      }));
       view.querySelector('[data-action=undo-set]')?.addEventListener('click', () => commit(W.removeAddedSet(active)));
       view.querySelector('[data-action=add-ex]')?.addEventListener('click', pickExtraExercise);
       view.querySelector('[data-action=other]')?.addEventListener('click', () => pickOtherExercise(step, ex));
@@ -450,6 +455,44 @@ async function pickOtherExercise(step, ex) {
   toast(t('nowDoing', other.name));
 }
 
+// ---- la prossima volta (v32): more weight, more reps (seconds, minutes) or the same ----
+
+/** An item to ask about: done as it is in the scheda (not added, not swapped, not a stand-in at this gym). */
+function askable(r, ix, w = active) {
+  const it = r?.items?.[ix];
+  const st = w ? w.steps.filter((s) => s.itemIndex === ix) : [];
+  if (!it || !st.length || st.some((s) => s.added != null || s.swappedFrom)) return false;
+  return st[0].exerciseId === it.exerciseId && Boolean(get('exercises', it.exerciseId));
+}
+
+function nextLabel(o) {
+  if (o.key === 'same') return t('nextSame');
+  if (o.field === 'weight') return t('nextKg', fmtNum(o.by));
+  if (o.field === 'seconds') return t('nextSecs', o.by);
+  if (o.field === 'duration') return t('nextMin', fmtNum(o.by));
+  return t('nextReps', o.by);
+}
+
+const itemText = (it, ex) => (ex.type === 'cardio' ? t('minutesN', fmtNum(Number(it.targets?.duration) || 10)) : setsText(it, ex.type === 'weights'));
+
+/** The three buttons, and once one is on, what the scheda will say. attr: next (workout) or snext (summary). */
+function nextQ(it, ex, ix, pick, attr, short = false) {
+  const opts = nextOptions(it, ex, increaseSettings());
+  const after = !pick ? '' : pick === 'same' ? t('nextStaysAt', itemText(it, ex)) : t('nextWillBe', itemText(nextItem(it, ex, pick, increaseSettings()), ex));
+  return `<div class="w-card next-q"><p>${short ? `<b>${esc(ex.name)}</b>` : t('nextQ', `<b>${esc(ex.name)}</b>`)}</p>
+    <div class="diff-choose" role="group">${opts.map((o) => `<button type="button" class="${pick === o.key ? 'on' : ''}" aria-pressed="${pick === o.key}" data-${attr}="${ix}|${o.key}">${esc(nextLabel(o))}</button>`).join('')}</div>
+    ${after ? `<p class="w-small">${esc(after)}</p>` : ''}</div>`;
+}
+
+/** During the rest after an exercise (or a superserie, or a cardio): what to do next time. */
+function nextCard() {
+  const r = get('routines', active.routineId);
+  return W.justFinished(active).filter((ix) => askable(r, ix)).map((ix) => {
+    const it = r.items[ix];
+    return nextQ(it, get('exercises', it.exerciseId), ix, active.next?.[ix] || null, 'next');
+  }).join('');
+}
+
 /** The question after an exercise's last set: another set, or another exercise. */
 function moreCard() {
   const s = W.current(active);
@@ -465,7 +508,7 @@ function endBody() {
   return `<main class="w-main center">
       <span class="eyebrow">${esc(t('lastSetDone'))}</span>
       <h2 class="w-title">${esc(t('allDoneQ'))}</h2>
-      ${moreCard()}
+      ${nextCard()}${moreCard()}
     </main>
     <div class="w-foot"><button type="button" class="btn yellow huge" data-action="end-rest">${icon('check', 26)}${esc(active.trial ? t('endTrial') : t('finishWorkout'))}</button>
       ${W.canGoBack(active) ? `<button type="button" class="btn ghost-dark" data-action="back">${icon('back', 18)}${esc(t('backToSet'))}</button>` : ''}</div>`;
@@ -630,14 +673,15 @@ function restBody() {
   const nextText = nxt && nex ? (nxt.kind === 'cardio' ? nex.name : `${nex.name} · ${t('setNofM', nxt.n, nxt.of)}${nxt.extra ? ` · ${t('tagExtra')}` : nxt.added != null ? ` · ${t('tagAdded')}` : ''}`) : '';
   const nextAmount = nxt && nxt.kind === 'set' ? `${nxt.plan.reps ?? `${nxt.plan.seconds} s`}${nxt.plan.weight ? ` × ${fmtNum(nxt.plan.weight)}` : ''}` : '';
   const sameMachine = nxt && active.restKind === 'set';
-  return `<main class="w-main center">
+  const asking = nextCard();
+  return `<main class="w-main center${asking ? ' ask' : ''}">
       <span class="eyebrow">${esc(active.restKind === 'between' ? t('restAndMove') : t('rest'))}</span>
       <div class="ring">
         <svg width="260" height="260" viewBox="0 0 260 260" aria-hidden="true"><circle cx="130" cy="130" r="110" class="ring-bg"/><circle cx="130" cy="130" r="110" class="ring-fg${left <= 0 ? ' over' : ''}" data-live="ring" stroke-dasharray="${(C * frac).toFixed(1)} 700" transform="rotate(-90 130 130)"/></svg>
         <div class="ring-text" role="timer"><span class="w-bigclock" data-live="rest-left">${left >= 0 ? clock(left) : `+${clock(-left)}`}</span><small>${esc(t('ofPlanned', clock(active.restPlanned)))}</small></div>
       </div>
-      ${trial ? `<p class="w-text">${esc(t('trialRest'))}</p>` : `<p class="w-text">${esc(t('youRested'))} <b data-live="rested">${clock(W.phaseSec(active))}</b></p>`}
-      ${moreCard()}
+      ${trial ? `<p class="w-text">${esc(t('trialRest'))}</p>` : `<p class="w-text rested">${esc(t('youRested'))} <b data-live="rested">${clock(W.phaseSec(active))}</b></p>`}
+      ${asking}${moreCard()}
     </main>
     <div class="w-foot rest-foot">
       ${trial ? `<button type="button" class="btn light big wide" data-action="end-rest">${esc(t('forward'))}</button>`
@@ -794,6 +838,7 @@ async function finish(early) {
   const session = W.toSession(active);
   if (early) session.outcome = active.log.length >= active.steps.length ? 'done' : 'partial';
   summaryDiff = null;
+  summaryNext = null;
   if (session.sets.length) {
     upsert('sessions', session);
     // a routine imported without weights: the first session sets them, set by set
@@ -812,6 +857,12 @@ async function finish(early) {
       const next = changed ? upsert('routines', { ...r, items }) : r;
       const rows = diffRows(active, next);
       if (rows.length) summaryDiff = { routineId: r.id, gymId: active.gymId || routineGymId(r), rows, pick: Object.fromEntries(rows.map((x) => [x.ix, x.def])) };
+      // next time (v32): the answers go into the scheda now; the exercises not answered are asked in the summary
+      const applied = Object.fromEntries(Object.entries(active.next || {}).filter(([ix]) => askable(next, Number(ix))));
+      const ask = [...new Set(active.log.map((x) => x.item))].filter((ix) => ix != null && !(ix in applied) && askable(next, ix)).sort((a, b) => a - b);
+      const base = Object.fromEntries(Object.keys(applied).map((ix) => [ix, next.items[ix]]));
+      if (Object.keys(applied).length) upsert('routines', applyNext(next, live('exercises'), applied, increaseSettings(), session.start));
+      summaryNext = { routineId: r.id, at: session.start, applied, base, ask, pick: {} };
     }
   }
   await W.saveActive(null);
@@ -904,8 +955,10 @@ function diffBecomes(row, choice, r) {
     const after = state.exercises.find((e) => e.id === r.items[row.added]?.exerciseId)?.name || '';
     return t('becomesAdded', after, setsText(itemFromRows({}, chosenRows(row, choice).map(clean)), ex.type === 'weights'));
   }
-  if (choice === 'oggi') return t('becomesStays', setsText(it, ex.type === 'weights'));
-  return t('becomesNew', setsText(itemFromRows(it, chosenRows(row, choice).map(clean)), ex.type === 'weights'));
+  const nextOn = summaryNext && summaryNext.routineId === summaryDiff?.routineId && summaryNext.applied[row.ix];
+  if (choice === 'oggi') return nextOn ? `${t('nextWillBe', setsText(it, ex.type === 'weights'))}.` : t('becomesStays', setsText(it, ex.type === 'weights'));
+  const becomes = withNext(row.ix, itemFromRows(baseItem(row.ix, it), chosenRows(row, choice).map(clean)));
+  return nextOn ? `${t('nextWillBe', setsText(becomes, ex.type === 'weights'))}.` : t('becomesNew', setsText(becomes, ex.type === 'weights'));
 }
 
 function chip(cls, txt) { return `<span class="chg ${cls}">${esc(txt)}</span>`; }
@@ -956,6 +1009,32 @@ function diffCard(row, pick, r) {
     <p class="w-small">${esc(diffBecomes(row, pick, r))}</p></div>`;
 }
 
+/** The item as it was before the answer for next time went in (v32), else as it is. */
+function baseItem(ix, it) {
+  const sn = summaryNext;
+  return sn && sn.routineId === summaryDiff?.routineId && sn.base[ix] ? sn.base[ix] : it;
+}
+
+/** The answer for next time given during the workout, applied again to an item rewritten from what was done. */
+function withNext(ix, it) {
+  const sn = summaryNext;
+  const k = sn && sn.routineId === summaryDiff?.routineId ? sn.applied[ix] : null;
+  const ex = k && get('exercises', it.exerciseId);
+  return ex ? { ...nextItem(it, ex, k, increaseSettings()), pickedAt: sn.at } : it;
+}
+
+/** The answers given in the summary go into the scheda when it closes. */
+function applySummaryNext() {
+  const sn = summaryNext;
+  summaryNext = null;
+  if (!sn) return;
+  const picks = Object.fromEntries(Object.entries(sn.pick).filter(([, k]) => k));
+  const cur = Object.keys(picks).length && get('routines', sn.routineId);
+  if (!cur) return;
+  upsert('routines', applyNext(cur, live('exercises'), picks, increaseSettings(), sn.at));
+  refreshEstimates();
+}
+
 /** Write the chosen changes into the scheda: changed items in place, added exercises after the one they followed. */
 function applyDiff() {
   const d = summaryDiff;
@@ -973,7 +1052,7 @@ function applyDiff() {
       n++;
       continue;
     }
-    items[row.ix] = itemFromRows(items[row.ix], chosenRows(row, k).map(clean));
+    items[row.ix] = withNext(row.ix, itemFromRows(baseItem(row.ix, items[row.ix]), chosenRows(row, k).map(clean)));
     n++;
   }
   // added exercises: after the item they followed, in the order they were done
@@ -1011,6 +1090,17 @@ function summaryView() {
   const total = totalWeight(s, state.exercises);
   const diff = summaryDiff && summaryDiff.routineId === s.routineId ? summaryDiff : null;
   const pending = diff ? diff.rows.filter((x) => diff.pick[x.ix] !== 'oggi').length : 0;
+  const sn = summaryNext && summaryNext.routineId === s.routineId && summaryNext.at === s.start ? summaryNext : null;
+  const nextSection = sn && r && sn.ask.length ? `<h2 class="eyebrow pad">${esc(t('nextTitle'))}</h2>
+    ${sn.ask.map((ix) => { const it = r.items[ix]; const ex = it && get('exercises', it.exerciseId); return ex ? nextQ(it, ex, ix, sn.pick[ix] || null, 'snext', true) : ''; }).join('')}` : '';
+  // the answers given during the workout, as a line under the exercise
+  const nextOf = (exId) => {
+    if (!sn || !r) return '';
+    const ix = Object.keys(sn.applied).find((i) => sn.base[i]?.exerciseId === exId);
+    const ex = ix != null && get('exercises', exId);
+    const o = ex && nextOptions(sn.base[ix], ex, increaseSettings()).find((x) => x.key === sn.applied[ix]);
+    return o ? `<small class="sum-next">${esc(t('nextTag', nextLabel(o)))}</small>` : '';
+  };
   const diffSection = (rr) => (diff && rr ? `<h2 class="eyebrow pad">${esc(t('diffTitle', diff.rows.length))}</h2>
     <div class="w-minor diff-all"><button type="button" class="btn ghost-dark" data-action="all-fatto">${esc(t('allAsIDid'))}</button><button type="button" class="btn ghost-dark" data-action="all-oggi">${esc(t('noneOnlyToday'))}</button></div>
     ${diff.rows.map((x) => diffCard(x, diff.pick[x.ix], rr)).join('')}` : '');
@@ -1024,6 +1114,7 @@ function summaryView() {
       <div class="w-card stat"><span class="eyebrow">${esc(t('rests'))}</span><b>${esc(clock(restsTaken))}</b><small>${esc(t('restsBreakdown', clock(restsPlanned)))}</small></div>
     </div>
     ${diffSection(r)}
+    ${nextSection}
     ${breakdownBar(s.breakdown || {}, true)}
     <h2 class="eyebrow pad">${esc(t('perExercise'))}</h2>
     <div class="w-card list">${groups.map((g) => {
@@ -1031,7 +1122,7 @@ function summaryView() {
     const reps = g.sets.map((x) => x.reps ?? (x.seconds != null ? `${x.seconds} s` : '')).filter((x) => x !== '');
     const sameReps = reps.every((x) => x === reps[0]);
     const txt = ex?.type === 'cardio' ? setText(ex, g.sets[0]) : `${g.sets.length} × ${sameReps ? reps[0] : reps.join('/')}${ex?.type === 'weights' ? ` · ${fmtNum(Math.max(...g.sets.map((x) => x.weight || 0)))}` : ''}`;
-    return `<div class="sum-row"><span>${esc(ex?.name || '')}</span>${best.has(g.exerciseId) ? `<span class="badge best">${esc(t('newBest'))}</span>` : ''}<b>${esc(txt)}</b></div>`;
+    return `<div class="sum-row"><span>${esc(ex?.name || '')}${nextOf(g.exerciseId)}</span>${best.has(g.exerciseId) ? `<span class="badge best">${esc(t('newBest'))}</span>` : ''}<b>${esc(txt)}</b></div>`;
   }).join('')}</div>
     <p class="w-small with-icon">${icon('cloud', 16)}${esc(s.everydayBlockId ? t('savedEveryday') : t('savedLocal'))}</p>
     <div class="w-foot">${pending ? `<button type="button" class="btn yellow huge" data-action="save-diff">${esc(t('updateScheda', pending))}</button><button type="button" class="btn ghost-dark" data-action="close">${esc(t('onlyTodayAll'))}</button>`
@@ -1041,7 +1132,12 @@ function summaryView() {
     dark: true,
     html,
     bind(view) {
-      view.querySelector('[data-action=close]').addEventListener('click', () => { summaryId = null; summaryDiff = null; location.hash = '#/history'; });
+      view.querySelector('[data-action=close]').addEventListener('click', () => { applySummaryNext(); summaryId = null; summaryDiff = null; location.hash = '#/history'; });
+      view.querySelectorAll('[data-snext]').forEach((b) => b.addEventListener('click', () => {
+        const [ix, k] = b.dataset.snext.split('|');
+        summaryNext.pick[ix] = summaryNext.pick[ix] === k ? null : k;
+        window.dispatchEvent(new CustomEvent('palestra:render'));
+      }));
       view.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => { const [ix, k] = b.dataset.pick.split('|'); summaryDiff.pick[ix] = k; window.dispatchEvent(new CustomEvent('palestra:render')); }));
       view.querySelectorAll('[data-action=all-fatto],[data-action=all-oggi]').forEach((b) => b.addEventListener('click', () => {
         const k = b.dataset.action === 'all-fatto' ? 'fatto' : 'oggi';
@@ -1050,6 +1146,7 @@ function summaryView() {
       }));
       view.querySelector('[data-action=save-diff]')?.addEventListener('click', () => {
         const n = applyDiff();
+        applySummaryNext();
         summaryId = null; summaryDiff = null;
         toast(t('schedaUpdated', n));
         location.hash = '#/history';

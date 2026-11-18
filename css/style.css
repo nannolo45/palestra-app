@@ -1321,3 +1321,18 @@ a.ax-row { text-decoration: none; }
 .imp-choice span { display: flex; flex-direction: column; min-width: 0; }
 .imp-choice small { color: var(--muted); font-size: 13px; }
 .imp-tag.upd { background: var(--chip); color: var(--ink); margin-left: auto; margin-right: 8px; }
+
+/* ---- v32 ---- */
+/* next time: after an exercise, more weight, more reps or the same */
+.next-q { width: 100%; padding: 8px 10px 8px 12px; text-align: left; }
+.next-q p { margin: 0; font-size: 14px; line-height: 1.25; }
+.next-q .diff-choose { margin: 6px 0 0; flex-wrap: nowrap; }
+.next-q .diff-choose button { flex: 1 1 0; white-space: nowrap; padding: 9px 4px; }
+.next-q .w-small { margin-top: 4px; }
+.summary .next-q { margin-bottom: 10px; }
+.sum-next { display: block; font-weight: 500; font-size: 13px; color: var(--yellow); margin-top: 2px; }
+/* the rest asking about next time: a smaller ring, so it all fits without scrolling */
+.w-screen.fit .w-main.ask .ring { width: min(200px, 20dvh, 60vw); height: min(200px, 20dvh, 60vw); }
+@media (max-height: 700px) { .w-screen.fit .w-main.ask .rested { display: none; } }
+.w-screen.fit .w-main.ask .ring .w-bigclock { font-size: clamp(36px, 6.2dvh, 64px); }
+.w-screen.fit .w-main.ask .ring-text small { font-size: 12px; }

@@ -348,6 +348,7 @@ export function increaseProposals(routine, exercises, sessions, settings = DEFAU
     if (!step || step <= 0) { out.excluded.push(ex.id); return; }
     const res = lastResult(item, ex, sessions, now);
     if (!res) return; // never done: nothing to go on yet
+    if (item.pickedAt && res.session && res.session.start <= item.pickedAt) return; // chosen at the end of last time (v32)
     if (ex.type === 'weights' && !(minPlannedWeight(item) > 0)) return; // no weight chosen yet: the first session sets it
     if (ex.type === 'weights' && res.at != null && res.at < minPlannedWeight(item)) return; // the new weight isn't tried yet
     if (settings.when !== 'always' && !res.complete) { out.held.push({ exerciseId: ex.id, short: res.short }); return; }
@@ -365,20 +366,80 @@ export function increaseProposals(routine, exercises, sessions, settings = DEFAU
   return out;
 }
 
+/** One routine item moved by a proposal {field, from, to}: weight, reps, seconds or duration (cardio minutes). */
+export function bumpItem(item, p) {
+  const it = { ...item, targets: item.targets ? { ...item.targets } : item.targets };
+  if (p.field === 'duration') { it.targets = { ...(it.targets || {}), duration: p.to }; return it; }
+  const d = p.to - p.from;
+  // every set goes up by the same step, so a pyramid stays a pyramid; a rep range moves as a whole
+  if (variedSets(it)) it.perSet = it.perSet.map((x) => ({ ...x, [p.field]: roundStep((Number(x[p.field]) || 0) + d, 0.25) }));
+  if (p.field === 'reps' && it.repsMax) it.repsMax = Number(it.repsMax) + d;
+  it[p.field] = roundStep((Number(it[p.field]) || 0) + d, 0.25);
+  return it;
+}
+
 /** The routine with the accepted proposals applied and this week marked as asked. */
 export function applyIncrease(routine, proposals, accepted, now = Date.now()) {
   const items = routine.items.map((it) => ({ ...it, targets: it.targets ? { ...it.targets } : it.targets }));
   for (const p of proposals) {
     if (!accepted.includes(p.itemIndex)) continue;
-    const it = items[p.itemIndex];
-    if (p.field === 'duration') { it.targets = { ...(it.targets || {}), duration: p.to }; continue; }
-    const d = p.to - p.from;
-    // every set goes up by the same step, so a pyramid stays a pyramid; a rep range moves as a whole
-    if (variedSets(it)) it.perSet = it.perSet.map((x) => ({ ...x, [p.field]: roundStep((Number(x[p.field]) || 0) + d, 0.25) }));
-    if (p.field === 'reps' && it.repsMax) it.repsMax = Number(it.repsMax) + d;
-    it[p.field] = roundStep((Number(it[p.field]) || 0) + d, 0.25);
+    items[p.itemIndex] = bumpItem(items[p.itemIndex], p);
   }
   return { ...routine, items, increaseWeek: isoWeek(new Date(now)) };
+}
+
+// ---- "la prossima volta" (v32): after an exercise, more weight, more reps (seconds, minutes) or the same ----
+
+/**
+ * The choices for next time, in order: [{key: 'weight'|'more'|'same', field, from, to, by}]. Weights get the weight
+ * (the exercise's own step, else the step of its kind from Impostazioni → Aumento) and +1 rep; timed sets +5 s;
+ * bodyweight the reps step; cardio the minutes step. 'same' is always last.
+ */
+export function nextOptions(item, ex, settings = DEFAULT_INCREASE) {
+  if (!item || !ex) return [];
+  const steps = { ...DEFAULT_INCREASE.steps, ...(settings?.steps || {}) };
+  const inc = ex.increase || {};
+  const custom = inc.mode === 'custom' && Number(inc.step) > 0 ? Number(inc.step) : null;
+  const out = [];
+  if (ex.type === 'cardio') {
+    const from = Number(item.targets?.duration) || 10;
+    const by = custom ?? (Number(steps.cardio) || 1);
+    out.push({ key: 'more', field: 'duration', from, to: roundStep(from + by, 0.5), by });
+  } else {
+    const p = setPlan(item, 1);
+    if (ex.type === 'weights') {
+      const from = p.weight || 0;
+      const by = custom ?? (Number(steps[increaseCategory(ex)]) || 2.5);
+      out.push({ key: 'weight', field: 'weight', from, to: roundStep(from + by, 0.25), by });
+    }
+    if (p.seconds != null) out.push({ key: 'more', field: 'seconds', from: p.seconds, to: p.seconds + 5, by: 5 });
+    else {
+      const by = ex.type === 'bodyweight' ? Math.max(1, Math.round(custom ?? (Number(steps.bodyweight) || 1))) : 1;
+      out.push({ key: 'more', field: 'reps', from: p.reps || 0, to: (p.reps || 0) + by, by });
+    }
+  }
+  out.push({ key: 'same' });
+  return out;
+}
+
+/** One item as it will be next time for a choice (the item itself for 'same' or an unknown key). */
+export function nextItem(item, ex, key, settings = DEFAULT_INCREASE) {
+  const o = nextOptions(item, ex, settings).find((x) => x.key === key);
+  return o && o.field ? bumpItem(item, o) : item;
+}
+
+/**
+ * The routine with the choices {itemIndex: key} applied. Each chosen item gets pickedAt (the session's start), so
+ * the weekly automatic increase leaves it alone until it has been done again.
+ */
+export function applyNext(routine, exercises, choices, settings = DEFAULT_INCREASE, at = Date.now()) {
+  const items = (routine.items || []).map((it, ix) => {
+    const key = choices?.[ix];
+    const ex = key && exercises.find((e) => e.id === it.exerciseId);
+    if (!ex) return it;
+    return { ...nextItem(it, ex, key, settings), pickedAt: at };
+  });
+  return { ...routine, items };
 }
 
 // ---- history ----
