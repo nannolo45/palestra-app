@@ -680,6 +680,22 @@ Object.assign(en, {
   weightWhat: (x) => `Weight · ${x}`,
 });
 
+Object.assign(it, {
+  // v34: salta o rimanda, un'altra serie, la fine
+  skipMenu: 'Salta o rimanda', laterAfter: (n) => `Più tardi, dopo ${n}`, laterAfterSub: 'Macchina occupata? Intanto fai il prossimo', laterEnd: 'Più tardi, alla fine', laterEndSub: 'Lo fai per ultimo',
+  skipToday: 'Salta per oggi', skipTodaySub: 'Se poi hai tempo, lo riprendi', skipOnlySet: 'Salta solo questa serie',
+  laterDone: (x, n) => `${x}: dopo ${n}`, laterEndDone: (x) => `${x}: alla fine`, skippedToday: (x) => `${x}: saltato per oggi`,
+  pvOneMore: 'Fai un\'altra serie', oneMoreNow: (x) => `${x}: una serie in più, adesso`, oneMoreAfterRest: (x) => `${x}: una serie in più, dopo il recupero`, nowAfterRest: (x) => `${x}: lo fai dopo il recupero`,
+  pvLater: 'Rimandato', atTheEnd: 'Sei alla fine', notDoneToday: 'Non fatti oggi',
+});
+Object.assign(en, {
+  skipMenu: 'Skip or put off', laterAfter: (n) => `Later, after ${n}`, laterAfterSub: 'Machine taken? Do the next one first', laterEnd: 'Later, at the end', laterEndSub: 'You do it last',
+  skipToday: 'Skip it today', skipTodaySub: 'If there\'s time later, you can pick it up again', skipOnlySet: 'Skip just this set',
+  laterDone: (x, n) => `${x}: after ${n}`, laterEndDone: (x) => `${x}: at the end`, skippedToday: (x) => `${x}: skipped for today`,
+  pvOneMore: 'Do one more set', oneMoreNow: (x) => `${x}: one more set, now`, oneMoreAfterRest: (x) => `${x}: one more set, after the rest`, nowAfterRest: (x) => `${x}: you do it after the rest`,
+  pvLater: 'Put off', atTheEnd: 'You\'re at the end', notDoneToday: 'Not done today',
+});
+
 export const DICTS = { it, en };
 
 export function getLang() {

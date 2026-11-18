@@ -144,8 +144,11 @@ export function endRest(w, now = Date.now()) {
   const log = w.log.map((x, i) => (i === w.log.length - 1 ? { ...x, restTaken: took, restPlanned: w.restPlanned } : x));
   if (w.restKind === 'end' && !w.steps[w.idx + 1]) return { ...w, idx: w.idx + 1, phase: 'done', phaseStart: now, restPlanned: 0, restKind: null };
   const bucket = w.restKind === 'between' ? 'walk' : 'rest';
-  const breakdown = { ...w.breakdown, [bucket]: w.breakdown[bucket] + (w.restKind === 'end' ? 0 : took) };
-  return { ...w, log, breakdown, idx: w.idx + 1, phase: 'work', phaseStart: now, restPlanned: 0, restKind: null };
+  const counted = w.restKind === 'end' ? 0 : took;
+  const breakdown = { ...w.breakdown, [bucket]: w.breakdown[bucket] + counted };
+  // the rest just ended is kept (v34): skipping or putting off the exercise that comes next picks it up again
+  const lastRest = { start: w.phaseStart, planned: w.restPlanned, kind: w.restKind, bucket, took: counted, log: log.length };
+  return { ...w, log, breakdown, lastRest, idx: w.idx + 1, phase: 'work', phaseStart: now, restPlanned: 0, restKind: null };
 }
 
 /** +30 s: added to the rest that's still going; when it's already over, 30 s from now (v27). */
@@ -155,11 +158,122 @@ export function addRest(w, sec = 30, now = Date.now()) {
   return { ...w, restPlanned: left > 0 ? w.restPlanned + sec : phaseSec(w, now) + sec };
 }
 
-/** Skip the current set without logging it. */
+/** Skip the current set without logging it. After the last one: the end screen, where what was skipped can come back. */
 export function skipStep(w, now = Date.now()) {
   if (w.phase !== 'work') return w;
-  if (!nextStep(w)) return { ...w, idx: w.idx + 1, phase: 'done', phaseStart: now };
-  return { ...w, idx: w.idx + 1, phase: 'work', phaseStart: now };
+  return settle(w, now, w.idx + 1);
+}
+
+// ---- salta o rimanda (v34): an exercise skipped for today, or put off until later ----
+
+/** Where the queue starts: the step being done during a set, the one after the rest during a rest. */
+const queueAt = (w) => (w.phase === 'rest' ? w.idx + 1 : w.idx);
+
+/** The rest that fits what now comes next (at): the same exercise, another one, or nothing more. */
+function restShape(w, at) {
+  const nxt = w.steps[at];
+  if (!nxt) return { restKind: 'end', restPlanned: 0 };
+  const last = w.log[w.log.length - 1];
+  const lastStep = last && w.steps.find((s) => s.itemIndex === last.item);
+  const same = Boolean(last) && (last.item === nxt.itemIndex || (lastStep?.group != null && lastStep.group === nxt.group));
+  if (same) return w.restKind === 'set' ? {} : { restKind: 'set', restPlanned: nxt.plan.rest ?? w.defaultRest };
+  return w.restKind === 'between' ? {} : { restKind: 'between', restPlanned: Math.max(w.restPlanned, w.between) };
+}
+
+/**
+ * After the queue changed, with `at` the first step still to do. During a rest the rest goes on. During a set, the
+ * rest that was cut short to get here is picked up again if it still has time left and nothing was done since, so
+ * the timer between exercises is always there. With nothing left to do: the end screen.
+ */
+function settle(w, now, at) {
+  if (w.phase === 'rest') return { ...w, idx: at - 1, ...restShape(w, at) };
+  const nxt = w.steps[at];
+  const lr = w.lastRest;
+  if (nxt && lr && !w.trial && at > 0 && lr.log === w.log.length) {
+    const r = { ...w, idx: at - 1, phase: 'rest', phaseStart: lr.start, restPlanned: lr.planned, restKind: lr.kind, lastRest: null };
+    const rest = { ...r, ...restShape(r, at), breakdown: { ...w.breakdown, [lr.bucket]: Math.max(0, w.breakdown[lr.bucket] - lr.took) } };
+    if (restLeft(rest, now) > 0) return rest;
+  }
+  if (!nxt) return at > 0 ? { ...w, idx: at - 1, phase: 'rest', phaseStart: now, restPlanned: 0, restKind: 'end' } : { ...w, idx: at, phase: 'done', phaseStart: now };
+  return { ...w, idx: at, phase: 'work', phaseStart: now };
+}
+
+/** The exercises still to come after this one, in order (a superserie counts once, by its first exercise). */
+export function comingAfter(w, itemIndex) {
+  const out = [];
+  let group = null;
+  for (const s of w.steps.slice(queueAt(w))) {
+    if (s.itemIndex === itemIndex || out.includes(s.itemIndex) || (s.group != null && s.group === group)) continue;
+    out.push(s.itemIndex);
+    group = s.group ?? null;
+  }
+  return out;
+}
+
+/**
+ * "Più tardi": the sets of this exercise not done yet move after the next exercise (where: 'next') or to the end
+ * ('end'). Nothing changes when no other exercise comes after it.
+ */
+export function later(w, itemIndex, where = 'next', now = Date.now()) {
+  if (isPaused(w) || w.phase === 'done') return w;
+  const at = queueAt(w);
+  const moving = w.steps.filter((s, i) => i >= at && s.itemIndex === itemIndex);
+  const rest = w.steps.filter((s, i) => i >= at && s.itemIndex !== itemIndex);
+  if (!moving.length || !rest.length) return w;
+  let cut = rest.length;
+  if (where === 'next') {
+    const f = rest[0];
+    cut = 1;
+    while (rest[cut] && (rest[cut].itemIndex === f.itemIndex || (f.group != null && rest[cut].group === f.group))) cut++;
+  }
+  const steps = [...w.steps.slice(0, at), ...rest.slice(0, cut), ...moving.map((s) => ({ ...s, later: true })), ...rest.slice(cut)];
+  return settle({ ...w, steps }, now, at);
+}
+
+/**
+ * "Salta per oggi": the sets of this exercise not done yet are left behind, not logged. It stays in the workout as
+ * skipped, so "Fallo adesso" can bring it back.
+ */
+export function skipExercise(w, itemIndex, now = Date.now()) {
+  if (isPaused(w) || w.phase === 'done') return w;
+  const at = queueAt(w);
+  const moving = w.steps.filter((s, i) => i >= at && s.itemIndex === itemIndex);
+  if (!moving.length) return w;
+  const rest = w.steps.filter((s, i) => i >= at && s.itemIndex !== itemIndex);
+  const steps = [...w.steps.slice(0, at), ...moving.map(({ later: _, ...s }) => s), ...rest];
+  return settle({ ...w, steps }, now, at + moving.length);
+}
+
+/** The exercises with sets not done: [{ itemIndex, left, of }], in workout order. For the end screen. */
+export function notDone(w) {
+  const out = [];
+  for (const s of w.steps) {
+    let o = out.find((x) => x.itemIndex === s.itemIndex);
+    if (!o) { o = { itemIndex: s.itemIndex, left: 0, of: 0 }; out.push(o); }
+    o.of++;
+    if (!isLogged(w, s)) o.left++;
+  }
+  return out.filter((o) => o.left > 0);
+}
+
+/**
+ * "Fai un'altra serie" on an exercise already finished: one more set of it, from the numbers of its last one. It
+ * comes now during a set, right after the rest during a rest.
+ */
+export function oneMore(w, itemIndex, now = Date.now()) {
+  if (isPaused(w) || w.phase === 'done') return w;
+  const mine = w.steps.filter((s) => s.itemIndex === itemIndex);
+  const last = mine[mine.length - 1];
+  if (!last || last.kind !== 'set' || mine.some((s) => !isLogged(w, s))) return w;
+  const done = [...w.log].reverse().find((x) => x.exerciseId === last.exerciseId && x.n === last.n);
+  const of = last.of + 1;
+  const { later: _, ...base } = last;
+  const extra = { ...base, n: last.n + 1, of, extra: true, plan: { ...last.plan, reps: done.reps ?? last.plan.reps, seconds: done.seconds ?? last.plan.seconds, weight: done.weight ?? last.plan.weight } };
+  const steps = w.steps.map((x) => (x.itemIndex === itemIndex ? { ...x, of } : x));
+  const at = queueAt(w);
+  steps.splice(at, 0, extra);
+  if (w.phase === 'rest') return { ...w, steps, ...restShape({ ...w, steps }, at) };
+  return { ...w, steps, idx: at, phaseStart: now };
 }
 
 /**
@@ -168,8 +282,10 @@ export function skipStep(w, now = Date.now()) {
  */
 export function back(w, now = Date.now()) {
   if (isPaused(w) || w.phase === 'done') return w;
-  const idx = w.phase === 'rest' ? w.idx : w.idx - 1;
+  let idx = w.phase === 'rest' ? w.idx : w.idx - 1;
   if (idx < 0) return w;
+  // a rest reached by skipping (v34): back to the first of the sets that were skipped
+  if (w.phase === 'rest' && !isLogged(w, w.steps[idx])) while (idx > 0 && w.steps[idx - 1].itemIndex === w.steps[idx].itemIndex && !isLogged(w, w.steps[idx - 1])) idx--;
   const step = w.steps[idx];
   let li = -1;
   for (let i = w.log.length - 1; i >= 0; i--) if (w.log[i].exerciseId === step.exerciseId && w.log[i].n === step.n) { li = i; break; }
@@ -192,7 +308,10 @@ export function back(w, now = Date.now()) {
 export function afterLastSet(w) {
   if (w.phase !== 'rest' || isPaused(w)) return false;
   const s = current(w); const nx = w.steps[w.idx + 1];
-  return Boolean(s && s.kind === 'set' && (!nx || (nx.itemIndex !== s.itemIndex && (s.group == null || nx.group !== s.group))));
+  if (!s || s.kind !== 'set' || !isLogged(w, s)) return false; // not logged: this rest was reached by skipping (v34)
+  if (nx && (nx.itemIndex === s.itemIndex || (s.group != null && nx.group === s.group))) return false;
+  // sets of it put off until later (v34): it isn't finished yet
+  return !w.steps.some((x, i) => i > w.idx && (x.itemIndex === s.itemIndex || (s.group != null && x.group === s.group)) && !isLogged(w, x));
 }
 
 /**
@@ -233,9 +352,8 @@ export function addSet(w) {
 export function removeAddedSet(w) {
   const nx = w.steps[w.idx + 1];
   if (w.phase !== 'rest' || !nx || !nx.extra || isLogged(w, nx)) return w;
-  const s = current(w);
-  const of = s.of - 1;
-  const steps = w.steps.filter((_, i) => i !== w.idx + 1).map((x) => (x.itemIndex === s.itemIndex ? { ...x, of } : x));
+  const of = nx.of - 1;
+  const steps = w.steps.filter((_, i) => i !== w.idx + 1).map((x) => (x.itemIndex === nx.itemIndex ? { ...x, of } : x));
   const after = steps[w.idx + 1];
   return { ...w, steps, restKind: !after ? 'end' : 'between', restPlanned: !after ? 0 : Math.max(w.restPlanned, w.between) };
 }

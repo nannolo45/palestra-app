@@ -31,10 +31,10 @@ test('back during a set goes to the previous one; a skipped set comes back as pl
   let b = W.back(w, T0 + 160_000);
   assert.equal(b.idx, 0);
   assert.equal(b.log.length, 0);
-  // skip the second squat set, then go back to it
-  w = W.skipStep(w, T0 + 160_000);
+  // skip the second squat set (well after the rest: since v34 a rest with time left would go on), then go back to it
+  w = W.skipStep(w, T0 + 260_000);
   assert.equal(w.idx, 2);
-  b = W.back(w, T0 + 170_000);
+  b = W.back(w, T0 + 270_000);
   assert.equal(b.idx, 1);
   assert.equal(b.log.length, 1, 'the first set stays logged');
   assert.equal(b.steps[1].plan.reps, 8);

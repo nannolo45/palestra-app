@@ -92,6 +92,13 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   page.on('console', (m) => { if (m.type() === 'error' && !/status of 404/.test(m.text())) errors.push(m.text()); });
   await page.clock.install({ time: new Date(2026, 9, 27, 18, 0) }); // Tue 27 Oct 2026, 18:00
   const shot = (n, opts = {}) => page.screenshot({ path: path.join(SHOTS, `${n}.png`), ...opts });
+  // v34: Salta serie is in the Salta o rimanda sheet (with one set left, Salta per oggi does the same)
+  const skipSet = async () => {
+    await page.click('.w-foot [data-action=skip-menu]');
+    await page.waitForSelector('#modal [data-skip]');
+    await page.click((await page.$('#modal [data-skip=set]')) ? '#modal [data-skip=set]' : '#modal [data-skip=skip]');
+    await page.waitForTimeout(120);
+  };
   const go = async (hash) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(150); };
   // v27 builders: press, move in steps, let go over the target
   const dragTo = async (from, to) => {
@@ -583,7 +590,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.click('[data-action=end-rest]');
   await page.waitForSelector('[data-stepper=reps]');
   check((await page.inputValue('[data-stepper=reps] input')) === '6' && (await page.inputValue('[data-stepper=weight] input')) === '12', 'set 2 starts from its own numbers, not the set before');
-  for (let i = 0; i < 3; i++) { await page.click('[data-action=skip-set]'); await page.waitForTimeout(80); }
+  for (let i = 0; i < 3; i++) await skipSet();
   await page.waitForSelector('.fail-tag');
   check((await page.textContent('.w-goal')).includes('Obiettivo 8–12'), 'to failure: the range shown');
   await shot('p11-failure');
@@ -609,7 +616,7 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   { const t0 = await page.evaluate(() => Date.now()); await page.clock.setFixedTime(t0 + 16 * 1000); await page.clock.runFor(1000); }
   await page.waitForSelector('.w-ex');
   check((await page.textContent('.w-ex')).startsWith('Curl con bilanciere'), 'the countdown starts it on its own');
-  for (let i = 0; i < 4; i++) { await page.click('[data-action=skip-set]'); await page.waitForTimeout(80); }
+  for (let i = 0; i < 4; i++) await skipSet();
   await page.waitForSelector('.sug-chip');
   await page.click('[data-action=use-sug]');
   check(Number((await page.inputValue('[data-stepper=weight] input')).replace(',', '.')) > 0, 'Usa puts the suggested weight in');
@@ -1190,6 +1197,81 @@ function check(cond, msg) { if (cond) console.log(`  ok  ${msg}`); else { failur
   await page.waitForSelector('.title');
   check(page.url().endsWith('#/settings'), `"Torna all'app" lands on Settings (${page.url()})`);
   await page.setViewportSize({ width: 390, height: 844 });
+
+  console.log('v34: skip or put off, one more set, the rest that goes on');
+  await page.evaluate(async () => {
+    const { upsert, saveSettings } = await import('/js/store.js');
+    await saveSettings({ lang: 'it' });
+    for (const [id, name] of [['v34a', 'Vai A'], ['v34b', 'Vai B'], ['v34c', 'Vai C']]) upsert('exercises', { id, name, type: 'weights', equipment: 'machine', muscles: [], notes: id === 'v34a' ? 'Una nota lunga che prima finiva sotto le frecce ai lati dello schermo.' : '' });
+    upsert('routines', { id: 'v34r', name: 'Vai', items: [{ exerciseId: 'v34a', sets: 2, reps: 10, weight: 20, rest: 60 }, { exerciseId: 'v34b', sets: 2, reps: 10, weight: 30, rest: 60 }, { exerciseId: 'v34c', sets: 1, reps: 10, weight: 10, rest: 60 }] });
+  });
+  let now34 = await page.evaluate(() => Date.now());
+  const adv = async (sec) => { now34 += sec * 1000; await page.clock.setFixedTime(now34); await page.clock.runFor(1000); await page.waitForTimeout(60); };
+  const pickSkip = async (from, k) => { await page.click(from); await page.waitForSelector('#modal [data-skip]'); const ks = await page.$$eval('#modal [data-skip]', (els) => els.map((e) => e.dataset.skip)); if (k) { await page.click(`#modal [data-skip=${k}]`); await page.waitForTimeout(150); } return ks.join(','); };
+  const nextCardText = async () => (await page.textContent('.w-card.next')).replace(/\s+/g, ' ');
+  await go('#/start/v34r');
+  await page.waitForSelector('[data-action=go]');
+  await page.click('[data-action=go]');
+  await page.waitForSelector('[data-action=done]');
+  {
+    const r = await page.evaluate(() => { const box = (q) => { const e = document.querySelector(q); return e ? e.getBoundingClientRect() : null; }; const m = box('.w-main > *'); const e = box('.w-edge.r'); const pr = box('.w-progress'); return { clear: e.bottom <= m.top + 1, inRow: e.top <= pr.top && e.bottom >= pr.bottom, left: getComputedStyle(document.querySelector('.w-edge.l')).visibility }; });
+    check(r.clear && r.inRow && r.left === 'hidden', `the arrows sit at the ends of the progress bar, clear of the page (${JSON.stringify(r)})`);
+  }
+  await shot('v34-set');
+  await fitsAt('v34: set');
+  check((await pickSkip('.w-foot [data-action=skip-menu]')) === 'next,end,skip,set', 'a set: after the next one, at the end, skip today, or just this set');
+  await page.click('#modal [data-close]');
+  await adv(40); await page.click('[data-action=done]'); await page.waitForSelector('.ring');
+  await adv(60); await page.click('[data-action=end-rest]'); await page.waitForSelector('[data-action=done]');
+  await adv(40); await page.click('[data-action=done]'); await page.waitForSelector('.ring');
+  check((await nextCardText()).includes('Vai B'), 'resting before B');
+  await adv(20);
+  await shot('v34-rest');
+  check((await pickSkip('.next-skip', 'skip')) === 'next,skip', 'from the rest: the next exercise goes later (only C is left, so no "at the end") or is skipped');
+  check(Boolean(await page.$('.ring')) && (await nextCardText()).includes('Vai C') && (await page.textContent('[data-live=rest-left]')) === '1:40', `B skipped from the rest: the rest goes on, C comes next (${await page.textContent('[data-live=rest-left]')})`);
+  await fitsAt('v34: rest after a skip');
+  await page.click('[data-action=end-rest]'); await page.waitForSelector('[data-action=done]');
+  check((await page.textContent('.w-ex')) === 'Vai C', 'on to C');
+  // B comes back: Fallo adesso from its preview
+  await page.click('.w-edge.l'); await page.waitForSelector('.pv-banner');
+  check((await page.textContent('.pv-banner')).includes('Saltato') && (await page.textContent('.w-ex')) === 'Vai B', 'the skipped one, in preview');
+  await page.click('[data-action=do-now]'); await page.waitForSelector('[data-action=done]');
+  check((await page.textContent('.w-ex')) === 'Vai B', 'Fallo adesso brings it back');
+  // the machine is taken: later, after C. The rest cut short picks up where it was (120 s, 21 gone)
+  await pickSkip('.w-foot [data-action=skip-menu]', 'next');
+  check(Boolean(await page.$('.ring')) && (await nextCardText()).includes('Vai C') && (await page.textContent('[data-live=rest-left]')) === '1:40', `put off from its set: back to the rest that was running (${await page.textContent('.w-main').then((x) => x.replace(/\s+/g, ' ').slice(0, 80))})`);
+  await adv(30);
+  check((await page.textContent('[data-live=rest-left]')) === '1:10', 'and it counts down');
+  await page.click('[data-action=end-rest]'); await page.waitForSelector('[data-action=done]');
+  await adv(30); await page.click('[data-action=done]'); await page.waitForSelector('.ring');
+  check((await nextCardText()).includes('Vai B'), 'after C, B again');
+  await page.click('.w-edge.r'); await page.waitForSelector('.pv-banner');
+  check((await page.textContent('.pv-banner')).includes('Rimandato'), `its preview says it was put off (${await page.textContent('.pv-banner')})`);
+  await page.click('[data-action=peek-home]'); await page.waitForSelector('.ring');
+  // one more set of A, finished long ago
+  await page.click('.w-edge.l'); await page.waitForSelector('.pv-banner');
+  check((await page.textContent('.pv-banner')).includes('Già fatto') && (await page.textContent('.w-ex')) === 'Vai A' && Boolean(await page.$('[data-action=one-more]')) && Boolean(await page.$('[data-action=fix]')), 'a finished exercise offers Fai un\'altra serie and Correggi i numeri');
+  await shot('v34-done-preview');
+  { const r = await page.evaluate(() => { const f = document.querySelector('.w-foot').getBoundingClientRect(); return { foot: Math.round(f.bottom), h: innerHeight, wide: document.documentElement.scrollWidth - innerWidth }; }); check(r.foot <= r.h + 1 && r.wide <= 0, `the preview's buttons fit (${JSON.stringify(r)})`); }
+  await page.click('[data-action=one-more]'); await page.waitForSelector('.ring');
+  check((await nextCardText()).includes('Vai A · Serie 3 di 3 · in più'), `one more set of A comes after the rest (${await nextCardText()})`);
+  await page.click('[data-action=undo-set]'); await page.waitForTimeout(150);
+  check((await nextCardText()).includes('Vai B · Serie 1 di 2'), 'and can be taken back');
+  // nothing after B: only skipping is left, and it leads to the end, where B is still on offer
+  check((await pickSkip('.next-skip', 'skip')) === 'skip', 'the last exercise can only be skipped');
+  await page.waitForSelector('.left-list');
+  check((await page.textContent('.w-main')).includes('Sei alla fine') && (await page.textContent('.left-list')).includes('Vai B') && !(await page.$('.more-q')), 'the end: what wasn\'t done today, with Fallo adesso');
+  await shot('v34-end');
+  await page.click('.left-list [data-do-now]'); await page.waitForSelector('.ring');
+  check((await nextCardText()).includes('Vai B · Serie 1 di 2'), 'from the end, B comes back after a rest');
+  await page.click('[data-action=end-rest]'); await page.waitForSelector('[data-action=done]');
+  await adv(30); await page.click('[data-action=done]'); await page.waitForSelector('.ring');
+  await pickSkip('.next-skip', 'skip');
+  await page.waitForSelector('.left-list');
+  check((await page.textContent('.left-list')).includes('ne mancano 1'), 'half done: one set left');
+  await page.click('[data-action=end-rest]');
+  await page.waitForSelector('.summary');
+  { const n = await page.evaluate(async () => { const s = (await import('/js/store.js')).live('sessions').find((x) => x.routineId === 'v34r'); return s.sets.map((x) => x.exerciseId).join(','); }); check(n === 'v34a,v34a,v34c,v34b', `the session has what was done, in the order done (${n})`); }
 
   check(errors.length === 0, `no errors in the page${errors.length ? `: ${errors.join(' | ')}` : ''}`);
   await browser.close();
